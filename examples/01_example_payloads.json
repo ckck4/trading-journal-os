@@ -1,0 +1,328 @@
+{
+  "description": "Example API payloads for Trading Journal OS",
+  "import_upload_response": {
+    "batchId": "b1c2d3e4-5678-9abc-def0-123456789abc",
+    "status": "completed",
+    "filename": "fills_2025-01-15.csv",
+    "totalRows": 47,
+    "newFills": 42,
+    "duplicateFills": 5,
+    "errorRows": 0,
+    "tradesReconstructed": 8,
+    "completedAt": "2025-01-15T20:05:12.000Z"
+  },
+  "trade_detail": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "accountId": "acc-001",
+    "rootSymbol": "MNQ",
+    "tradingDay": "2025-01-15",
+    "entryTime": "2025-01-15T14:32:05.000Z",
+    "exitTime": "2025-01-15T14:38:22.000Z",
+    "durationSeconds": 377,
+    "sessionId": "session-rth",
+    "side": "LONG",
+    "entryQty": 2,
+    "exitQty": 2,
+    "avgEntryPrice": 21450.75,
+    "avgExitPrice": 21458.50,
+    "isOpen": false,
+    "grossPnl": 31.00,
+    "commissionTotal": 2.48,
+    "feesTotal": 0.00,
+    "netPnl": 28.52,
+    "initialStopPoints": 10.0,
+    "rMultiple": 1.43,
+    "strategyId": "strat-orb",
+    "strategyAuto": true,
+    "outcome": "WIN",
+    "notes": "Clean breakout above OR high. Followed plan.",
+    "tradingviewLink": "https://www.tradingview.com/chart/abc123/",
+    "groupingMethod": "flat_to_flat",
+    "manuallyAdjusted": false,
+    "tags": [
+      {
+        "id": "tag-001",
+        "name": "Clean Setup",
+        "color": "#22C55E"
+      }
+    ],
+    "grade": {
+      "numericScore": 88.5,
+      "letterGrade": "B+",
+      "categoryScores": [
+        {
+          "categoryId": "cat-setup",
+          "name": "Setup",
+          "score": 9,
+          "maxScore": 10
+        },
+        {
+          "categoryId": "cat-exec",
+          "name": "Execution",
+          "score": 8,
+          "maxScore": 10
+        },
+        {
+          "categoryId": "cat-risk",
+          "name": "Risk",
+          "score": 9,
+          "maxScore": 10
+        },
+        {
+          "categoryId": "cat-psych",
+          "name": "Psychology",
+          "score": 10,
+          "maxScore": 10
+        }
+      ],
+      "confluenceResults": [
+        {
+          "confluenceId": "conf-1",
+          "label": "Above VWAP",
+          "checked": true
+        },
+        {
+          "confluenceId": "conf-2",
+          "label": "Volume spike at breakout",
+          "checked": true
+        },
+        {
+          "confluenceId": "conf-3",
+          "label": "No major resistance within 20pts",
+          "checked": false
+        }
+      ]
+    },
+    "fills": [
+      {
+        "id": "fill-001",
+        "side": "BUY",
+        "quantity": 2,
+        "price": 21450.75,
+        "fillTime": "2025-01-15T14:32:05.000Z",
+        "commission": 1.24
+      },
+      {
+        "id": "fill-002",
+        "side": "SELL",
+        "quantity": 2,
+        "price": 21458.50,
+        "fillTime": "2025-01-15T14:38:22.000Z",
+        "commission": 1.24
+      }
+    ],
+    "screenshots": [
+      {
+        "id": "ss-001",
+        "filePath": "/screenshots/a1b2c3d4/chart_entry.png",
+        "caption": "Entry setup"
+      }
+    ]
+  },
+  "analytics_kpis": {
+    "filters": {
+      "accountIds": [
+        "acc-001"
+      ],
+      "from": "2025-01-01",
+      "to": "2025-01-31",
+      "session": "*",
+      "instrument": "*",
+      "strategy": "*"
+    },
+    "kpis": {
+      "totalTrades": 87,
+      "wins": 52,
+      "losses": 33,
+      "breakevens": 2,
+      "winRate": 61.18,
+      "grossPnl": 4250.00,
+      "netPnl": 3642.56,
+      "totalCommissions": 607.44,
+      "profitFactor": 1.82,
+      "expectancy": 41.87,
+      "avgWin": 98.25,
+      "avgLoss": -62.40,
+      "largestWin": 312.00,
+      "largestLoss": -186.50,
+      "avgR": 0.87,
+      "totalR": 65.30,
+      "maxDrawdown": -425.00,
+      "recoveryFactor": 8.57,
+      "avgDuration": 245,
+      "tradingDays": 19,
+      "tradesPerDay": 4.58
+    }
+  },
+  "prop_evaluation_status": {
+    "id": "eval-001",
+    "accountId": "acc-001",
+    "templateName": "LucidFlex 50K Evaluation",
+    "stage": "evaluation",
+    "status": "active",
+    "startDate": "2025-01-06",
+    "rules": {
+      "profitTarget": {
+        "target": 3000,
+        "current": 2165.50,
+        "progress": 72.18,
+        "status": "on_track"
+      },
+      "maxLoss": {
+        "limit": 2000,
+        "maxDrawdown": 412.00,
+        "remaining": 1588.00,
+        "status": "ok"
+      },
+      "consistency": {
+        "maxPct": 50,
+        "currentRatio": 38.2,
+        "largestDayProfit": 827.50,
+        "totalProfit": 2165.50,
+        "status": "ok"
+      },
+      "maxSize": {
+        "maxMinis": 4,
+        "maxMicros": 40,
+        "largestPosition": 4,
+        "status": "ok"
+      },
+      "tradingWindow": {
+        "flatBy": "16:45",
+        "resumeAt": "18:00",
+        "timezone": "America/New_York",
+        "violations": 0,
+        "status": "ok"
+      }
+    },
+    "daysTradedCount": 14,
+    "cumulativePnl": 2165.50
+  },
+  "leak_signal_example": {
+    "id": "leak-001",
+    "signalType": "time_of_day",
+    "dimensionKey": "14:00-16:00",
+    "description": "Your win rate drops to 35% for trades entered between 2–4 PM ET, compared to 64% overall.",
+    "severity": "high",
+    "metrics": {
+      "winRate": 35.0,
+      "overallWinRate": 64.0,
+      "tradeCount": 23,
+      "netPnl": -892.50,
+      "avgLoss": -73.20
+    },
+    "tradeIds": [
+      "trade-1",
+      "trade-2",
+      "trade-3"
+    ],
+    "periodStart": "2025-01-01",
+    "periodEnd": "2025-01-31"
+  },
+  "dashboard_layout": {
+    "id": "layout-001",
+    "name": "Default",
+    "isDefault": true,
+    "widgets": [
+      {
+        "type": "net_pnl",
+        "config": {
+          "period": "today"
+        },
+        "position": {
+          "x": 0,
+          "y": 0,
+          "w": 3,
+          "h": 2
+        }
+      },
+      {
+        "type": "win_rate",
+        "config": {
+          "period": "this_week"
+        },
+        "position": {
+          "x": 3,
+          "y": 0,
+          "w": 3,
+          "h": 2
+        }
+      },
+      {
+        "type": "profit_factor",
+        "config": {
+          "period": "this_week"
+        },
+        "position": {
+          "x": 6,
+          "y": 0,
+          "w": 3,
+          "h": 2
+        }
+      },
+      {
+        "type": "calendar_heatmap",
+        "config": {
+          "period": "this_month"
+        },
+        "position": {
+          "x": 9,
+          "y": 0,
+          "w": 3,
+          "h": 2
+        }
+      },
+      {
+        "type": "grade_summary",
+        "config": {
+          "period": "this_week"
+        },
+        "position": {
+          "x": 0,
+          "y": 2,
+          "w": 4,
+          "h": 2
+        }
+      },
+      {
+        "type": "r_stats",
+        "config": {
+          "period": "this_month"
+        },
+        "position": {
+          "x": 4,
+          "y": 2,
+          "w": 4,
+          "h": 2
+        }
+      },
+      {
+        "type": "equity_curve",
+        "config": {
+          "period": "this_month"
+        },
+        "position": {
+          "x": 8,
+          "y": 2,
+          "w": 4,
+          "h": 2
+        }
+      }
+    ]
+  },
+  "global_context": {
+    "selectedAccounts": [
+      "acc-001"
+    ],
+    "dateRange": {
+      "from": "2025-01-01",
+      "to": "2025-01-31"
+    },
+    "session": "*",
+    "instrument": "*",
+    "strategy": "*",
+    "timezone": "America/New_York",
+    "currency": "USD",
+    "tradingDayRollover": "18:00"
+  }
+}
