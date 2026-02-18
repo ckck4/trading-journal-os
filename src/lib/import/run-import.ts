@@ -46,34 +46,52 @@ async function finalizeBatch(
 }
 
 // ── Main orchestrator ──────────────────────────────────────────────────────
-// Pass the admin Supabase client so all writes bypass RLS.
+// All writes use the admin client — RLS is bypassed, so the auto_set_user_id
+// trigger does NOT fire.  Every insert MUST include user_id explicitly.
 export async function runImport(
     csvText: string,
     filename: string,
     userId: string,
     supabase: SupabaseClient,
 ): Promise<ImportResult> {
+    // ── Guard: userId must be a non-empty string ───────────────────────────
+    // The admin client bypasses the DB trigger that would normally set user_id
+    // from auth.uid().  If userId is absent here every insert will violate the
+    // NOT NULL constraint on user_id.
+    if (!userId || typeof userId !== "string") {
+        throw new Error(
+            `runImport: userId is required but received: ${JSON.stringify(userId)}`,
+        );
+    }
+    console.log("[run-import] starting for user:", userId, "file:", filename);
+
     const errors: Array<{ row?: number; message: string }> = [];
     const fileHash = hashFile(csvText);
 
     // ── Step 1: Create import_batch ────────────────────────────────────────
+    // user_id must be explicit — the admin client bypasses the auto_set_user_id trigger.
+    const batchInsert = {
+        user_id: userId,
+        filename: filename,
+        file_hash: fileHash,
+        status: "processing",
+        started_at: new Date().toISOString(),
+    };
+    console.log("[run-import] inserting import_batch:", batchInsert);
+
     const { data: batch, error: batchCreateError } = await supabase
         .from("import_batches")
-        .insert({
-            user_id: userId,
-            filename,
-            file_hash: fileHash,
-            status: "processing",
-            started_at: new Date().toISOString(),
-        })
+        .insert(batchInsert)
         .select("id")
         .single();
 
     if (batchCreateError) {
+        console.error("[run-import] import_batch insert failed:", batchCreateError);
         throw new Error(`Failed to create import batch: ${batchCreateError.message}`);
     }
 
     const batchId = batch.id;
+    console.log("[run-import] batch created:", batchId);
 
     try {
         // ── Step 2: Parse CSV ──────────────────────────────────────────────
@@ -110,6 +128,7 @@ export async function runImport(
 
         // ── Step 5: Deduplicate ────────────────────────────────────────────
         const { newFills, duplicates } = await deduplicateFills(fills, userId, supabase);
+        console.log("[run-import] dedup: new=", newFills.length, "dupes=", duplicates.length);
 
         // ── Step 6: Insert new fills ───────────────────────────────────────
         let insertedCount = 0;
@@ -194,6 +213,7 @@ export async function runImport(
             errors,
         );
 
+        console.log("[run-import] complete — fills:", insertedCount, "trades:", tradesCreated);
         return {
             batchId,
             newFills: insertedCount,
