@@ -4,16 +4,31 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { runImport } from "@/lib/import/run-import";
 
 export async function POST(request: NextRequest) {
-    // ── Auth: identify the calling user via server Supabase client ─────────
+    // ── Auth ───────────────────────────────────────────────────────────────
+    // Use the SSR server client so it reads the session cookie that was
+    // refreshed by middleware.  getUser() verifies the JWT server-side —
+    // never trust getSession() alone for auth in route handlers.
     const supabase = await createClient();
     const {
         data: { user },
         error: authError,
     } = await supabase.auth.getUser();
 
+    // Guard 1: no session at all
     if (authError || !user) {
+        console.warn("[import] unauthenticated request:", authError?.message ?? "no user");
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Guard 2: user object exists but id is missing (malformed JWT / SSR cookie
+    // issue).  This is the root cause of "null value in column user_id".
+    if (!user.id) {
+        console.error("[import] user object has no id:", JSON.stringify(user));
+        return NextResponse.json({ error: "Unauthorized — session missing user id" }, { status: 401 });
+    }
+
+    const userId = user.id;
+    console.log("[import] authenticated user:", userId);
 
     // ── Parse multipart/form-data ──────────────────────────────────────────
     let formData: FormData;
@@ -37,14 +52,19 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "File is empty" }, { status: 400 });
     }
 
-    // ── Run pipeline — admin client bypasses RLS for all DB writes ─────────
-    const adminSupabase = createAdminClient();
-
+    // ── Run pipeline ───────────────────────────────────────────────────────
+    // All writes use the admin client to bypass RLS.
+    // createAdminClient is inside the try so a missing env var returns 500
+    // rather than an unhandled exception.
     try {
-        const result = await runImport(csvText, file.name, user.id, adminSupabase);
+        const adminSupabase = createAdminClient();
+        console.log("[import] starting pipeline — user:", userId, "file:", file.name, "size:", file.size);
+        const result = await runImport(csvText, file.name, userId, adminSupabase);
+        console.log("[import] pipeline complete:", result);
         return NextResponse.json(result, { status: 200 });
     } catch (e) {
         const message = e instanceof Error ? e.message : "Import failed";
+        console.error("[import] pipeline error:", message);
         return NextResponse.json({ error: message }, { status: 500 });
     }
 }
