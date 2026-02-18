@@ -2,6 +2,7 @@
 
 import { Upload, ChevronDown, Calendar } from 'lucide-react'
 import { useFiltersStore, type DatePreset } from '@/stores/filters'
+import { useImportModalStore } from '@/stores/import-modal'
 import { cn } from '@/lib/utils'
 
 const DATE_PRESETS: { value: DatePreset; label: string }[] = [
@@ -47,6 +48,7 @@ function FilterDropdown({
 
 export function GlobalToolbar() {
   const { datePreset } = useFiltersStore()
+  const openModal = useImportModalStore((s) => s.openModal)
 
   return (
     <header
@@ -83,6 +85,7 @@ export function GlobalToolbar() {
 
         {/* Import button */}
         <button
+          onClick={openModal}
           className={cn(
             'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium',
             'bg-[var(--primary)] text-[var(--primary-foreground)]',

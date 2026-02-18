@@ -2,9 +2,13 @@
 
 import { useState } from 'react'
 import { Sidebar } from './sidebar'
-import { GlobalToolbar } from './global-toolbar'
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+interface AppShellProps {
+  children: React.ReactNode
+  toolbar?: React.ReactNode
+}
+
+export function AppShell({ children, toolbar }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(false)
 
   return (
@@ -14,8 +18,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Main area */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Global toolbar */}
-        <GlobalToolbar />
+        {/* Toolbar slot — provided by (app)/layout.tsx */}
+        {toolbar}
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto p-6">
