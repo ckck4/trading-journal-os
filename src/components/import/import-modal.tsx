@@ -130,12 +130,12 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
                 {/* ── Idle / file selection ── */}
                 {(phase === "idle" || phase === "error") && (
                     <>
-                        {/* Drag & drop zone */}
-                        <div
+                        {/* Drag & drop zone — label natively forwards clicks to the file input */}
+                        <label
+                            htmlFor="import-csv-input"
                             onDragOver={onDragOver}
                             onDragLeave={onDragLeave}
                             onDrop={onDrop}
-                            onClick={() => fileInputRef.current?.click()}
                             className="mb-4 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed py-10 text-center transition-colors"
                             style={{
                                 borderColor: isDragOver ? "#3B82F6" : "#333333",
@@ -178,8 +178,9 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
                                     </p>
                                 </>
                             )}
-                        </div>
+                        </label>
                         <input
+                            id="import-csv-input"
                             ref={fileInputRef}
                             type="file"
                             accept=".csv"
