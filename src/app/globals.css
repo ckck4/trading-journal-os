@@ -1,5 +1,7 @@
 @import "tailwindcss";
-@import "tw-animate-css";
+/* tw-animate-css: bare package import fails in Turbopack (Lightning CSS doesn't resolve
+   the "style" export condition). Using direct path to dist file instead. */
+@import "../../node_modules/tw-animate-css/dist/tw-animate.css";
 
 @custom-variant dark (&:is(.dark *));
 
