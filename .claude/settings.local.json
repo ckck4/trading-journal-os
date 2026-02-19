@@ -20,7 +20,10 @@
       "Bash(powershell.exe -Command \"Get-NetTCPConnection -LocalPort 3000 | Select-Object LocalAddress,LocalPort,State,OwningProcess\")",
       "Bash(powershell.exe -Command:*)",
       "Bash(python3:*)",
-      "Bash(constraint import_batches_user_id_users_id_fk\"\n\nFix 1 — Migration \\(supabase/migrations/20260219000000_sync_auth_users.sql\\):\n  - handle_new_auth_user\\(\\) trigger: fires AFTER INSERT on auth.users,\n    auto-inserts into public.users \\(id, email, display_name, password_hash=''''\\)\n  - One-time backfill: INSERT INTO public.users SELECT from auth.users\n    WHERE NOT EXISTS in public.users — ON CONFLICT DO NOTHING \\(idempotent\\)\n  → Run this SQL in Supabase SQL Editor to apply\n\nFix 2 — run-import.ts:\n  - Add userEmail: string as 5th parameter\n  - Step 0: upsert into public.users before any batch insert \\(safety net\n    for users whose row wasn''t created by the trigger yet\\)\n  - ON CONFLICT \\(id\\) DO NOTHING — preserves existing user data\n\nFix 3 — route.ts:\n  - Extract user.email, guard against missing email → 401\n  - Pass userEmail as 5th arg to runImport\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(constraint import_batches_user_id_users_id_fk\"\n\nFix 1 — Migration \\(supabase/migrations/20260219000000_sync_auth_users.sql\\):\n  - handle_new_auth_user\\(\\) trigger: fires AFTER INSERT on auth.users,\n    auto-inserts into public.users \\(id, email, display_name, password_hash=''''\\)\n  - One-time backfill: INSERT INTO public.users SELECT from auth.users\n    WHERE NOT EXISTS in public.users — ON CONFLICT DO NOTHING \\(idempotent\\)\n  → Run this SQL in Supabase SQL Editor to apply\n\nFix 2 — run-import.ts:\n  - Add userEmail: string as 5th parameter\n  - Step 0: upsert into public.users before any batch insert \\(safety net\n    for users whose row wasn''t created by the trigger yet\\)\n  - ON CONFLICT \\(id\\) DO NOTHING — preserves existing user data\n\nFix 3 — route.ts:\n  - Extract user.email, guard against missing email → 401\n  - Pass userEmail as 5th arg to runImport\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(npx tsc:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
