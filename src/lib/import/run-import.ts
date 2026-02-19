@@ -48,22 +48,57 @@ async function finalizeBatch(
 // ── Main orchestrator ──────────────────────────────────────────────────────
 // All writes use the admin client — RLS is bypassed, so the auto_set_user_id
 // trigger does NOT fire.  Every insert MUST include user_id explicitly.
+//
+// userEmail is required to ensure the user exists in public.users before we
+// attempt to insert into import_batches (which has a FK to public.users.id).
+// The admin client bypasses RLS, hitting the FK directly against public.users.
 export async function runImport(
     csvText: string,
     filename: string,
     userId: string,
+    userEmail: string,
     supabase: SupabaseClient,
 ): Promise<ImportResult> {
-    // ── Guard: userId must be a non-empty string ───────────────────────────
-    // The admin client bypasses the DB trigger that would normally set user_id
-    // from auth.uid().  If userId is absent here every insert will violate the
-    // NOT NULL constraint on user_id.
+    // ── Guard: both userId and userEmail must be non-empty strings ─────────
     if (!userId || typeof userId !== "string") {
         throw new Error(
             `runImport: userId is required but received: ${JSON.stringify(userId)}`,
         );
     }
-    console.log("[run-import] starting for user:", userId, "file:", filename);
+    if (!userEmail || typeof userEmail !== "string") {
+        throw new Error(
+            `runImport: userEmail is required but received: ${JSON.stringify(userEmail)}`,
+        );
+    }
+
+    console.log("[run-import] starting for user:", userId, "email:", userEmail, "file:", filename);
+
+    // ── Step 0: Ensure user exists in public.users ─────────────────────────
+    // The admin client bypasses RLS and hits FK constraints directly.
+    // import_batches.user_id → public.users.id — must exist before inserting.
+    // Supabase Auth writes to auth.users only; the trigger in the migration
+    // handles future signups, but we upsert here as a safety net for cases
+    // where the trigger hasn't run yet (e.g. existing users before migration).
+    const displayName = userEmail.split("@")[0];
+    const { error: upsertUserError } = await supabase
+        .from("users")
+        .upsert(
+            {
+                id: userId,
+                email: userEmail,
+                display_name: displayName,
+                password_hash: "", // auth handled by Supabase Auth — placeholder only
+            },
+            { onConflict: "id", ignoreDuplicates: true },
+        );
+
+    if (upsertUserError) {
+        // If the user already exists with a different email this is a conflict
+        // on the unique email index — log but do not abort, the FK will succeed.
+        console.warn("[run-import] public.users upsert warning:", upsertUserError.message);
+    } else {
+        console.log("[run-import] public.users upsert OK for", userId);
+    }
 
     const errors: Array<{ row?: number; message: string }> = [];
     const fileHash = hashFile(csvText);

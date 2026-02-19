@@ -28,7 +28,12 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = user.id;
-    console.log("[import] authenticated user:", userId);
+    const userEmail = user.email ?? "";
+    if (!userEmail) {
+        console.error("[import] user has no email:", JSON.stringify(user));
+        return NextResponse.json({ error: "Unauthorized — session missing email" }, { status: 401 });
+    }
+    console.log("[import] authenticated user:", userId, userEmail);
 
     // ── Parse multipart/form-data ──────────────────────────────────────────
     let formData: FormData;
@@ -59,7 +64,7 @@ export async function POST(request: NextRequest) {
     try {
         const adminSupabase = createAdminClient();
         console.log("[import] starting pipeline — user:", userId, "file:", file.name, "size:", file.size);
-        const result = await runImport(csvText, file.name, userId, adminSupabase);
+        const result = await runImport(csvText, file.name, userId, userEmail, adminSupabase);
         console.log("[import] pipeline complete:", result);
         return NextResponse.json(result, { status: 200 });
     } catch (e) {
