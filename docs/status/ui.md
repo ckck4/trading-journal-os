@@ -164,3 +164,32 @@ Last updated: 2026-02-19
 **Full chain verified**: toolbar click → Zustand setter → queryKey changes → TanStack Query refetches → journal list updates
 
 **Verified by**: build ✅ (0 errors, 0 warnings) | browser ⚠️ (manual required)
+
+---
+
+## Session Summary — 2026-02-19
+
+**What was built (Phase 2: Trade Journal):**
+- `GET /api/trades` — authenticated endpoint with 6 filter params, returns trades with embedded fills + tags, ordered by day/time DESC.
+- `PATCH /api/trades/[id]` — updates notes, tradingview_link, strategy_id with ownership check.
+- `GET /api/strategies` — active strategies list for dropdown.
+- `src/types/trades.ts` — shared `Trade`, `TradeFill`, `TradeTag`, `Strategy` types.
+- `journal-client.tsx` — client component: TanStack Query, trades grouped by day, loading skeleton, empty state, error retry.
+- `trade-detail-panel.tsx` — right slide-over with fills table, editable annotations (save on blur/change), save feedback states, grade placeholder.
+- `journal/page.tsx` — replaced placeholder with real page.
+
+**Bug fixed (Filter Wiring):**
+- All toolbar dropdowns were dead UI — no handlers, never called Zustand. Fixed by rewriting `global-toolbar.tsx` with a real `FilterDropdown` (fixed-position menu via `getBoundingClientRect`, outside-click + Escape to close, checkmarks, active state on trigger).
+- Added `GET /api/accounts`, `/api/instruments`, `/api/sessions` to populate dropdowns.
+- Removed `overflow-x: auto` from toolbar header — it was promoting `overflow-y` to `auto` and would have clipped dropdown menus.
+
+**Key decisions:**
+- Dropdown uses `position: fixed` (not absolute) to escape toolbar's overflow context.
+- Journal page is a server component wrapping a client component — allows `metadata` export while keeping interactivity.
+- `queryKey` includes all Zustand filter values so any store change triggers a TanStack Query refetch automatically.
+
+**Exact next steps:**
+1. Manual browser verification: open `/journal`, confirm trades display, panel opens, notes save, date preset changes reload list.
+2. Phase 3: Analytics Lab — KPI row (`net_pnl`, `win_rate`, `profit_factor`, `avg_win`, `avg_loss`, `expectancy`) + Recharts equity curve + breakdown chart.
+3. Middleware auth guard — redirect unauthenticated users to `/login`.
+4. Command Center — replace placeholder with real widget grid using daily summary data.
