@@ -74,6 +74,27 @@ Expected reconstruction:
 
 ---
 
+## 2026-02-19 — FK Violation Fix
+**Status**: Complete ✅
+**What was done**:
+- Root cause: `import_batches.user_id` FK points to `public.users.id`, but Supabase Auth only
+  writes to `auth.users`. Service-role client hits FK directly.
+- `supabase/migrations/20260219000000_sync_auth_users.sql`:
+  - `handle_new_auth_user()` trigger: fires AFTER INSERT on `auth.users`, auto-inserts into
+    `public.users` (id, email, display_name, password_hash='' placeholder)
+  - One-time backfill: syncs all existing auth users missing from `public.users`
+  - **Run this in Supabase SQL Editor** before testing
+- `src/lib/import/run-import.ts`:
+  - Added `userEmail: string` as 5th parameter
+  - Step 0: upsert into `public.users` before any batch insert (safety net, ON CONFLICT DO NOTHING)
+- `src/app/api/import/route.ts`:
+  - Extract + guard `user.email` → 401 if missing
+  - Pass `userEmail` as 5th arg to `runImport`
+**Verified by**: build ✅ | migration created ✅ | type check ✅
+**Next**: Run the migration SQL in Supabase, then test full import in browser
+
+---
+
 ## Next Phase
 
 - [ ] Wire `GlobalToolbar` into `src/app/layout.tsx`
