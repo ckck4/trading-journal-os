@@ -68,11 +68,11 @@ function EmptyState() {
 }
 
 const TOOLTIP_STYLE = {
-  backgroundColor: '#14171E',
-  border: '1px solid #2A2F3E',
+  backgroundColor: '#0d0f14',
+  border: '1px solid #2a2f3e',
   borderRadius: '6px',
   fontSize: '12px',
-  color: '#E8EAF0',
+  color: '#e8eaf0',
 }
 
 // ─── a. Equity Curve ─────────────────────────────────────────────────────────
@@ -107,6 +107,7 @@ export function EquityCurveChart({ days }: { days: DayResult[] }) {
             formatter={(value: any) => [fmtDollar(value ?? 0), 'Cumulative P&L']}
             labelFormatter={fmtLabel}
             contentStyle={TOOLTIP_STYLE}
+            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
           />
           <Line
             type="monotone"
@@ -154,6 +155,7 @@ export function DailyPnlChart({ days }: { days: DayResult[] }) {
             formatter={(value: any) => [fmtDollar(value ?? 0), 'Net P&L']}
             labelFormatter={fmtLabel}
             contentStyle={TOOLTIP_STYLE}
+            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
           />
           <Bar dataKey="netPnl" radius={[2, 2, 0, 0]}>
             {days.map((entry, index) => (
@@ -322,6 +324,7 @@ export function RMultipleHistogram({ rMultiples }: { rMultiples: number[] }) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={(value: any) => [value ?? 0, 'Trades']}
             contentStyle={TOOLTIP_STYLE}
+            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
           />
           <Bar dataKey="count" radius={[2, 2, 0, 0]}>
             {data.map((entry, index) => (
@@ -385,6 +388,7 @@ export function BreakdownBarChart({
               return [`${fmtDollar(value ?? 0)}${wr}`, 'Net P&L']
             }}
             contentStyle={TOOLTIP_STYLE}
+            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
           />
           <Bar dataKey="netPnl" radius={[0, 2, 2, 0]}>
             {data.map((entry, index) => (
@@ -445,6 +449,7 @@ export function DurationHistogram({ durations }: { durations: number[] }) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={(value: any) => [value ?? 0, 'Trades']}
             contentStyle={TOOLTIP_STYLE}
+            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
           />
           <Bar dataKey="count" fill="#3B82F6" fillOpacity={0.75} radius={[2, 2, 0, 0]} />
         </BarChart>
