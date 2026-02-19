@@ -208,7 +208,6 @@ interface TradeRowProps {
 }
 
 function TradeRow({ trade, isSelected, onClick }: TradeRowProps) {
-  const netPnlNum = parseFloat(trade.netPnl)
   const isLong = trade.side === 'LONG'
 
   return (

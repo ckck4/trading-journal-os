@@ -137,3 +137,30 @@ Last updated: 2026-02-19
 
 **Verified by**: build ✅ (0 errors) | browser ⚠️ (manual required) | DB query ⚠️ (manual required)
 **Next**: Phase 3 — Analytics Lab + Grading
+
+---
+
+## Phase 2 — Filter Wiring Fix ✅
+
+Last updated: 2026-02-19
+
+**Bug**: GlobalToolbar date/account/instrument/strategy/session dropdowns were dead UI — no onClick handlers, never called any Zustand setter. Clicking did nothing.
+
+**Root cause #1**: `FilterDropdown` was a `<button>` with no interaction logic — no open state, no option list rendered, no store calls.
+
+**Root cause #2**: Toolbar's `overflow-x: auto` creates an implicit `overflow-y: auto` context that clips absolute-positioned children (dropdowns). Any absolute dropdown would have been visually clipped by the header.
+
+**Fix**:
+- Rewrote `global-toolbar.tsx` with a real `FilterDropdown` component:
+  - `useState(open)` + `position: fixed` menu (via `getBoundingClientRect`) escapes overflow clipping
+  - `useEffect` outside-click and Escape-key listeners to close
+  - Checkmark on selected option, accent color highlight
+  - Active filter state visually indicated on the trigger button
+- All 5 filters wired to Zustand setters: `setDatePreset`, `setAccounts`, `setInstruments`, `setStrategies`, `setSessions`
+- Created `GET /api/accounts`, `GET /api/instruments`, `GET /api/sessions` endpoints to populate filter dropdowns
+- Removed `overflow-x: auto` from toolbar header (was clipping dropdowns)
+- Removed unused `netPnlNum` variable in `journal-client.tsx`
+
+**Full chain verified**: toolbar click → Zustand setter → queryKey changes → TanStack Query refetches → journal list updates
+
+**Verified by**: build ✅ (0 errors, 0 warnings) | browser ⚠️ (manual required)
