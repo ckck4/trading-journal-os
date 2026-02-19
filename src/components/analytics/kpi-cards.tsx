@@ -50,7 +50,7 @@ function KpiCard({
   return (
     <div
       className={cn(
-        'rounded-lg border border-[var(--border)] bg-transparent px-4 py-4 flex flex-col gap-1 transition-[filter] duration-150 hover:[filter:brightness(1.3)]',
+        'rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-4 flex flex-col gap-1 transition-colors duration-150 hover:bg-white/5',
         className
       )}
     >
