@@ -193,3 +193,44 @@ Last updated: 2026-02-19
 2. Phase 3: Analytics Lab — KPI row (`net_pnl`, `win_rate`, `profit_factor`, `avg_win`, `avg_loss`, `expectancy`) + Recharts equity curve + breakdown chart.
 3. Middleware auth guard — redirect unauthenticated users to `/login`.
 4. Command Center — replace placeholder with real widget grid using daily summary data.
+
+---
+
+## Phase 3 — Analytics Lab + Grading ✅
+
+Last updated: 2026-02-19
+
+### Services
+- `src/lib/services/recalc-summaries.ts` — `recalcSummaries(userId, accountId, tradingDay)`: queries closed trades, computes 17 metrics, upserts daily_summaries with cumulative P&L
+- `src/lib/services/grading.ts` — `computeGrade(scores, categories)`: weighted average → letter grade (A/B/C/D); `createAutoGrade(categories)`: mid-point scores
+
+### API Routes
+- `PATCH /api/trades/[id]` — wired recalcSummaries call after every trade update (non-fatal, catch swallowed)
+- `GET /api/analytics/summary` — aggregates daily_summaries range into 12-field AnalyticsSummary
+- `GET /api/analytics/daily` — raw daily_summaries rows as DayResult[], sorted ASC
+- `GET /api/analytics/breakdowns` — trades grouped by instrument/session/strategy + R-multiples + durations arrays
+- `POST /api/analytics/recalc` — bulk recalc all days for an account
+- `GET/POST /api/grading/rubrics` — list + create rubrics with categories
+- `PATCH/DELETE /api/grading/rubrics/[id]` — update (name/isDefault) + delete; isDefault=true clears all others first
+- `GET/POST /api/grading/rubrics/[id]/categories` — list + add categories
+- `PATCH/DELETE /api/grading/categories/[id]` — update + delete (ownership via rubric join)
+- `GET/POST /api/trades/[id]/grade` — fetch grade with rubric/categories; upsert via server-side computeGrade
+
+### Analytics UI
+- `src/app/(app)/analytics/page.tsx` — server wrapper → AnalyticsClient
+- `src/components/analytics/analytics-client.tsx` — 3 TanStack Query hooks, responds to Zustand accountId + datePreset, empty state when no account
+- `src/components/analytics/kpi-cards.tsx` — 8 KPI cards in 2/4-col grid: Net P&L, Win Rate, Profit Factor, Avg R, Total Trades, Avg Win/Loss, Largest Win/Loss, Best/Worst Day
+- `src/components/analytics/charts.tsx` — 8 recharts charts: equity curve, daily P&L, calendar heatmap (custom grid), R-multiple histogram, 3 horizontal breakdown charts, duration histogram; all handle empty state
+
+### Grading UI
+- `src/app/(app)/settings/grading/page.tsx` — server wrapper → GradingSettingsClient
+- `src/components/settings/grading-settings-client.tsx` — accordion rubric list, inline category add/edit/delete, weight sum validation, set-default button
+- `src/components/journal/grade-section.tsx` — trade detail panel grade section: no-rubric state, grade-this-trade button, live slider editor with computed score preview, letter grade badge + score breakdown display
+
+### Types
+- `src/types/analytics.ts` — DayResult, AnalyticsSummary, BreakdownEntry, AnalyticsBreakdowns
+- `src/types/grading.ts` — RubricCategory, Rubric, TradeGrade, ComputeGradeResult
+
+**Verified by**: build ✅ (0 errors, 0 warnings, 25 files, 3726 insertions) | tsc --noEmit ✅ | browser ⚠️ (manual required) | DB query ⚠️ (manual required — run POST /api/analytics/recalc after importing data)
+
+**Next**: Phase 4 — Command Center + Prop Firm HQ. First action: run POST /api/analytics/recalc in browser to populate daily_summaries for existing import data.
