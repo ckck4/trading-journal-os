@@ -1,14 +1,7 @@
-import { PlaceholderPage } from '@/components/ui/placeholder-page'
-import { BookOpen } from 'lucide-react'
+import { JournalClient } from '@/components/journal/journal-client'
 
 export const metadata = { title: 'Trade Journal' }
 
 export default function JournalPage() {
-  return (
-    <PlaceholderPage
-      title="Trade Journal"
-      description="Scrollable trade log grouped by day with detail panel, strategy, tags, grades, and notes."
-      icon={BookOpen}
-    />
-  )
+  return <JournalClient />
 }

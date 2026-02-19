@@ -85,17 +85,55 @@ Last updated: 2026-02-18
 
 ---
 
-## Next Steps — Phase 1
+## Next Steps — Phase 3+
 
 - [ ] Command Center: real KPI widget grid (BentoCard, KpiCard components)
-- [ ] Trade Journal: DataTable with day groups, TradeRow component, SlidePanel detail
 - [ ] Analytics Lab: KPI row + chart area with Recharts
-- [ ] shadcn components to add: `select`, `dropdown-menu`, `sheet`, `dialog`, `badge`, `separator`
+- [ ] Journal calendar view (`/journal/calendar`)
 - [ ] Middleware auth guard: redirect unauthenticated users to `/login`
-- [ ] Keyboard shortcuts: Cmd+K command palette skeleton
 
 ## Architecture Notes
 - Route groups: `(app)` wraps all authenticated pages with AppShell; `(auth)` wraps login/register
 - `src/app/page.tsx` has no default export (avoids conflict with `(app)/page.tsx` at `/`)
 - Filter state: Zustand `useFiltersStore` — single source of truth for all global filters
 - Supabase client: `src/lib/supabase/client.ts` (browser), `server.ts` (server components)
+
+---
+
+## Phase 2 — Trade Journal ✅
+
+Last updated: 2026-02-19
+
+### Task 1: GET /api/trades ✅
+- `src/app/api/trades/route.ts`
+- Auth via server client, DB reads via admin client
+- Query params: `account_id`, `date_from`, `date_to`, `instrument`, `strategy_id`, `session_id`
+- Returns trades ordered by `trading_day DESC`, `entry_time DESC`
+- Includes embedded fills (sorted by fill_time ASC) + tags via `trade_tags → tags`
+- All fields camelCase in response, typed with `src/types/trades.ts`
+
+### Task 2: Trade Journal List Page ✅
+- `src/app/(app)/journal/page.tsx` — server wrapper (metadata export)
+- `src/components/journal/journal-client.tsx` — client component
+  - TanStack Query with 30s staleTime; refetches on any filter change
+  - Trades grouped by `trading_day`, day header shows date + count + daily net P&L
+  - Trade row: time, instrument, side arrow, entry→exit price, duration, fills count, tags, net P&L, outcome badge
+  - Click row → opens TradeDetailPanel (toggle off on second click)
+  - Loading skeleton, empty state with import CTA, error state with retry
+
+### Task 3: Trade Detail Panel ✅
+- `src/components/journal/trade-detail-panel.tsx`
+- Right slide-over (300ms ease, Escape key + backdrop click to close)
+- Sections: header, summary metrics, fills table, annotations (strategy/notes/tv link), tags, grade placeholder
+- Save feedback: Saving… / Saved / Save failed per field
+- Invalidates trades query on successful save
+
+### Task 4: PATCH /api/trades/[id] + GET /api/strategies ✅
+- `src/app/api/trades/[id]/route.ts` — PATCH, ownership check, allowed fields only
+- `src/app/api/strategies/route.ts` — GET active strategies for dropdown
+
+### Shared Types ✅
+- `src/types/trades.ts` — Trade, TradeFill, TradeTag, Strategy
+
+**Verified by**: build ✅ (0 errors) | browser ⚠️ (manual required) | DB query ⚠️ (manual required)
+**Next**: Phase 3 — Analytics Lab + Grading
