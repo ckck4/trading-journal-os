@@ -1,10 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { X, ArrowUp, ArrowDown, ExternalLink, Clock, TrendingUp } from 'lucide-react'
+import { X, ArrowUp, ArrowDown, ExternalLink, Clock } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import type { Trade, Strategy } from '@/types/trades'
+import { GradeSection } from '@/components/journal/grade-section'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -587,18 +588,10 @@ export function TradeDetailPanel({ trade, onClose }: TradeDetailPanelProps) {
                 </section>
               )}
 
-              {/* ── Grade placeholder ───────────────────────────────────────── */}
+              {/* ── Grade ─────────────────────────────────────────────────── */}
               <section>
                 <SectionHeader title="Grade" />
-                <div className={cn(
-                  'flex items-center gap-3 rounded-md border border-dashed border-[var(--border)]',
-                  'px-4 py-3 bg-[var(--secondary)]/40'
-                )}>
-                  <TrendingUp size={16} className="text-[var(--muted-foreground)] shrink-0" />
-                  <span className="text-sm text-[var(--muted-foreground)]">
-                    Grading is coming in Phase 3
-                  </span>
-                </div>
+                <GradeSection tradeId={trade.id} />
               </section>
 
             </div>

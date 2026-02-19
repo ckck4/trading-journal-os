@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { recalcSummaries } from '@/lib/services/recalc-summaries'
 
 // Allowed editable fields — never expose internal fields to mutation
 const ALLOWED_FIELDS = ['notes', 'tradingview_link', 'strategy_id'] as const
@@ -85,6 +86,21 @@ export async function PATCH(
     if (updateError) {
       console.error('[trades PATCH] update error:', updateError)
       return NextResponse.json({ error: 'Update failed' }, { status: 500 })
+    }
+
+    // Recalculate daily summary for the trade's day
+    try {
+      const { data: tradeForRecalc } = await adminClient
+        .from('trades')
+        .select('account_id, trading_day')
+        .eq('id', tradeId)
+        .single()
+      if (tradeForRecalc) {
+        const t = tradeForRecalc as unknown as { account_id: string; trading_day: string }
+        await recalcSummaries(user.id, t.account_id, t.trading_day)
+      }
+    } catch (recalcErr) {
+      console.error('[trades PATCH] recalc error (non-fatal):', recalcErr)
     }
 
     return NextResponse.json({ trade: updated })
