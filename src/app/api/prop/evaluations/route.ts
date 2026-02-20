@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { accountId, templateId, stage, startDate } = body
+    const { accountId, templateId, stage, startDate, status } = body
 
     if (!accountId || !templateId || !startDate) {
       return NextResponse.json(
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
         account_id: accountId,
         template_id: templateId,
         stage: stage ?? 'evaluation',
-        status: 'active',
+        status: status ?? 'active',
         start_date: startDate,
         cumulative_pnl: '0',
         max_drawdown: '0',

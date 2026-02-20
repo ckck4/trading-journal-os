@@ -69,6 +69,7 @@ export interface PropEvaluation {
   consistencyPct: string | null
   daysTraded: number
   violations: unknown[]
+  profitTargetOverride: string | null
   createdAt: string
   updatedAt: string
   // Joined from accounts

@@ -36,13 +36,15 @@ export async function PATCH(
       return NextResponse.json({ error: 'Evaluation not found' }, { status: 404 })
     }
 
-    const { stage, status, endDate, startDate } = body
+    const { stage, status, endDate, startDate, templateId, profitTargetOverride } = body
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
 
     if (stage !== undefined) updates.stage = stage
     if (status !== undefined) updates.status = status
     if (endDate !== undefined) updates.end_date = endDate
     if (startDate !== undefined) updates.start_date = startDate
+    if (templateId !== undefined) updates.template_id = templateId
+    if (profitTargetOverride !== undefined) updates.profit_target_override = profitTargetOverride
 
     const { data, error } = await admin
       .from('prop_evaluations')

@@ -7,6 +7,7 @@ type RawAccountRow = {
   name: string
   broker: string
   external_id: string | null
+  starting_balance: string
 }
 
 export type AccountOption = {
@@ -14,6 +15,7 @@ export type AccountOption = {
   name: string
   broker: string
   externalId: string | null
+  startingBalance: string
 }
 
 export async function GET() {
@@ -32,7 +34,7 @@ export async function GET() {
 
     const { data, error } = await adminClient
       .from('accounts')
-      .select('id, name, broker, external_id')
+      .select('id, name, broker, external_id, starting_balance')
       .eq('user_id', user.id)
       .eq('is_archived', false)
       .order('name', { ascending: true })
@@ -49,6 +51,7 @@ export async function GET() {
       name: a.name,
       broker: a.broker,
       externalId: a.external_id,
+      startingBalance: a.starting_balance,
     }))
 
     return NextResponse.json({ accounts })

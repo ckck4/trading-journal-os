@@ -575,6 +575,7 @@ export const propEvaluations = pgTable("prop_evaluations", {
     consistencyPct: numeric("consistency_pct", { precision: 5, scale: 2 }),
     daysTraded: integer("days_traded").notNull().default(0),
     violations: jsonb("violations").default("[]"),
+    profitTargetOverride: numeric("profit_target_override", { precision: 14, scale: 2 }),
 
     ...timestamps,
 });

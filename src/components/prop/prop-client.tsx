@@ -14,6 +14,7 @@ import {
   ArrowRight,
   Building2,
   DollarSign,
+  Settings2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type {
@@ -137,11 +138,13 @@ function Modal({
   onClose,
   title,
   children,
+  wide,
 }: {
   open: boolean
   onClose: () => void
   title: string
   children: React.ReactNode
+  wide?: boolean
 }) {
   if (!open) return null
   return (
@@ -150,7 +153,12 @@ function Modal({
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-md mx-4 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl p-6">
+      <div
+        className={cn(
+          'relative z-10 w-full mx-4 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl p-6 max-h-[90vh] overflow-y-auto',
+          wide ? 'max-w-lg' : 'max-w-md'
+        )}
+      >
         <h3 className="text-base font-semibold text-[var(--foreground)] mb-4">{title}</h3>
         {children}
       </div>
@@ -163,9 +171,11 @@ function Modal({
 function EvalCard({
   evaluation,
   onAdvance,
+  onConfigure,
 }: {
   evaluation: PropEvaluation
   onAdvance: (evaluation: PropEvaluation) => void
+  onConfigure: (evaluation: PropEvaluation) => void
 }) {
   const { data: statusData, isLoading: statusLoading } = useQuery<{ status: EvaluateRulesResult }>({
     queryKey: ['eval-status', evaluation.id],
@@ -216,6 +226,13 @@ function EvalCard({
               </span>
             </div>
           )}
+          <button
+            onClick={() => onConfigure(evaluation)}
+            className="p-1 rounded text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-white/5 transition-colors"
+            title="Configure"
+          >
+            <Settings2 className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
@@ -259,14 +276,14 @@ function EvalCard({
   )
 }
 
-// ─── Start Evaluation Card ────────────────────────────────────────────────────
+// ─── No-Eval Card ─────────────────────────────────────────────────────────────
 
 function NoEvalCard({
   account,
-  onStart,
+  onConfigure,
 }: {
-  account: { id: string; name: string; broker: string }
-  onStart: (account: { id: string; name: string; broker: string }) => void
+  account: { id: string; name: string; broker: string; startingBalance?: string }
+  onConfigure: (account: { id: string; name: string; broker: string; startingBalance?: string }) => void
 }) {
   return (
     <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--card)]/50 p-5 flex flex-col gap-3 opacity-70">
@@ -274,13 +291,13 @@ function NoEvalCard({
         <p className="text-base font-semibold text-[var(--foreground)]">{account.name}</p>
         <p className="text-xs text-[var(--muted-foreground)]">{account.broker}</p>
       </div>
-      <p className="text-xs text-[var(--muted-foreground)]">No active evaluation</p>
+      <p className="text-xs text-[var(--muted-foreground)]">No evaluation configured</p>
       <button
-        onClick={() => onStart(account)}
+        onClick={() => onConfigure(account)}
         className="flex items-center justify-center gap-2 w-full py-2 rounded-md border border-[var(--border)] text-sm text-[var(--muted-foreground)] hover:bg-white/5 hover:text-[var(--foreground)] transition-colors"
       >
-        <Plus className="w-3.5 h-3.5" />
-        Start Evaluation
+        <Settings2 className="w-3.5 h-3.5" />
+        Configure
       </button>
     </div>
   )
@@ -296,6 +313,13 @@ const RULE_FIELDS: Array<{ key: keyof StageRules; label: string; hint: string }>
   { key: 'consistencyPct', label: 'Consistency (%)', hint: 'e.g. 30 (or blank for N/A)' },
 ]
 
+const DEFAULT_STAGE_RULES: StageRules = {
+  profitTarget: null,
+  maxDailyLoss: null,
+  minTradingDays: null,
+  consistencyPct: null,
+}
+
 function TemplateEditor({
   template,
   onSave,
@@ -310,8 +334,16 @@ function TemplateEditor({
   const [expanded, setExpanded] = useState(false)
   const [firmName, setFirmName] = useState(template.firmName)
   const [templateName, setTemplateName] = useState(template.templateName)
-  const [rules, setRules] = useState<RulesJson>(template.rulesJson)
   const [dirty, setDirty] = useState(false)
+
+  // BUG 1 FIX: normalize rules_json — ensure all 3 stages always exist with defaults
+  const normalizedRules: RulesJson = {
+    evaluation: { ...DEFAULT_STAGE_RULES, ...(template.rulesJson?.evaluation ?? {}) },
+    pa: { ...DEFAULT_STAGE_RULES, ...(template.rulesJson?.pa ?? {}) },
+    funded: { ...DEFAULT_STAGE_RULES, ...(template.rulesJson?.funded ?? {}) },
+  }
+
+  const [rules, setRules] = useState<RulesJson>(normalizedRules)
 
   function setRule(stage: Stage, field: keyof StageRules, raw: string) {
     const val = raw === '' ? null : parseFloat(raw)
@@ -438,6 +470,76 @@ function TemplateEditor({
   )
 }
 
+// ─── Configure modal form type ────────────────────────────────────────────────
+
+type ConfigureTarget = {
+  accountId: string
+  accountName: string
+  broker: string
+  startingBalance: string
+  existingEval: PropEvaluation | null
+}
+
+type ConfigureForm = {
+  accountName: string
+  startingBalance: string
+  templateId: string
+  stage: string
+  startDate: string
+  profitTargetOverride: string
+  status: string
+}
+
+// ─── Field label helper ───────────────────────────────────────────────────────
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <label className="text-xs text-[var(--muted-foreground)]">{children}</label>
+  )
+}
+
+function FieldInput({
+  type = 'text',
+  value,
+  onChange,
+  placeholder,
+}: {
+  type?: string
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+}) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm text-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
+    />
+  )
+}
+
+function FieldSelect({
+  value,
+  onChange,
+  children,
+}: {
+  value: string
+  onChange: (v: string) => void
+  children: React.ReactNode
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm text-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
+    >
+      {children}
+    </select>
+  )
+}
+
 // ─── Main PropClient ──────────────────────────────────────────────────────────
 
 export function PropClient() {
@@ -445,15 +547,19 @@ export function PropClient() {
 
   // Modal state
   const [advanceModal, setAdvanceModal] = useState<PropEvaluation | null>(null)
-  const [startEvalModal, setStartEvalModal] = useState<{ id: string; name: string; broker: string } | null>(null)
   const [logPayoutModal, setLogPayoutModal] = useState(false)
   const [showTemplates, setShowTemplates] = useState(true)
 
-  // Start eval form state
-  const [startEvalForm, setStartEvalForm] = useState({
+  // Configure modal state
+  const [configureModal, setConfigureModal] = useState<ConfigureTarget | null>(null)
+  const [configureForm, setConfigureForm] = useState<ConfigureForm>({
+    accountName: '',
+    startingBalance: '',
     templateId: '',
-    startDate: new Date().toISOString().split('T')[0],
     stage: 'evaluation',
+    startDate: new Date().toISOString().split('T')[0],
+    profitTargetOverride: '',
+    status: 'active',
   })
 
   // Log payout form state
@@ -472,7 +578,9 @@ export function PropClient() {
     staleTime: 30_000,
   })
 
-  const accountsQuery = useQuery<{ accounts: Array<{ id: string; name: string; broker: string }> }>({
+  const accountsQuery = useQuery<{
+    accounts: Array<{ id: string; name: string; broker: string; startingBalance?: string }>
+  }>({
     queryKey: ['accounts'],
     queryFn: () => fetch('/api/accounts').then((r) => r.json()),
     staleTime: 300_000,
@@ -506,16 +614,68 @@ export function PropClient() {
     },
   })
 
-  const startEvalMutation = useMutation({
-    mutationFn: (body: { accountId: string; templateId: string; stage: string; startDate: string }) =>
-      fetch('/api/prop/evaluations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      }).then((r) => r.json()),
+  const configureMutation = useMutation({
+    mutationFn: async ({ target, form }: { target: ConfigureTarget; form: ConfigureForm }) => {
+      const tasks: Promise<Response>[] = []
+
+      // Update account if name or balance changed
+      if (form.accountName !== target.accountName || form.startingBalance !== target.startingBalance) {
+        tasks.push(
+          fetch(`/api/accounts/${target.accountId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: form.accountName.trim(),
+              startingBalance: parseFloat(form.startingBalance) || 0,
+            }),
+          })
+        )
+      }
+
+      if (target.existingEval) {
+        // Update existing evaluation
+        tasks.push(
+          fetch(`/api/prop/evaluations/${target.existingEval.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              templateId: form.templateId || undefined,
+              stage: form.stage,
+              status: form.status,
+              startDate: form.startDate,
+              profitTargetOverride: form.profitTargetOverride
+                ? parseFloat(form.profitTargetOverride)
+                : null,
+            }),
+          })
+        )
+      } else if (form.templateId) {
+        // Create new evaluation
+        tasks.push(
+          fetch('/api/prop/evaluations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              accountId: target.accountId,
+              templateId: form.templateId,
+              stage: form.stage,
+              startDate: form.startDate,
+              status: form.status,
+            }),
+          })
+        )
+      }
+
+      const results = await Promise.all(tasks)
+      for (const r of results) {
+        if (!r.ok) throw new Error(`Request failed: ${r.status}`)
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prop-evaluations'] })
-      setStartEvalModal(null)
+      queryClient.invalidateQueries({ queryKey: ['accounts'] })
+      queryClient.invalidateQueries({ queryKey: ['eval-status'] })
+      setConfigureModal(null)
     },
   })
 
@@ -586,6 +746,63 @@ export function PropClient() {
 
   const defaultTemplate = templates.find((t) => t.isDefault) ?? templates[0]
 
+  // ─── Open configure modal ────────────────────────────────────────────────────
+
+  function openConfigureModal(
+    account: { id: string; name: string; broker: string; startingBalance?: string },
+    existingEval: PropEvaluation | null
+  ) {
+    // Auto-detect LucidFlex template for accounts matching LFE*
+    const isLFE = /^LFE/i.test(account.name)
+    const lucidTemplate = isLFE
+      ? (templates.find((t) => /lucid/i.test(t.firmName)) ?? null)
+      : null
+
+    const autoTemplateId =
+      existingEval?.templateId ??
+      lucidTemplate?.id ??
+      defaultTemplate?.id ??
+      ''
+
+    const startingBalance =
+      account.startingBalance ??
+      existingEval?.account?.startingBalance ??
+      '0'
+
+    setConfigureForm({
+      accountName: account.name,
+      startingBalance,
+      templateId: autoTemplateId,
+      stage: existingEval?.stage ?? 'evaluation',
+      startDate: existingEval?.startDate ?? new Date().toISOString().split('T')[0],
+      profitTargetOverride:
+        existingEval?.profitTargetOverride != null
+          ? String(existingEval.profitTargetOverride)
+          : '',
+      status: existingEval?.status ?? 'active',
+    })
+
+    setConfigureModal({
+      accountId: account.id,
+      accountName: account.name,
+      broker: account.broker,
+      startingBalance,
+      existingEval,
+    })
+
+    // Fetch earliest trading day for default start date (only if creating new eval)
+    if (!existingEval) {
+      fetch(`/api/accounts/${account.id}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data: { earliestTradingDay?: string | null } | null) => {
+          if (data?.earliestTradingDay) {
+            setConfigureForm((f) => ({ ...f, startDate: data.earliestTradingDay! }))
+          }
+        })
+        .catch(() => {})
+    }
+  }
+
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
@@ -618,6 +835,17 @@ export function PropClient() {
                 key={evaluation.id}
                 evaluation={evaluation}
                 onAdvance={setAdvanceModal}
+                onConfigure={(ev) => {
+                  const acct = ev.account
+                    ? {
+                        id: ev.accountId,
+                        name: ev.account.name,
+                        broker: ev.account.broker,
+                        startingBalance: ev.account.startingBalance,
+                      }
+                    : { id: ev.accountId, name: 'Unknown', broker: '' }
+                  openConfigureModal(acct, ev)
+                }}
               />
             ))}
             {/* Accounts without eval */}
@@ -625,14 +853,7 @@ export function PropClient() {
               <NoEvalCard
                 key={account.id}
                 account={account}
-                onStart={(a) => {
-                  setStartEvalModal(a)
-                  setStartEvalForm({
-                    templateId: defaultTemplate?.id ?? '',
-                    startDate: new Date().toISOString().split('T')[0],
-                    stage: 'evaluation',
-                  })
-                }}
+                onConfigure={(a) => openConfigureModal(a, null)}
               />
             ))}
             {/* Empty state */}
@@ -817,6 +1038,119 @@ export function PropClient() {
         )}
       </section>
 
+      {/* ── Modal: Configure Account ──────────────────────────────────────────── */}
+      <Modal
+        open={configureModal !== null}
+        onClose={() => setConfigureModal(null)}
+        title={configureModal ? `Configure — ${configureModal.accountName}` : 'Configure'}
+        wide
+      >
+        {configureModal && (
+          <div className="flex flex-col gap-4">
+            {/* Row 1: Account name + Starting balance */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <FieldLabel>Account Name</FieldLabel>
+                <FieldInput
+                  value={configureForm.accountName}
+                  onChange={(v) => setConfigureForm((f) => ({ ...f, accountName: v }))}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <FieldLabel>Starting Balance ($)</FieldLabel>
+                <FieldInput
+                  type="number"
+                  value={configureForm.startingBalance}
+                  onChange={(v) => setConfigureForm((f) => ({ ...f, startingBalance: v }))}
+                  placeholder="e.g. 50000"
+                />
+              </div>
+            </div>
+
+            {/* Row 2: Template */}
+            <div className="flex flex-col gap-1.5">
+              <FieldLabel>Prop Template</FieldLabel>
+              <FieldSelect
+                value={configureForm.templateId}
+                onChange={(v) => setConfigureForm((f) => ({ ...f, templateId: v }))}
+              >
+                <option value="">Select template…</option>
+                {templates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.firmName} — {t.templateName}
+                  </option>
+                ))}
+              </FieldSelect>
+            </div>
+
+            {/* Row 3: Stage + Status */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <FieldLabel>Stage</FieldLabel>
+                <FieldSelect
+                  value={configureForm.stage}
+                  onChange={(v) => setConfigureForm((f) => ({ ...f, stage: v }))}
+                >
+                  <option value="evaluation">Evaluation</option>
+                  <option value="pa">PA</option>
+                  <option value="funded">Funded</option>
+                </FieldSelect>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <FieldLabel>Status</FieldLabel>
+                <FieldSelect
+                  value={configureForm.status}
+                  onChange={(v) => setConfigureForm((f) => ({ ...f, status: v }))}
+                >
+                  <option value="active">Active</option>
+                  <option value="passed">Passed</option>
+                  <option value="failed">Failed</option>
+                  <option value="withdrawn">Withdrawn</option>
+                </FieldSelect>
+              </div>
+            </div>
+
+            {/* Row 4: Start date + Profit target override */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <FieldLabel>Start Date</FieldLabel>
+                <FieldInput
+                  type="date"
+                  value={configureForm.startDate}
+                  onChange={(v) => setConfigureForm((f) => ({ ...f, startDate: v }))}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <FieldLabel>Profit Target Override ($) <span className="text-[10px] opacity-60">optional</span></FieldLabel>
+                <FieldInput
+                  type="number"
+                  value={configureForm.profitTargetOverride}
+                  onChange={(v) => setConfigureForm((f) => ({ ...f, profitTargetOverride: v }))}
+                  placeholder="Leave blank for template default"
+                />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 justify-end pt-2">
+              <button
+                onClick={() => setConfigureModal(null)}
+                className="px-4 py-2 rounded-md border border-[var(--border)] text-sm text-[var(--muted-foreground)] hover:bg-white/5"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={configureMutation.isPending}
+                onClick={() => configureMutation.mutate({ target: configureModal, form: configureForm })}
+                className="px-4 py-2 rounded-md bg-[var(--color-accent-primary)] text-white text-sm hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+              >
+                {configureMutation.isPending ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
       {/* ── Modal: Advance Stage ──────────────────────────────────────────────── */}
       <Modal
         open={advanceModal !== null}
@@ -867,75 +1201,6 @@ export function PropClient() {
         })()}
       </Modal>
 
-      {/* ── Modal: Start Evaluation ───────────────────────────────────────────── */}
-      <Modal
-        open={startEvalModal !== null}
-        onClose={() => setStartEvalModal(null)}
-        title={`Start Evaluation — ${startEvalModal?.name ?? ''}`}
-      >
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-[var(--muted-foreground)]">Template</label>
-            <select
-              className="px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm text-[var(--foreground)] focus:outline-none"
-              value={startEvalForm.templateId}
-              onChange={(e) => setStartEvalForm((f) => ({ ...f, templateId: e.target.value }))}
-            >
-              <option value="">Select template…</option>
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.firmName} — {t.templateName}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-[var(--muted-foreground)]">Stage</label>
-            <select
-              className="px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm text-[var(--foreground)] focus:outline-none"
-              value={startEvalForm.stage}
-              onChange={(e) => setStartEvalForm((f) => ({ ...f, stage: e.target.value }))}
-            >
-              <option value="evaluation">Evaluation</option>
-              <option value="pa">PA</option>
-              <option value="funded">Funded</option>
-            </select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-[var(--muted-foreground)]">Start Date</label>
-            <input
-              type="date"
-              className="px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm text-[var(--foreground)] focus:outline-none"
-              value={startEvalForm.startDate}
-              onChange={(e) => setStartEvalForm((f) => ({ ...f, startDate: e.target.value }))}
-            />
-          </div>
-          <div className="flex gap-3 justify-end">
-            <button
-              onClick={() => setStartEvalModal(null)}
-              className="px-4 py-2 rounded-md border border-[var(--border)] text-sm text-[var(--muted-foreground)] hover:bg-white/5"
-            >
-              Cancel
-            </button>
-            <button
-              disabled={!startEvalForm.templateId || !startEvalModal || startEvalMutation.isPending}
-              onClick={() => {
-                if (!startEvalModal || !startEvalForm.templateId) return
-                startEvalMutation.mutate({
-                  accountId: startEvalModal.id,
-                  templateId: startEvalForm.templateId,
-                  stage: startEvalForm.stage,
-                  startDate: startEvalForm.startDate,
-                })
-              }}
-              className="px-4 py-2 rounded-md bg-[var(--color-accent-primary)] text-white text-sm hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
-            >
-              {startEvalMutation.isPending ? 'Starting…' : 'Start Evaluation'}
-            </button>
-          </div>
-        </div>
-      </Modal>
-
       {/* ── Modal: Log Payout ─────────────────────────────────────────────────── */}
       <Modal
         open={logPayoutModal}
@@ -944,11 +1209,10 @@ export function PropClient() {
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-[var(--muted-foreground)]">Evaluation</label>
-            <select
-              className="px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm text-[var(--foreground)] focus:outline-none"
+            <FieldLabel>Evaluation</FieldLabel>
+            <FieldSelect
               value={payoutForm.evaluationId}
-              onChange={(e) => setPayoutForm((f) => ({ ...f, evaluationId: e.target.value }))}
+              onChange={(v) => setPayoutForm((f) => ({ ...f, evaluationId: v }))}
             >
               <option value="">Select evaluation…</option>
               {activeEvals.map((e) => (
@@ -956,37 +1220,33 @@ export function PropClient() {
                   {e.account?.name ?? e.accountId} — {STAGE_LABELS[e.stage]}
                 </option>
               ))}
-            </select>
+            </FieldSelect>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-[var(--muted-foreground)]">Amount ($)</label>
-            <input
+            <FieldLabel>Amount ($)</FieldLabel>
+            <FieldInput
               type="number"
-              className="px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm text-[var(--foreground)] focus:outline-none"
-              placeholder="e.g. 500"
               value={payoutForm.amount}
-              onChange={(e) => setPayoutForm((f) => ({ ...f, amount: e.target.value }))}
+              onChange={(v) => setPayoutForm((f) => ({ ...f, amount: v }))}
+              placeholder="e.g. 500"
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-[var(--muted-foreground)]">Status</label>
-            <select
-              className="px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm text-[var(--foreground)] focus:outline-none"
+            <FieldLabel>Status</FieldLabel>
+            <FieldSelect
               value={payoutForm.status}
-              onChange={(e) => setPayoutForm((f) => ({ ...f, status: e.target.value }))}
+              onChange={(v) => setPayoutForm((f) => ({ ...f, status: v }))}
             >
               <option value="pending">Pending</option>
               <option value="paid">Paid</option>
-            </select>
+            </FieldSelect>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-[var(--muted-foreground)]">Notes (optional)</label>
-            <input
-              type="text"
-              className="px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm text-[var(--foreground)] focus:outline-none"
-              placeholder="e.g. First payout"
+            <FieldLabel>Notes (optional)</FieldLabel>
+            <FieldInput
               value={payoutForm.notes}
-              onChange={(e) => setPayoutForm((f) => ({ ...f, notes: e.target.value }))}
+              onChange={(v) => setPayoutForm((f) => ({ ...f, notes: v }))}
+              placeholder="e.g. First payout"
             />
           </div>
           <div className="flex gap-3 justify-end">
