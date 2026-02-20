@@ -9,15 +9,20 @@ export type OverallStatus = 'on_track' | 'warning' | 'violation' | 'passed'
 
 export interface StageRules {
   profitTarget: number | null
-  maxDailyLoss: number | null      // negative number, e.g. -1500
+  maxDailyLoss: number | null          // negative number, e.g. -1500
+  maxTrailingDrawdown: number | null   // negative number, e.g. -2000; trailing from equity peak
   minTradingDays: number | null
-  consistencyPct: number | null    // e.g. 30 means no single day > 30% of total profit
+  consistencyPct: number | null        // e.g. 30 means no single day > 30% of total profit
+}
+
+export interface TemplateStage {
+  key: string    // e.g. 'evaluation', 'pa', 'funded', or custom
+  label: string  // e.g. 'Evaluation', 'PA', 'Funded'
+  rules: StageRules
 }
 
 export interface RulesJson {
-  evaluation: StageRules
-  pa: StageRules
-  funded: StageRules
+  stages: TemplateStage[]
 }
 
 // ─── Rule Engine Result ───────────────────────────────────────────────────────
@@ -33,6 +38,7 @@ export interface RuleResult {
 export interface EvaluateRulesResult {
   rules: {
     maxDailyLoss: RuleResult
+    maxTrailingDrawdown: RuleResult
     minTradingDays: RuleResult
     consistency: RuleResult
     profitTarget: RuleResult

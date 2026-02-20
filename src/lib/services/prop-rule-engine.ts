@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { migrateRulesJson } from '@/lib/prop-migrate'
 import type {
   StageRules,
-  RulesJson,
   RuleResult,
   RuleStatus,
   EvaluateRulesResult,
@@ -29,19 +29,27 @@ type EvalRow = {
 
 type TemplateRow = {
   id: string
-  rules_json: RulesJson
+  rules_json: unknown
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const DEFAULT_STAGE_RULES: StageRules = {
+  profitTarget: null,
+  maxDailyLoss: null,
+  maxTrailingDrawdown: null,
+  minTradingDays: null,
+  consistencyPct: null,
+}
 
 function clamp(v: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, v))
 }
 
-function getStageRules(rulesJson: RulesJson, stage: string): StageRules {
-  if (stage === 'pa') return rulesJson.pa
-  if (stage === 'funded') return rulesJson.funded
-  return rulesJson.evaluation
+function getStageRules(rulesJsonRaw: unknown, stage: string): StageRules {
+  const migrated = migrateRulesJson(rulesJsonRaw)
+  const found = migrated.stages.find((s) => s.key === stage)
+  return found?.rules ?? migrated.stages[0]?.rules ?? DEFAULT_STAGE_RULES
 }
 
 function naRule(): RuleResult {
@@ -159,7 +167,54 @@ export async function evaluateRules(
     }
   }
 
-  // ─── Rule B: Min Trading Days ──────────────────────────────────────────────
+  // ─── Rule B: Max Trailing Drawdown ────────────────────────────────────────
+  // Trailing drawdown = worst (running_pnl - peak) across all days
+  // Violation if worst drawdown < threshold (e.g. -2000)
+
+  let maxTrailingDrawdown: RuleResult
+
+  if (stageRules.maxTrailingDrawdown === null) {
+    maxTrailingDrawdown = naRule()
+  } else {
+    const threshold = stageRules.maxTrailingDrawdown    // e.g. -2000
+    const warningThreshold = threshold * 0.8            // e.g. -1600
+
+    let runningPnl = 0
+    let peak = 0
+    let worstDrawdown = 0
+
+    for (const s of summaries) {
+      runningPnl += parseFloat(s.net_pnl)
+      if (runningPnl > peak) peak = runningPnl
+      const drawdown = runningPnl - peak  // <= 0
+      if (drawdown < worstDrawdown) worstDrawdown = drawdown
+    }
+
+    const progress = clamp(
+      Math.round((Math.abs(worstDrawdown) / Math.abs(threshold)) * 100),
+      0,
+      100
+    )
+
+    let status: RuleStatus
+    if (worstDrawdown < threshold) {
+      status = 'violation'
+    } else if (worstDrawdown < warningThreshold) {
+      status = 'warning'
+    } else {
+      status = 'pass'
+    }
+
+    maxTrailingDrawdown = {
+      status,
+      current: Math.round(worstDrawdown * 100) / 100,
+      threshold,
+      progress,
+      direction: 'toward_limit',
+    }
+  }
+
+  // ─── Rule C: Min Trading Days ──────────────────────────────────────────────
   // Pass if distinct active days >= threshold; pending otherwise
 
   let minTradingDays: RuleResult
@@ -181,7 +236,7 @@ export async function evaluateRules(
     }
   }
 
-  // ─── Rule C: Consistency ──────────────────────────────────────────────────
+  // ─── Rule D: Consistency ──────────────────────────────────────────────────
   // No single day > X% of total profit
   // Only meaningful when total profit is positive
 
@@ -219,7 +274,7 @@ export async function evaluateRules(
     }
   }
 
-  // ─── Rule D: Profit Target ────────────────────────────────────────────────
+  // ─── Rule E: Profit Target ────────────────────────────────────────────────
   // Pass if cumulative net P&L >= threshold; pending with progress % otherwise
 
   let profitTarget: RuleResult
@@ -243,7 +298,7 @@ export async function evaluateRules(
 
   // ─── Overall Status ───────────────────────────────────────────────────────
 
-  const allRules = [maxDailyLoss, minTradingDays, consistency, profitTarget]
+  const allRules = [maxDailyLoss, maxTrailingDrawdown, minTradingDays, consistency, profitTarget]
 
   const hasViolation = allRules.some((r) => r.status === 'violation')
   const hasWarning = allRules.some((r) => r.status === 'warning')
@@ -262,7 +317,13 @@ export async function evaluateRules(
 
   // ─── Summary Text ─────────────────────────────────────────────────────────
 
-  const ruleNames = ['Max Daily Loss', 'Min Trading Days', 'Consistency', 'Profit Target']
+  const ruleNames = [
+    'Max Daily Loss',
+    'Max Trailing Drawdown',
+    'Min Trading Days',
+    'Consistency',
+    'Profit Target',
+  ]
   let summary: string
 
   if (overallStatus === 'passed') {
@@ -270,7 +331,7 @@ export async function evaluateRules(
   } else if (overallStatus === 'violation') {
     summary = 'Rule violation detected — review required'
   } else if (overallStatus === 'warning') {
-    summary = 'Approaching daily loss limit — trade carefully'
+    summary = 'Approaching limit — trade carefully'
   } else {
     const pendingRules = allRules
       .map((r, i) => (r.status === 'pending' ? ruleNames[i] : null))
@@ -282,7 +343,7 @@ export async function evaluateRules(
   }
 
   return {
-    rules: { maxDailyLoss, minTradingDays, consistency, profitTarget },
+    rules: { maxDailyLoss, maxTrailingDrawdown, minTradingDays, consistency, profitTarget },
     overallStatus,
     summary,
   }

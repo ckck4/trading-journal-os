@@ -1,33 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { migrateRulesJson } from '@/lib/prop-migrate'
 import type { RulesJson } from '@/types/prop'
 
-// ─── LucidFlex 50K Preset ────────────────────────────────────────────────────
+// ─── LucidFlex 50K Preset (new stages-array format) ──────────────────────────
 
 const LUCIDFLEX_50K_RULES: RulesJson = {
-  evaluation: {
-    profitTarget: 3000,
-    maxDailyLoss: -1500,
-    minTradingDays: 10,
-    consistencyPct: 30,
-  },
-  pa: {
-    profitTarget: null,
-    maxDailyLoss: -1500,
-    minTradingDays: null,
-    consistencyPct: null,
-  },
-  funded: {
-    profitTarget: null,
-    maxDailyLoss: -1500,
-    minTradingDays: null,
-    consistencyPct: null,
-  },
+  stages: [
+    {
+      key: 'evaluation',
+      label: 'Evaluation',
+      rules: {
+        profitTarget: 3000,
+        maxDailyLoss: -1500,
+        maxTrailingDrawdown: null,
+        minTradingDays: 10,
+        consistencyPct: 30,
+      },
+    },
+    {
+      key: 'pa',
+      label: 'PA',
+      rules: {
+        profitTarget: null,
+        maxDailyLoss: -1500,
+        maxTrailingDrawdown: null,
+        minTradingDays: null,
+        consistencyPct: null,
+      },
+    },
+    {
+      key: 'funded',
+      label: 'Funded',
+      rules: {
+        profitTarget: null,
+        maxDailyLoss: -1500,
+        maxTrailingDrawdown: null,
+        minTradingDays: null,
+        consistencyPct: null,
+      },
+    },
+  ],
 }
 
 // ─── GET /api/prop/templates ─────────────────────────────────────────────────
 // List user's prop templates. Auto-seeds LucidFlex 50K preset on first visit.
+// Applies rules_json migration before returning to ensure new format.
 
 export async function GET() {
   try {
@@ -74,10 +93,21 @@ export async function GET() {
         return NextResponse.json({ error: 'Failed to seed default template' }, { status: 500 })
       }
 
-      return NextResponse.json({ templates: seeded ?? [] })
+      const seededMigrated = (seeded ?? []).map((row) => ({
+        ...row,
+        rules_json: migrateRulesJson(row.rules_json),
+      }))
+
+      return NextResponse.json({ templates: seededMigrated })
     }
 
-    return NextResponse.json({ templates: rows })
+    // Apply migration to all rows before returning
+    const migrated = (rows ?? []).map((row) => ({
+      ...row,
+      rules_json: migrateRulesJson(row.rules_json),
+    }))
+
+    return NextResponse.json({ templates: migrated })
   } catch (error) {
     console.error('[prop/templates GET] error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -118,6 +148,9 @@ export async function POST(request: NextRequest) {
         .eq('user_id', user.id)
     }
 
+    // Ensure stored format is always new format
+    const normalizedRules = migrateRulesJson(rulesJson)
+
     const { data, error } = await admin
       .from('prop_templates')
       .insert({
@@ -126,7 +159,7 @@ export async function POST(request: NextRequest) {
         template_name: templateName,
         version: 1,
         is_default: isDefault ?? false,
-        rules_json: rulesJson,
+        rules_json: normalizedRules,
       })
       .select()
       .single()

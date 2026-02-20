@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { evaluateRules } from '@/lib/services/prop-rule-engine'
 import type { WidgetData, BalanceData, DailyPnlData, WinRateData } from '@/types/dashboard'
-import type { RulesJson } from '@/types/prop'
+import { migrateRulesJson } from '@/lib/prop-migrate'
 
 // ─── GET /api/dashboard/widgets ───────────────────────────────────────────────
 // Runs all 7 widget queries in parallel. Returns single WidgetData object.
@@ -144,11 +144,17 @@ export async function GET(request: NextRequest) {
       if (activeEvals.length > 0) {
         const evalRow = activeEvals[0] as {
           max_drawdown: string
-          prop_templates?: { rules_json?: RulesJson } | null
+          stage?: string
+          prop_templates?: { rules_json?: unknown } | null
         }
         const tmpl = evalRow.prop_templates
-        if (tmpl?.rules_json?.evaluation?.maxDailyLoss != null) {
-          maxDailyLossThreshold = tmpl.rules_json.evaluation.maxDailyLoss
+        if (tmpl?.rules_json) {
+          const migrated = migrateRulesJson(tmpl.rules_json)
+          const stage = evalRow.stage ?? 'evaluation'
+          const stageRules = migrated.stages.find((s) => s.key === stage) ?? migrated.stages[0]
+          if (stageRules?.rules?.maxDailyLoss != null) {
+            maxDailyLossThreshold = stageRules.rules.maxDailyLoss
+          }
         }
       }
 

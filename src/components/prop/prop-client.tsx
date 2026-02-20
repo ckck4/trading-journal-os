@@ -5,7 +5,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ChevronDown,
   ChevronRight,
+  ChevronUp,
   Plus,
+  X,
   TrendingUp,
   AlertTriangle,
   CheckCircle2,
@@ -18,15 +20,16 @@ import {
   Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { migrateRulesJson } from '@/lib/prop-migrate'
 import type {
   PropEvaluation,
   PropTemplate,
+  TemplateStage,
   Payout,
   EvaluateRulesResult,
   RuleResult,
   RuleStatus,
   OverallStatus,
-  RulesJson,
   StageRules,
 } from '@/types/prop'
 
@@ -44,20 +47,20 @@ function fmtDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-const STAGE_ORDER = ['evaluation', 'pa', 'funded'] as const
-type Stage = typeof STAGE_ORDER[number]
+// Stage color palette — cycles by index position in stages array
+const STAGE_COLOR_PALETTE = [
+  'bg-[var(--color-accent-muted)] text-[var(--color-accent-primary)]',
+  'bg-[var(--color-yellow-muted)] text-[var(--color-yellow)]',
+  'bg-[var(--color-green-muted)] text-[var(--color-green)]',
+]
 
-function nextStage(current: string): Stage | null {
-  const idx = STAGE_ORDER.indexOf(current as Stage)
-  return idx >= 0 && idx < STAGE_ORDER.length - 1 ? STAGE_ORDER[idx + 1] : null
+// Fallback labels/colors for legacy stage keys
+const LEGACY_STAGE_LABELS: Record<string, string> = {
+  evaluation: 'EVAL',
+  pa: 'PA',
+  funded: 'FUNDED',
 }
 
-const STAGE_LABELS: Record<string, string> = { evaluation: 'EVAL', pa: 'PA', funded: 'FUNDED' }
-const STAGE_COLORS: Record<string, string> = {
-  evaluation: 'bg-[var(--color-accent-muted)] text-[var(--color-accent-primary)]',
-  pa: 'bg-[var(--color-yellow-muted)] text-[var(--color-yellow)]',
-  funded: 'bg-[var(--color-green-muted)] text-[var(--color-green)]',
-}
 const OVERALL_COLORS: Record<OverallStatus, string> = {
   on_track: 'text-[var(--color-green)]',
   warning: 'text-[var(--color-yellow)]',
@@ -72,6 +75,7 @@ const OVERALL_ICONS: Record<OverallStatus, typeof CheckCircle2> = {
 }
 const RULE_LABELS: Record<string, string> = {
   maxDailyLoss: 'Max Daily Loss',
+  maxTrailingDrawdown: 'Max Trailing Drawdown',
   minTradingDays: 'Min Trading Days',
   consistency: 'Consistency',
   profitTarget: 'Profit Target',
@@ -167,15 +171,39 @@ function Modal({
   )
 }
 
+// ─── Toggle switch ────────────────────────────────────────────────────────────
+
+function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={cn(
+        'relative w-9 h-5 rounded-full transition-colors flex-shrink-0',
+        enabled ? 'bg-[var(--color-accent-primary)]' : 'bg-[var(--secondary)]'
+      )}
+    >
+      <span
+        className={cn(
+          'absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform',
+          enabled ? 'translate-x-4' : 'translate-x-0'
+        )}
+      />
+    </button>
+  )
+}
+
 // ─── Eval Card ────────────────────────────────────────────────────────────────
 
 function EvalCard({
   evaluation,
+  template,
   onAdvance,
   onConfigure,
   onDelete,
 }: {
   evaluation: PropEvaluation
+  template?: PropTemplate
   onAdvance: (evaluation: PropEvaluation) => void
   onConfigure: (evaluation: PropEvaluation) => void
   onDelete: (evaluation: PropEvaluation) => void
@@ -192,9 +220,27 @@ function EvalCard({
   })
 
   const ruleStatus = statusData?.status
-  const next = nextStage(evaluation.stage)
   const account = evaluation.account
   const OverallIcon = ruleStatus ? OVERALL_ICONS[ruleStatus.overallStatus] : Clock
+
+  // Dynamic stage info from template
+  const templateStages = template?.rulesJson?.stages ?? []
+  const currentStageIdx = templateStages.findIndex((s) => s.key === evaluation.stage)
+  const currentStage = templateStages[currentStageIdx]
+  const nextStageInfo =
+    currentStageIdx >= 0 && currentStageIdx < templateStages.length - 1
+      ? templateStages[currentStageIdx + 1]
+      : null
+
+  const stageLabel =
+    currentStage?.label?.toUpperCase() ??
+    LEGACY_STAGE_LABELS[evaluation.stage] ??
+    evaluation.stage.toUpperCase()
+
+  const stageBadgeColor =
+    currentStageIdx >= 0
+      ? STAGE_COLOR_PALETTE[currentStageIdx % STAGE_COLOR_PALETTE.length]
+      : STAGE_COLOR_PALETTE[0]
 
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-5 flex flex-col gap-4">
@@ -209,13 +255,8 @@ function EvalCard({
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span
-            className={cn(
-              'text-[11px] font-bold tracking-widest px-2 py-0.5 rounded',
-              STAGE_COLORS[evaluation.stage] ?? STAGE_COLORS.evaluation
-            )}
-          >
-            {STAGE_LABELS[evaluation.stage] ?? evaluation.stage.toUpperCase()}
+          <span className={cn('text-[11px] font-bold tracking-widest px-2 py-0.5 rounded', stageBadgeColor)}>
+            {stageLabel}
           </span>
           {ruleStatus && (
             <div className="flex items-center gap-1">
@@ -268,18 +309,17 @@ function EvalCard({
         <p className="text-[11px] text-[var(--muted-foreground)]">{ruleStatus.summary}</p>
       )}
 
-      {next && (
+      {nextStageInfo ? (
         <button
           onClick={() => onAdvance(evaluation)}
           className="flex items-center justify-center gap-2 w-full py-2 rounded-md border border-[var(--border)] text-sm text-[var(--foreground)] hover:bg-white/5 transition-colors"
         >
-          Advance to {STAGE_LABELS[next]}
+          Advance to {nextStageInfo.label}
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
-      )}
-      {!next && (
+      ) : (
         <div className="text-center text-xs text-[var(--muted-foreground)] py-1">
-          Funded stage — final level
+          {currentStage ? `${currentStage.label} — final stage` : 'Final stage'}
         </div>
       )}
     </div>
@@ -315,20 +355,33 @@ function NoEvalCard({
 
 // ─── Template editor ──────────────────────────────────────────────────────────
 
-const STAGE_KEYS: Stage[] = ['evaluation', 'pa', 'funded']
-const RULE_FIELDS: Array<{ key: keyof StageRules; label: string; hint: string }> = [
-  { key: 'profitTarget', label: 'Profit Target ($)', hint: 'e.g. 3000' },
-  { key: 'maxDailyLoss', label: 'Max Daily Loss ($)', hint: 'e.g. -1500' },
-  { key: 'minTradingDays', label: 'Min Trading Days', hint: 'e.g. 10 (or blank for N/A)' },
-  { key: 'consistencyPct', label: 'Consistency (%)', hint: 'e.g. 30 (or blank for N/A)' },
-]
-
 const DEFAULT_STAGE_RULES: StageRules = {
   profitTarget: null,
   maxDailyLoss: null,
+  maxTrailingDrawdown: null,
   minTradingDays: null,
   consistencyPct: null,
 }
+
+// Default value when toggling a rule on for the first time
+const DEFAULT_RULE_VALS: Record<keyof StageRules, number> = {
+  profitTarget: 3000,
+  maxDailyLoss: -1500,
+  maxTrailingDrawdown: -2000,
+  minTradingDays: 10,
+  consistencyPct: 30,
+}
+
+const RULE_FIELDS: Array<{ key: keyof StageRules; label: string; placeholder: string }> = [
+  { key: 'profitTarget', label: 'Profit Target ($)', placeholder: '3000' },
+  { key: 'maxDailyLoss', label: 'Max Daily Loss ($)', placeholder: '-1500' },
+  { key: 'maxTrailingDrawdown', label: 'Max Trailing Drawdown ($)', placeholder: '-2000' },
+  { key: 'minTradingDays', label: 'Min Trading Days', placeholder: '10' },
+  { key: 'consistencyPct', label: 'Consistency (%)', placeholder: '30' },
+]
+
+const inputCls =
+  'px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] text-xs font-mono text-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]'
 
 function TemplateEditor({
   template,
@@ -345,22 +398,68 @@ function TemplateEditor({
   const [firmName, setFirmName] = useState(template.firmName)
   const [templateName, setTemplateName] = useState(template.templateName)
   const [dirty, setDirty] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
 
-  // BUG 1 FIX: normalize rules_json — ensure all 3 stages always exist with defaults
-  const normalizedRules: RulesJson = {
-    evaluation: { ...DEFAULT_STAGE_RULES, ...(template.rulesJson?.evaluation ?? {}) },
-    pa: { ...DEFAULT_STAGE_RULES, ...(template.rulesJson?.pa ?? {}) },
-    funded: { ...DEFAULT_STAGE_RULES, ...(template.rulesJson?.funded ?? {}) },
+  // Always start from migrated rules (handles both old and new DB format)
+  const migrated = migrateRulesJson(template.rulesJson)
+  const [stages, setStages] = useState<TemplateStage[]>(migrated.stages)
+
+  function setStageLabel(idx: number, label: string) {
+    setStages((prev) => prev.map((s, i) => (i === idx ? { ...s, label } : s)))
+    setDirty(true)
   }
 
-  const [rules, setRules] = useState<RulesJson>(normalizedRules)
+  function toggleRule(stageIdx: number, field: keyof StageRules) {
+    setStages((prev) =>
+      prev.map((s, i) => {
+        if (i !== stageIdx) return s
+        const current = s.rules[field]
+        return {
+          ...s,
+          rules: { ...s.rules, [field]: current === null ? DEFAULT_RULE_VALS[field] : null },
+        }
+      })
+    )
+    setDirty(true)
+  }
 
-  function setRule(stage: Stage, field: keyof StageRules, raw: string) {
+  function setRuleVal(stageIdx: number, field: keyof StageRules, raw: string) {
     const val = raw === '' ? null : parseFloat(raw)
-    setRules((prev) => ({
+    setStages((prev) =>
+      prev.map((s, i) => {
+        if (i !== stageIdx) return s
+        return { ...s, rules: { ...s.rules, [field]: isNaN(val as number) ? null : val } }
+      })
+    )
+    setDirty(true)
+  }
+
+  function moveStage(idx: number, dir: 'up' | 'down') {
+    const target = dir === 'up' ? idx - 1 : idx + 1
+    if (target < 0 || target >= stages.length) return
+    setStages((prev) => {
+      const next = [...prev]
+      ;[next[idx], next[target]] = [next[target], next[idx]]
+      return next
+    })
+    setDirty(true)
+  }
+
+  function addStage() {
+    setStages((prev) => [
       ...prev,
-      [stage]: { ...prev[stage], [field]: isNaN(val as number) ? null : val },
-    }))
+      {
+        key: `stage_${Date.now()}`,
+        label: `Stage ${prev.length + 1}`,
+        rules: { ...DEFAULT_STAGE_RULES },
+      },
+    ])
+    setDirty(true)
+  }
+
+  function removeStage(idx: number) {
+    if (stages.length <= 1) return
+    setStages((prev) => prev.filter((_, i) => i !== idx))
     setDirty(true)
   }
 
@@ -381,8 +480,9 @@ function TemplateEditor({
           <span className="text-sm font-semibold text-[var(--foreground)]">
             {template.firmName} — {template.templateName}
           </span>
+          <span className="text-[11px] text-[var(--muted-foreground)] ml-2">v{template.version}</span>
           <span className="text-[11px] text-[var(--muted-foreground)] ml-2">
-            v{template.version}
+            {stages.length} stage{stages.length !== 1 ? 's' : ''}
           </span>
         </div>
         {template.isDefault && (
@@ -402,7 +502,7 @@ function TemplateEditor({
                 Firm Name
               </label>
               <input
-                className="px-3 py-1.5 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm text-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
+                className={inputCls.replace('text-xs', 'text-sm').replace('py-1', 'py-1.5').replace('px-2', 'px-3')}
                 value={firmName}
                 onChange={(e) => { setFirmName(e.target.value); setDirty(true) }}
               />
@@ -412,32 +512,96 @@ function TemplateEditor({
                 Template Name
               </label>
               <input
-                className="px-3 py-1.5 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm text-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
+                className={inputCls.replace('text-xs', 'text-sm').replace('py-1', 'py-1.5').replace('px-2', 'px-3')}
                 value={templateName}
                 onChange={(e) => { setTemplateName(e.target.value); setDirty(true) }}
               />
             </div>
           </div>
 
-          {/* Rules per stage */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {STAGE_KEYS.map((stage) => (
-              <div key={stage} className="flex flex-col gap-2">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-                  {stage === 'pa' ? 'PA' : stage.charAt(0).toUpperCase() + stage.slice(1)}
-                </h4>
-                {RULE_FIELDS.map(({ key, label, hint }) => (
-                  <div key={key} className="flex flex-col gap-0.5">
-                    <label className="text-[10px] text-[var(--muted-foreground)]">{label}</label>
-                    <input
-                      type="number"
-                      placeholder={hint}
-                      value={rules[stage][key] ?? ''}
-                      onChange={(e) => setRule(stage, key, e.target.value)}
-                      className="px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] text-xs font-mono text-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
-                    />
+          {/* Stages */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+                Stages
+              </span>
+              <button
+                onClick={addStage}
+                className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-dashed border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-white/5 transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                Add Stage
+              </button>
+            </div>
+
+            {stages.map((stage, idx) => (
+              <div
+                key={stage.key}
+                className="rounded-md border border-[var(--border)] p-3 flex flex-col gap-3 bg-[var(--background)]/30"
+              >
+                {/* Stage header */}
+                <div className="flex items-center gap-2">
+                  {/* Reorder */}
+                  <div className="flex flex-col gap-0.5">
+                    <button
+                      onClick={() => moveStage(idx, 'up')}
+                      disabled={idx === 0}
+                      className="p-0.5 rounded text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronUp className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => moveStage(idx, 'down')}
+                      disabled={idx === stages.length - 1}
+                      className="p-0.5 rounded text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
                   </div>
-                ))}
+
+                  {/* Label */}
+                  <input
+                    value={stage.label}
+                    onChange={(e) => setStageLabel(idx, e.target.value)}
+                    placeholder="Stage name"
+                    className="flex-1 px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] text-sm font-semibold text-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
+                  />
+
+                  {/* Remove stage */}
+                  {stages.length > 1 && (
+                    <button
+                      onClick={() => removeStage(idx)}
+                      className="p-1 rounded text-[var(--muted-foreground)] hover:text-[var(--color-red)] hover:bg-[var(--color-red-muted)] transition-colors"
+                      title="Remove stage"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Rules */}
+                <div className="flex flex-col gap-2">
+                  {RULE_FIELDS.map(({ key, label, placeholder }) => {
+                    const enabled = stage.rules[key] !== null
+                    return (
+                      <div key={key} className="flex items-center gap-2">
+                        <Toggle enabled={enabled} onToggle={() => toggleRule(idx, key)} />
+                        <span className="text-xs text-[var(--muted-foreground)] flex-1">{label}</span>
+                        {enabled ? (
+                          <input
+                            type="number"
+                            value={stage.rules[key] ?? ''}
+                            onChange={(e) => setRuleVal(idx, key, e.target.value)}
+                            placeholder={placeholder}
+                            className={cn(inputCls, 'w-24 text-right')}
+                          />
+                        ) : (
+                          <span className="w-24 text-right text-xs text-[var(--muted-foreground)]/40">N/A</span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             ))}
           </div>
@@ -452,20 +616,34 @@ function TemplateEditor({
                 Set as Default
               </button>
             )}
-            <button
-              onClick={() => onDelete(template.id)}
-              className="text-xs px-3 py-1.5 rounded border border-[var(--color-red)]/30 text-[var(--color-red)] hover:bg-[var(--color-red-muted)] transition-colors"
-            >
-              Delete
-            </button>
+            {deleteConfirm ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-[var(--muted-foreground)]">Sure?</span>
+                <button
+                  onClick={() => { onDelete(template.id); setDeleteConfirm(false) }}
+                  className="text-xs px-3 py-1.5 rounded bg-[var(--color-red)] text-white hover:opacity-90 transition-opacity"
+                >
+                  Yes, delete
+                </button>
+                <button
+                  onClick={() => setDeleteConfirm(false)}
+                  className="text-xs px-3 py-1.5 rounded border border-[var(--border)] text-[var(--muted-foreground)] hover:bg-white/5"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setDeleteConfirm(true)}
+                className="text-xs px-3 py-1.5 rounded border border-[var(--color-red)]/30 text-[var(--color-red)] hover:bg-[var(--color-red-muted)] transition-colors"
+              >
+                Delete
+              </button>
+            )}
             {dirty && (
               <button
                 onClick={() => {
-                  onSave(template.id, {
-                    firmName,
-                    templateName,
-                    rulesJson: rules,
-                  })
+                  onSave(template.id, { firmName, templateName, rulesJson: { stages } })
                   setDirty(false)
                 }}
                 className="ml-auto text-xs px-3 py-1.5 rounded bg-[var(--color-accent-primary)] text-white hover:bg-[var(--color-accent-hover)] transition-colors"
@@ -480,7 +658,7 @@ function TemplateEditor({
   )
 }
 
-// ─── Configure modal form type ────────────────────────────────────────────────
+// ─── Configure modal form types ───────────────────────────────────────────────
 
 type ConfigureTarget = {
   accountId: string
@@ -500,12 +678,10 @@ type ConfigureForm = {
   status: string
 }
 
-// ─── Field label helper ───────────────────────────────────────────────────────
+// ─── Field helpers ────────────────────────────────────────────────────────────
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <label className="text-xs text-[var(--muted-foreground)]">{children}</label>
-  )
+  return <label className="text-xs text-[var(--muted-foreground)]">{children}</label>
 }
 
 function FieldInput({
@@ -770,13 +946,15 @@ export function PropClient() {
 
   const defaultTemplate = templates.find((t) => t.isDefault) ?? templates[0]
 
+  // Template lookup by ID (used for EvalCard dynamic stages)
+  const templateMap = new Map(templates.map((t) => [t.id, t]))
+
   // ─── Open configure modal ────────────────────────────────────────────────────
 
   function openConfigureModal(
     account: { id: string; name: string; broker: string; startingBalance?: string },
     existingEval: PropEvaluation | null
   ) {
-    // Auto-detect LucidFlex template for accounts matching LFE*
     const isLFE = /^LFE/i.test(account.name)
     const lucidTemplate = isLFE
       ? (templates.find((t) => /lucid/i.test(t.firmName)) ?? null)
@@ -788,6 +966,10 @@ export function PropClient() {
       defaultTemplate?.id ??
       ''
 
+    // Resolve first stage key from template
+    const resolvedTemplate = templates.find((t) => t.id === autoTemplateId)
+    const firstStageKey = resolvedTemplate?.rulesJson?.stages?.[0]?.key ?? 'evaluation'
+
     const startingBalance =
       account.startingBalance ??
       existingEval?.account?.startingBalance ??
@@ -797,7 +979,7 @@ export function PropClient() {
       accountName: account.name,
       startingBalance,
       templateId: autoTemplateId,
-      stage: existingEval?.stage ?? 'evaluation',
+      stage: existingEval?.stage ?? firstStageKey,
       startDate: existingEval?.startDate ?? new Date().toISOString().split('T')[0],
       profitTargetOverride:
         existingEval?.profitTargetOverride != null
@@ -858,6 +1040,7 @@ export function PropClient() {
               <EvalCard
                 key={evaluation.id}
                 evaluation={evaluation}
+                template={templateMap.get(evaluation.templateId)}
                 onAdvance={setAdvanceModal}
                 onDelete={setDeleteEvalModal}
                 onConfigure={(ev) => {
@@ -1040,9 +1223,23 @@ export function PropClient() {
                   firmName: 'Custom',
                   templateName: 'New Template',
                   rulesJson: {
-                    evaluation: { profitTarget: null, maxDailyLoss: null, minTradingDays: null, consistencyPct: null },
-                    pa: { profitTarget: null, maxDailyLoss: null, minTradingDays: null, consistencyPct: null },
-                    funded: { profitTarget: null, maxDailyLoss: null, minTradingDays: null, consistencyPct: null },
+                    stages: [
+                      {
+                        key: 'evaluation',
+                        label: 'Evaluation',
+                        rules: { profitTarget: null, maxDailyLoss: null, maxTrailingDrawdown: null, minTradingDays: null, consistencyPct: null },
+                      },
+                      {
+                        key: 'pa',
+                        label: 'PA',
+                        rules: { profitTarget: null, maxDailyLoss: null, maxTrailingDrawdown: null, minTradingDays: null, consistencyPct: null },
+                      },
+                      {
+                        key: 'funded',
+                        label: 'Funded',
+                        rules: { profitTarget: null, maxDailyLoss: null, maxTrailingDrawdown: null, minTradingDays: null, consistencyPct: null },
+                      },
+                    ],
                   },
                   isDefault: false,
                 }
@@ -1070,110 +1267,131 @@ export function PropClient() {
         title={configureModal ? `Configure — ${configureModal.accountName}` : 'Configure'}
         wide
       >
-        {configureModal && (
-          <div className="flex flex-col gap-4">
-            {/* Row 1: Account name + Starting balance */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1.5">
-                <FieldLabel>Account Name</FieldLabel>
-                <FieldInput
-                  value={configureForm.accountName}
-                  onChange={(v) => setConfigureForm((f) => ({ ...f, accountName: v }))}
-                />
+        {configureModal && (() => {
+          const selectedTemplate = templates.find((t) => t.id === configureForm.templateId)
+          const templateStages = selectedTemplate?.rulesJson?.stages ?? []
+          return (
+            <div className="flex flex-col gap-4">
+              {/* Row 1: Account name + Starting balance */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <FieldLabel>Account Name</FieldLabel>
+                  <FieldInput
+                    value={configureForm.accountName}
+                    onChange={(v) => setConfigureForm((f) => ({ ...f, accountName: v }))}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <FieldLabel>Starting Balance ($)</FieldLabel>
+                  <FieldInput
+                    type="number"
+                    value={configureForm.startingBalance}
+                    onChange={(v) => setConfigureForm((f) => ({ ...f, startingBalance: v }))}
+                    placeholder="e.g. 50000"
+                  />
+                </div>
               </div>
-              <div className="flex flex-col gap-1.5">
-                <FieldLabel>Starting Balance ($)</FieldLabel>
-                <FieldInput
-                  type="number"
-                  value={configureForm.startingBalance}
-                  onChange={(v) => setConfigureForm((f) => ({ ...f, startingBalance: v }))}
-                  placeholder="e.g. 50000"
-                />
-              </div>
-            </div>
 
-            {/* Row 2: Template */}
-            <div className="flex flex-col gap-1.5">
-              <FieldLabel>Prop Template</FieldLabel>
-              <FieldSelect
-                value={configureForm.templateId}
-                onChange={(v) => setConfigureForm((f) => ({ ...f, templateId: v }))}
-              >
-                <option value="">Select template…</option>
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.firmName} — {t.templateName}
-                  </option>
-                ))}
-              </FieldSelect>
-            </div>
-
-            {/* Row 3: Stage + Status */}
-            <div className="grid grid-cols-2 gap-3">
+              {/* Row 2: Template */}
               <div className="flex flex-col gap-1.5">
-                <FieldLabel>Stage</FieldLabel>
+                <FieldLabel>Prop Template</FieldLabel>
                 <FieldSelect
-                  value={configureForm.stage}
-                  onChange={(v) => setConfigureForm((f) => ({ ...f, stage: v }))}
+                  value={configureForm.templateId}
+                  onChange={(v) => {
+                    const tpl = templates.find((t) => t.id === v)
+                    const firstKey = tpl?.rulesJson?.stages?.[0]?.key ?? 'evaluation'
+                    setConfigureForm((f) => ({ ...f, templateId: v, stage: firstKey }))
+                  }}
                 >
-                  <option value="evaluation">Evaluation</option>
-                  <option value="pa">PA</option>
-                  <option value="funded">Funded</option>
+                  <option value="">Select template…</option>
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.firmName} — {t.templateName}
+                    </option>
+                  ))}
                 </FieldSelect>
               </div>
-              <div className="flex flex-col gap-1.5">
-                <FieldLabel>Status</FieldLabel>
-                <FieldSelect
-                  value={configureForm.status}
-                  onChange={(v) => setConfigureForm((f) => ({ ...f, status: v }))}
+
+              {/* Row 3: Stage + Status */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <FieldLabel>Stage</FieldLabel>
+                  <FieldSelect
+                    value={configureForm.stage}
+                    onChange={(v) => setConfigureForm((f) => ({ ...f, stage: v }))}
+                  >
+                    {templateStages.length > 0 ? (
+                      templateStages.map((s) => (
+                        <option key={s.key} value={s.key}>
+                          {s.label}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="evaluation">Evaluation</option>
+                        <option value="pa">PA</option>
+                        <option value="funded">Funded</option>
+                      </>
+                    )}
+                  </FieldSelect>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <FieldLabel>Status</FieldLabel>
+                  <FieldSelect
+                    value={configureForm.status}
+                    onChange={(v) => setConfigureForm((f) => ({ ...f, status: v }))}
+                  >
+                    <option value="active">Active</option>
+                    <option value="passed">Passed</option>
+                    <option value="failed">Failed</option>
+                    <option value="withdrawn">Withdrawn</option>
+                  </FieldSelect>
+                </div>
+              </div>
+
+              {/* Row 4: Start date + Profit target override */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <FieldLabel>Start Date</FieldLabel>
+                  <FieldInput
+                    type="date"
+                    value={configureForm.startDate}
+                    onChange={(v) => setConfigureForm((f) => ({ ...f, startDate: v }))}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <FieldLabel>
+                    Profit Target Override ($){' '}
+                    <span className="text-[10px] opacity-60">optional</span>
+                  </FieldLabel>
+                  <FieldInput
+                    type="number"
+                    value={configureForm.profitTargetOverride}
+                    onChange={(v) => setConfigureForm((f) => ({ ...f, profitTargetOverride: v }))}
+                    placeholder="Leave blank for template default"
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 justify-end pt-2">
+                <button
+                  onClick={() => setConfigureModal(null)}
+                  className="px-4 py-2 rounded-md border border-[var(--border)] text-sm text-[var(--muted-foreground)] hover:bg-white/5"
                 >
-                  <option value="active">Active</option>
-                  <option value="passed">Passed</option>
-                  <option value="failed">Failed</option>
-                  <option value="withdrawn">Withdrawn</option>
-                </FieldSelect>
+                  Cancel
+                </button>
+                <button
+                  disabled={configureMutation.isPending}
+                  onClick={() => configureMutation.mutate({ target: configureModal, form: configureForm })}
+                  className="px-4 py-2 rounded-md bg-[var(--color-accent-primary)] text-white text-sm hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+                >
+                  {configureMutation.isPending ? 'Saving…' : 'Save'}
+                </button>
               </div>
             </div>
-
-            {/* Row 4: Start date + Profit target override */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1.5">
-                <FieldLabel>Start Date</FieldLabel>
-                <FieldInput
-                  type="date"
-                  value={configureForm.startDate}
-                  onChange={(v) => setConfigureForm((f) => ({ ...f, startDate: v }))}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <FieldLabel>Profit Target Override ($) <span className="text-[10px] opacity-60">optional</span></FieldLabel>
-                <FieldInput
-                  type="number"
-                  value={configureForm.profitTargetOverride}
-                  onChange={(v) => setConfigureForm((f) => ({ ...f, profitTargetOverride: v }))}
-                  placeholder="Leave blank for template default"
-                />
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 justify-end pt-2">
-              <button
-                onClick={() => setConfigureModal(null)}
-                className="px-4 py-2 rounded-md border border-[var(--border)] text-sm text-[var(--muted-foreground)] hover:bg-white/5"
-              >
-                Cancel
-              </button>
-              <button
-                disabled={configureMutation.isPending}
-                onClick={() => configureMutation.mutate({ target: configureModal, form: configureForm })}
-                className="px-4 py-2 rounded-md bg-[var(--color-accent-primary)] text-white text-sm hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
-              >
-                {configureMutation.isPending ? 'Saving…' : 'Save'}
-              </button>
-            </div>
-          </div>
-        )}
+          )
+        })()}
       </Modal>
 
       {/* ── Modal: Delete Evaluation ─────────────────────────────────────────── */}
@@ -1217,7 +1435,13 @@ export function PropClient() {
         title="Advance to Next Stage"
       >
         {advanceModal && (() => {
-          const next = nextStage(advanceModal.stage)
+          const tpl = templateMap.get(advanceModal.templateId)
+          const stages = tpl?.rulesJson?.stages ?? []
+          const currentIdx = stages.findIndex((s) => s.key === advanceModal.stage)
+          const next = currentIdx >= 0 && currentIdx < stages.length - 1 ? stages[currentIdx + 1] : null
+          const currentLabel = stages[currentIdx]?.label ?? LEGACY_STAGE_LABELS[advanceModal.stage] ?? advanceModal.stage
+          const nextLabel = next?.label ?? '—'
+
           return (
             <div className="flex flex-col gap-4">
               <p className="text-sm text-[var(--muted-foreground)]">
@@ -1226,14 +1450,9 @@ export function PropClient() {
                   {advanceModal.account?.name}
                 </strong>{' '}
                 from{' '}
-                <strong className="text-[var(--foreground)]">
-                  {STAGE_LABELS[advanceModal.stage]}
-                </strong>{' '}
-                to{' '}
-                <strong className="text-[var(--foreground)]">
-                  {next ? STAGE_LABELS[next] : '—'}
-                </strong>
-                ?
+                <strong className="text-[var(--foreground)]">{currentLabel}</strong>
+                {' '}to{' '}
+                <strong className="text-[var(--foreground)]">{nextLabel}</strong>?
               </p>
               <p className="text-xs text-[var(--muted-foreground)]">
                 The start date for the new stage will be set to today.
@@ -1248,7 +1467,7 @@ export function PropClient() {
                 <button
                   disabled={!next || advanceStageMutation.isPending}
                   onClick={() => {
-                    if (next) advanceStageMutation.mutate({ id: advanceModal.id, stage: next })
+                    if (next) advanceStageMutation.mutate({ id: advanceModal.id, stage: next.key })
                   }}
                   className="px-4 py-2 rounded-md bg-[var(--color-accent-primary)] text-white text-sm hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
                 >
@@ -1274,11 +1493,17 @@ export function PropClient() {
               onChange={(v) => setPayoutForm((f) => ({ ...f, evaluationId: v }))}
             >
               <option value="">Select evaluation…</option>
-              {activeEvals.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.account?.name ?? e.accountId} — {STAGE_LABELS[e.stage]}
-                </option>
-              ))}
+              {activeEvals.map((e) => {
+                const stageLabel =
+                  templateMap.get(e.templateId)?.rulesJson?.stages?.find((s) => s.key === e.stage)?.label ??
+                  LEGACY_STAGE_LABELS[e.stage] ??
+                  e.stage
+                return (
+                  <option key={e.id} value={e.id}>
+                    {e.account?.name ?? e.accountId} — {stageLabel}
+                  </option>
+                )
+              })}
             </FieldSelect>
           </div>
           <div className="flex flex-col gap-1.5">
