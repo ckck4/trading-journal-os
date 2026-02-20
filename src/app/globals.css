@@ -2,6 +2,9 @@
 /* tw-animate-css: bare package import fails in Turbopack (Lightning CSS doesn't resolve
    the "style" export condition). Using direct path to dist file instead. */
 @import "../../node_modules/tw-animate-css/dist/tw-animate.css";
+/* react-grid-layout + react-resizable — imported via direct path for Turbopack compat */
+@import "../../node_modules/react-grid-layout/css/styles.css";
+@import "../../node_modules/react-resizable/css/styles.css";
 
 @custom-variant dark (&:is(.dark *));
 
