@@ -390,7 +390,7 @@ function TemplateEditor({
   onSetDefault,
 }: {
   template: PropTemplate
-  onSave: (id: string, updates: Partial<PropTemplate>) => void
+  onSave: (id: string, updates: Partial<PropTemplate>) => Promise<void>
   onDelete: (id: string) => void
   onSetDefault: (id: string) => void
 }) {
@@ -398,6 +398,8 @@ function TemplateEditor({
   const [firmName, setFirmName] = useState(template.firmName)
   const [templateName, setTemplateName] = useState(template.templateName)
   const [dirty, setDirty] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
 
   // Always start from migrated rules (handles both old and new DB format)
@@ -642,14 +644,26 @@ function TemplateEditor({
             )}
             {dirty && (
               <button
-                onClick={() => {
-                  onSave(template.id, { firmName, templateName, rulesJson: { stages } })
-                  setDirty(false)
+                disabled={saving}
+                onClick={async () => {
+                  setSaveError(null)
+                  setSaving(true)
+                  try {
+                    await onSave(template.id, { firmName, templateName, rulesJson: { stages } })
+                    setDirty(false)
+                  } catch (err) {
+                    setSaveError(err instanceof Error ? err.message : 'Failed to save')
+                  } finally {
+                    setSaving(false)
+                  }
                 }}
-                className="ml-auto text-xs px-3 py-1.5 rounded bg-[var(--color-accent-primary)] text-white hover:bg-[var(--color-accent-hover)] transition-colors"
+                className="ml-auto text-xs px-3 py-1.5 rounded bg-[var(--color-accent-primary)] text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors"
               >
-                Save Changes
+                {saving ? 'Saving…' : 'Save Changes'}
               </button>
+            )}
+            {saveError && (
+              <p className="text-xs text-[var(--color-red)] ml-auto">{saveError}</p>
             )}
           </div>
         </div>
@@ -904,8 +918,8 @@ export function PropClient() {
   })
 
   const saveTemplateMutation = useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<PropTemplate> }) =>
-      fetch(`/api/prop/templates/${id}`, {
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<PropTemplate> }) => {
+      const r = await fetch(`/api/prop/templates/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -913,7 +927,15 @@ export function PropClient() {
           templateName: updates.templateName,
           rulesJson: updates.rulesJson,
         }),
-      }).then((r) => r.json()),
+      })
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}))
+        const msg = (body as { error?: string }).error || `Server error ${r.status}`
+        console.error('[saveTemplate] PATCH failed:', msg)
+        throw new Error(msg)
+      }
+      return r.json()
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['prop-templates'] }),
   })
 
@@ -1209,7 +1231,7 @@ export function PropClient() {
                 <TemplateEditor
                   key={template.id}
                   template={template}
-                  onSave={(id, updates) => saveTemplateMutation.mutate({ id, updates })}
+                  onSave={(id, updates) => saveTemplateMutation.mutateAsync({ id, updates })}
                   onDelete={(id) => deleteTemplateMutation.mutate(id)}
                   onSetDefault={(id) => setDefaultTemplateMutation.mutate(id)}
                 />

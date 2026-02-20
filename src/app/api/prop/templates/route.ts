@@ -44,9 +44,25 @@ const LUCIDFLEX_50K_RULES: RulesJson = {
   ],
 }
 
+// ─── Row mapper: snake_case → camelCase (matches PropTemplate interface) ──────
+
+function mapRow(row: Record<string, unknown>) {
+  return {
+    id: row.id as string,
+    userId: row.user_id as string,
+    firmName: row.firm_name as string,
+    templateName: row.template_name as string,
+    version: row.version as number,
+    isDefault: row.is_default as boolean,
+    rulesJson: migrateRulesJson(row.rules_json),
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
+  }
+}
+
 // ─── GET /api/prop/templates ─────────────────────────────────────────────────
 // List user's prop templates. Auto-seeds LucidFlex 50K preset on first visit.
-// Applies rules_json migration before returning to ensure new format.
+// Returns camelCase fields matching the PropTemplate client interface.
 
 export async function GET() {
   try {
@@ -93,21 +109,10 @@ export async function GET() {
         return NextResponse.json({ error: 'Failed to seed default template' }, { status: 500 })
       }
 
-      const seededMigrated = (seeded ?? []).map((row) => ({
-        ...row,
-        rules_json: migrateRulesJson(row.rules_json),
-      }))
-
-      return NextResponse.json({ templates: seededMigrated })
+      return NextResponse.json({ templates: (seeded ?? []).map(mapRow) })
     }
 
-    // Apply migration to all rows before returning
-    const migrated = (rows ?? []).map((row) => ({
-      ...row,
-      rules_json: migrateRulesJson(row.rules_json),
-    }))
-
-    return NextResponse.json({ templates: migrated })
+    return NextResponse.json({ templates: (rows ?? []).map(mapRow) })
   } catch (error) {
     console.error('[prop/templates GET] error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
