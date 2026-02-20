@@ -1,6 +1,33 @@
 # UI Status — Phase 0 Foundation
 
-Last updated: 2026-02-18
+Last updated: 2026-02-20
+
+---
+
+## Phase 4 — Command Center + Prop Firm HQ ✅
+
+### 2026-02-20 — Phase 4 Complete
+**Status**: Complete ✅
+**What was done**:
+- `src/types/prop.ts` — RuleResult, EvaluateRulesResult, PropTemplate, PropEvaluation, Payout types
+- `src/types/dashboard.ts` — WidgetData and all 7 widget data shapes
+- `src/lib/services/prop-rule-engine.ts` — evaluateRules() with 4 rules (maxDailyLoss w/ 20% warning zone, minTradingDays, consistency, profitTarget)
+- API routes: `/api/prop/templates`, `/api/prop/evaluations`, `/api/prop/evaluations/[id]/status`, `/api/prop/payouts` (all CRUD)
+- API routes: `/api/dashboard/widgets` (8 parallel queries), `/api/dashboard/layouts` (layout persistence)
+- `react-grid-layout` v2.2.2 installed; CSS via direct node_modules paths for Turbopack
+- 7 dashboard widget components: balance/drawdown, equity curve (Recharts), daily P&L, win rate, prop rules, recent trades, goals
+- `command-center-client.tsx` — overview mode (fixed Tailwind grid) + custom mode (react-grid-layout v2 with useContainerWidth)
+- `prop-client.tsx` — account cards with live rule status, payout tracker table, template manager
+**Verified by**: build ✅ (0 errors, 0 warnings) | commit ✅ 6e6b261
+**Key learnings**:
+- react-grid-layout v2: no WidthProvider — use `useContainerWidth()` hook, pass `width` prop
+- react-grid-layout v2: `isDraggable`/`isResizable` → `dragConfig={{ enabled }}`/`resizeConfig={{ enabled }}`
+- react-grid-layout v2: `Layouts` → `ResponsiveLayouts`, `onLayoutChange(layout, allLayouts)` sig unchanged
+- `eval` is a reserved JS word — cannot use as prop name in strict mode
+- TanStack Query v5: `onSuccess` removed from `useQuery` — use `useEffect` reacting to `query.data`
+**Next**: Phase 5 — Finance + Ledger + Leak Detector
+
+---
 
 ## Phase 0 — Foundation ✅
 
