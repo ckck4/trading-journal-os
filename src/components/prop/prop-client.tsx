@@ -15,6 +15,7 @@ import {
   Building2,
   DollarSign,
   Settings2,
+  Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type {
@@ -172,10 +173,12 @@ function EvalCard({
   evaluation,
   onAdvance,
   onConfigure,
+  onDelete,
 }: {
   evaluation: PropEvaluation
   onAdvance: (evaluation: PropEvaluation) => void
   onConfigure: (evaluation: PropEvaluation) => void
+  onDelete: (evaluation: PropEvaluation) => void
 }) {
   const { data: statusData, isLoading: statusLoading } = useQuery<{ status: EvaluateRulesResult }>({
     queryKey: ['eval-status', evaluation.id],
@@ -232,6 +235,13 @@ function EvalCard({
             title="Configure"
           >
             <Settings2 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => onDelete(evaluation)}
+            className="p-1 rounded text-[var(--muted-foreground)] hover:text-[var(--color-red)] hover:bg-[var(--color-red-muted)] transition-colors"
+            title="Delete evaluation"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -547,6 +557,7 @@ export function PropClient() {
 
   // Modal state
   const [advanceModal, setAdvanceModal] = useState<PropEvaluation | null>(null)
+  const [deleteEvalModal, setDeleteEvalModal] = useState<PropEvaluation | null>(null)
   const [logPayoutModal, setLogPayoutModal] = useState(false)
   const [showTemplates, setShowTemplates] = useState(true)
 
@@ -611,6 +622,19 @@ export function PropClient() {
       queryClient.invalidateQueries({ queryKey: ['prop-evaluations'] })
       queryClient.invalidateQueries({ queryKey: ['eval-status'] })
       setAdvanceModal(null)
+    },
+  })
+
+  const deleteEvalMutation = useMutation({
+    mutationFn: (id: string) =>
+      fetch(`/api/prop/evaluations/${id}`, { method: 'DELETE' }).then((r) => {
+        if (!r.ok) throw new Error('Failed to delete evaluation')
+        return r.json()
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prop-evaluations'] })
+      queryClient.invalidateQueries({ queryKey: ['eval-status'] })
+      setDeleteEvalModal(null)
     },
   })
 
@@ -835,6 +859,7 @@ export function PropClient() {
                 key={evaluation.id}
                 evaluation={evaluation}
                 onAdvance={setAdvanceModal}
+                onDelete={setDeleteEvalModal}
                 onConfigure={(ev) => {
                   const acct = ev.account
                     ? {
@@ -1145,6 +1170,40 @@ export function PropClient() {
                 className="px-4 py-2 rounded-md bg-[var(--color-accent-primary)] text-white text-sm hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
               >
                 {configureMutation.isPending ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ── Modal: Delete Evaluation ─────────────────────────────────────────── */}
+      <Modal
+        open={deleteEvalModal !== null}
+        onClose={() => setDeleteEvalModal(null)}
+        title="Delete Evaluation"
+      >
+        {deleteEvalModal && (
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-[var(--muted-foreground)]">
+              Delete this evaluation for{' '}
+              <strong className="text-[var(--foreground)]">
+                {deleteEvalModal.account?.name ?? 'this account'}
+              </strong>
+              ? This cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteEvalModal(null)}
+                className="px-4 py-2 rounded-md border border-[var(--border)] text-sm text-[var(--muted-foreground)] hover:bg-white/5"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={deleteEvalMutation.isPending}
+                onClick={() => deleteEvalMutation.mutate(deleteEvalModal.id)}
+                className="px-4 py-2 rounded-md bg-[var(--color-red)] text-white text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+              >
+                {deleteEvalMutation.isPending ? 'Deleting…' : 'Delete'}
               </button>
             </div>
           </div>
