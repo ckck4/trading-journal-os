@@ -239,22 +239,31 @@ export async function runImport(
 
         // ── Step 7.5: Recalculate daily summaries ─────────────────────────
         // Run after trades are written so summaries reflect the new data.
-        // Uses Promise.all for parallel execution across distinct (account, day) pairs.
+        // Days within each account are processed sequentially in ascending date
+        // order so that cumulative_pnl is computed correctly (each day reads the
+        // previous day's already-written summary). Different accounts are
+        // processed in parallel since they are fully independent.
         if (insertedFills.length > 0) {
-            const dayMap = new Map<string, { accountId: string; tradingDay: string }>()
+            // Build per-account set of distinct trading days
+            const accountDayMap = new Map<string, Set<string>>()
             for (const fill of insertedFills) {
-                const key = `${fill.accountId}:${fill.tradingDay}`
-                if (!dayMap.has(key)) {
-                    dayMap.set(key, { accountId: fill.accountId, tradingDay: fill.tradingDay })
+                if (!accountDayMap.has(fill.accountId)) {
+                    accountDayMap.set(fill.accountId, new Set())
                 }
+                accountDayMap.get(fill.accountId)!.add(fill.tradingDay)
             }
             try {
                 await Promise.all(
-                    [...dayMap.values()].map(({ accountId, tradingDay }) =>
-                        recalcSummaries(userId, accountId, tradingDay)
-                    )
+                    [...accountDayMap.entries()].map(async ([accountId, daySet]) => {
+                        // Sort ascending so each day sees correct prior cumulative
+                        const days = [...daySet].sort()
+                        for (const tradingDay of days) {
+                            await recalcSummaries(userId, accountId, tradingDay)
+                        }
+                    })
                 )
-                console.log('[run-import] recalcSummaries complete for', dayMap.size, 'day(s)')
+                const totalDays = [...accountDayMap.values()].reduce((n, s) => n + s.size, 0)
+                console.log('[run-import] recalcSummaries complete:', accountDayMap.size, 'account(s),', totalDays, 'day(s)')
             } catch (recalcErr) {
                 // Non-fatal — trades are persisted; summaries are stale but recoverable
                 console.error('[run-import] recalcSummaries error (non-fatal):', recalcErr)

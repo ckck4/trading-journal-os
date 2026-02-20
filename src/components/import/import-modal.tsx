@@ -90,6 +90,8 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
             setPhase("complete");
             // Invalidate all data that depends on trades/summaries so every
             // page (Dashboard, Analytics, Journal, Prop HQ) refreshes automatically.
+            // Specific keys first for targeted invalidation, then no-args as a
+            // safety net to catch any query not explicitly listed.
             queryClient.invalidateQueries({ queryKey: ['trades'] });
             queryClient.invalidateQueries({ queryKey: ['analytics-summary'] });
             queryClient.invalidateQueries({ queryKey: ['analytics-daily'] });
@@ -97,6 +99,9 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
             queryClient.invalidateQueries({ queryKey: ['dashboard-widgets'] });
             queryClient.invalidateQueries({ queryKey: ['prop-evaluations'] });
             queryClient.invalidateQueries({ queryKey: ['eval-status'] });
+            // Blanket invalidation — marks every cached query stale so any
+            // mounted component refetches and any future mount gets fresh data.
+            queryClient.invalidateQueries();
         } catch (e) {
             setErrorMessage(e instanceof Error ? e.message : "Network error");
             setPhase("error");

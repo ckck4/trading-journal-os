@@ -4,6 +4,84 @@ Last updated: 2026-02-20
 
 ---
 
+## 2026-02-20 — Full Data Connectivity After Import ✅
+
+**Status**: Complete ✅
+**Commit**: fix: full data connectivity after import across all pages
+
+### What was done
+
+#### Server: recalcSummaries after import (`src/lib/import/run-import.ts`)
+- Step 7.5 added: after `reconstructTrades`, collect distinct (accountId, tradingDay) pairs from all inserted fills
+- Process days **sequentially per account in ascending date order** — ensures each day's `cumulative_pnl` correctly sums prior days (parallel would cause race condition where D2 reads D1 before it's written)
+- Multiple accounts processed in parallel (they are independent)
+- `recalcSummaries` completes before `finalizeBatch` and HTTP response — import does not return until summaries are ready
+
+#### Server: Data relationship verification
+- `GET /api/analytics/summary` — filters by `user_id` + `account_id` ✅
+- `GET /api/analytics/daily` — filters by `user_id` + `account_id` ✅
+- `GET /api/analytics/breakdowns` — filters by `user_id` + `account_id` ✅
+- `GET /api/dashboard/widgets` — all 8 sub-queries filter by `account_id` + `user_id` ✅
+- `GET /api/prop/evaluations/[id]/status` — ownership-checks eval then passes `account_id` to evaluateRules ✅
+- No data bleeds between accounts
+
+#### Client: Query invalidation (`src/components/import/import-modal.tsx`)
+- On successful import: invalidates `trades`, `analytics-summary`, `analytics-daily`, `analytics-breakdowns`, `dashboard-widgets`, `prop-evaluations`, `eval-status`
+- Added `queryClient.invalidateQueries()` (no args) as blanket safety net — marks ALL cached queries stale
+- Any mounted component refetches immediately; any future mount gets fresh data
+
+#### Client: Account filter verification
+- Analytics page: `accountId = accountIds[0]` from Zustand → passed to all 3 API calls ✅
+- Command Center: `accountId = accountIds[0]` from Zustand → passed to `/api/dashboard/widgets` ✅
+- Prop HQ: each eval card loads status by `evaluation.id` (DB already knows correct `account_id`) ✅
+
+### End-to-end flow (verified by code trace)
+1. User selects account in toolbar → Zustand `accountIds[0]` set
+2. Import modal upload → `/api/import` → fills inserted → trades reconstructed → recalcSummaries per day/account (sequential, parallel across accounts) → HTTP 200
+3. Modal: `setPhase("complete")` → 7 specific invalidations + blanket `invalidateQueries()`
+4. Dashboard (if mounted): `['dashboard-widgets']` refetches → balance, equity, daily P&L, win rate, prop rules all update
+5. Analytics (if mounted): `['analytics-summary/daily/breakdowns']` refetch → KPI cards and charts update
+6. Prop HQ (if mounted): `['prop-evaluations']` + `['eval-status']` refetch → account cards update
+7. Journal (if mounted): `['trades']` refetches → trade list updates
+
+**Verified by**: tsc ✅ | build ✅ (0 errors, 0 warnings) | commits ✅ c363716, fix applied
+
+---
+
+## Phase 4 — Fully Configurable Prop Template Manager (2026-02-20) ✅
+
+### Overview
+Rebuilt the prop template manager with a new dynamic `rules_json` schema using a stages array instead of hardcoded eval/pa/funded keys.
+
+### Schema Change
+- **Old**: `{ evaluation: StageRules, pa: StageRules, funded: StageRules }`
+- **New**: `{ stages: [{ key: string, label: string, rules: StageRules }] }`
+- All 5 rules per stage: `profitTarget`, `maxDailyLoss`, `maxTrailingDrawdown`, `minTradingDays`, `consistencyPct`
+
+### New Files
+- `src/lib/prop-migrate.ts` — pure `migrateRulesJson()` function, importable from client + server; detects old format and converts; idempotent on new format
+
+### Rule Engine
+- Added `maxTrailingDrawdown` rule: tracks worst (running_cumulative_pnl - peak) across all trading days
+- `getStageRules()` now uses `stages.find(s => s.key === stage)`, falls back to first stage
+- Both `maxDailyLoss` and `maxTrailingDrawdown` use 20% warning zone
+
+### API Changes
+- `GET /api/prop/templates`: applies `migrateRulesJson` to all rows before returning; LucidFlex 50K seed uses new format
+- `POST /api/prop/templates`: normalizes rulesJson to new format before storing
+- `GET /api/dashboard/widgets`: updated to use `migrateRulesJson` for threshold lookup
+
+### UI Changes (`prop-client.tsx`)
+- **TemplateEditor**: full rewrite — toggle switches per rule (on/off), per-stage editable labels, add/remove/reorder stages, inline delete confirmation
+- **Configure modal**: stage dropdown is dynamic from selected template's stages array; resets to first stage on template change
+- **EvalCard**: dynamic stage labels/colors from template; "Advance to X" button uses template stage order
+- **Advance modal**: uses dynamic stage labels from template stages array
+- **Payout modal**: stage labels also dynamic
+
+**Verified by**: tsc ✅ | build ✅ (0 errors, 0 warnings) | commit ✅ 4e7e824
+
+---
+
 ## Phase 4 — Prop Page Fixes (2026-02-20) ✅
 
 ### BUG 1 — TemplateEditor crash fixed
