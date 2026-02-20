@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { ImportResult } from "@/lib/import/run-import";
 
 // ── State machine ──────────────────────────────────────────────────────────
@@ -12,6 +13,7 @@ interface ImportModalProps {
 }
 
 export function ImportModal({ open, onClose }: ImportModalProps) {
+    const queryClient = useQueryClient();
     const [phase, setPhase] = useState<ModalPhase>("idle");
     const [file, setFile] = useState<File | null>(null);
     const [isDragOver, setIsDragOver] = useState(false);
@@ -86,6 +88,15 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
 
             setResult(data as ImportResult);
             setPhase("complete");
+            // Invalidate all data that depends on trades/summaries so every
+            // page (Dashboard, Analytics, Journal, Prop HQ) refreshes automatically.
+            queryClient.invalidateQueries({ queryKey: ['trades'] });
+            queryClient.invalidateQueries({ queryKey: ['analytics-summary'] });
+            queryClient.invalidateQueries({ queryKey: ['analytics-daily'] });
+            queryClient.invalidateQueries({ queryKey: ['analytics-breakdowns'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard-widgets'] });
+            queryClient.invalidateQueries({ queryKey: ['prop-evaluations'] });
+            queryClient.invalidateQueries({ queryKey: ['eval-status'] });
         } catch (e) {
             setErrorMessage(e instanceof Error ? e.message : "Network error");
             setPhase("error");

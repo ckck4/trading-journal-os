@@ -5,6 +5,7 @@ import { deduplicateFills, type FillWithHash } from "./dedupe";
 import { resolveAccount } from "./resolve-account";
 import { resolveInstrument, type ResolvedInstrument } from "./resolve-instrument";
 import { reconstructTrades, type InsertedFill } from "./reconstruct-trades";
+import { recalcSummaries } from "../services/recalc-summaries";
 
 // ── Public result type ─────────────────────────────────────────────────────
 export interface ImportResult {
@@ -234,6 +235,30 @@ export async function runImport(
             errors.push({
                 message: `Trade reconstruction error: ${e instanceof Error ? e.message : String(e)}`,
             });
+        }
+
+        // ── Step 7.5: Recalculate daily summaries ─────────────────────────
+        // Run after trades are written so summaries reflect the new data.
+        // Uses Promise.all for parallel execution across distinct (account, day) pairs.
+        if (insertedFills.length > 0) {
+            const dayMap = new Map<string, { accountId: string; tradingDay: string }>()
+            for (const fill of insertedFills) {
+                const key = `${fill.accountId}:${fill.tradingDay}`
+                if (!dayMap.has(key)) {
+                    dayMap.set(key, { accountId: fill.accountId, tradingDay: fill.tradingDay })
+                }
+            }
+            try {
+                await Promise.all(
+                    [...dayMap.values()].map(({ accountId, tradingDay }) =>
+                        recalcSummaries(userId, accountId, tradingDay)
+                    )
+                )
+                console.log('[run-import] recalcSummaries complete for', dayMap.size, 'day(s)')
+            } catch (recalcErr) {
+                // Non-fatal — trades are persisted; summaries are stale but recoverable
+                console.error('[run-import] recalcSummaries error (non-fatal):', recalcErr)
+            }
         }
 
         // ── Step 8: Finalize batch ─────────────────────────────────────────
