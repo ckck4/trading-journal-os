@@ -4,6 +4,27 @@ Last updated: 2026-02-20
 
 ---
 
+## Phase 4 — Prop Page Fixes (2026-02-20) ✅
+
+### BUG 1 — TemplateEditor crash fixed
+- Normalize rules_json before `useState` — all 3 stages always get default values via `{ ...DEFAULT_STAGE_RULES, ...(rules_json?.stage ?? {}) }` pattern
+
+### FEATURE 1 — Configure modal
+- Gear icon on every account card (EvalCard + NoEvalCard)
+- 7-field modal: account name, starting balance, template dropdown, stage, status, start date (auto-fetched from earliest daily_summary trading_day), profit target override
+- Save: PATCH /api/accounts/[id] + PATCH or POST /api/prop/evaluations
+- Auto-detects LucidFlex template for LFE* account names
+- New API: GET + PATCH /api/accounts/[id] (returns account + earliestTradingDay)
+- Migration: profit_target_override column added to prop_evaluations
+
+### FEATURE 2 — All accounts visible
+- accountsWithoutEval already computed from accounts query minus activeEvalAccountIds
+- NoEvalCard now shows "No evaluation configured" + Configure button
+
+**Verified by**: build ✅ (0 errors, 0 warnings) | tsc ✅ | commit ✅ c39e27b
+
+---
+
 ## Phase 4 — Command Center + Prop Firm HQ ✅
 
 ### 2026-02-20 — Phase 4 Complete
