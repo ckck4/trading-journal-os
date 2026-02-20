@@ -221,7 +221,26 @@ function EvalCard({
 
   const ruleStatus = statusData?.status
   const account = evaluation.account
-  const OverallIcon = ruleStatus ? OVERALL_ICONS[ruleStatus.overallStatus] : Clock
+  const isActive = evaluation.status === 'active'
+
+  // Composite status badge: eval.status takes precedence for non-active
+  type BadgeInfo = { label: string; color: string; Icon: typeof CheckCircle2 }
+  let statusBadge: BadgeInfo | null = null
+  if (!isActive) {
+    if (evaluation.status === 'passed') {
+      statusBadge = { label: 'PASSED', color: 'text-[var(--color-accent-primary)]', Icon: CheckCircle2 }
+    } else if (evaluation.status === 'failed') {
+      statusBadge = { label: 'FAILED', color: 'text-[var(--color-red)]', Icon: XCircle }
+    } else if (evaluation.status === 'withdrawn') {
+      statusBadge = { label: 'WITHDRAWN', color: 'text-[var(--muted-foreground)]', Icon: Clock }
+    }
+  } else if (ruleStatus) {
+    statusBadge = {
+      label: ruleStatus.overallStatus.replace('_', ' ').toUpperCase(),
+      color: OVERALL_COLORS[ruleStatus.overallStatus],
+      Icon: OVERALL_ICONS[ruleStatus.overallStatus],
+    }
+  }
 
   // Dynamic stage info from template
   const templateStages = template?.rulesJson?.stages ?? []
@@ -243,7 +262,10 @@ function EvalCard({
       : STAGE_COLOR_PALETTE[0]
 
   return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-5 flex flex-col gap-4">
+    <div className={cn(
+      'rounded-lg border bg-[var(--card)] p-5 flex flex-col gap-4',
+      isActive ? 'border-[var(--border)]' : 'border-[var(--border)] opacity-70'
+    )}>
       {/* Card header */}
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -258,15 +280,11 @@ function EvalCard({
           <span className={cn('text-[11px] font-bold tracking-widest px-2 py-0.5 rounded', stageBadgeColor)}>
             {stageLabel}
           </span>
-          {ruleStatus && (
+          {statusBadge && (
             <div className="flex items-center gap-1">
-              <OverallIcon
-                className={cn('w-3.5 h-3.5', OVERALL_COLORS[ruleStatus.overallStatus])}
-              />
-              <span
-                className={cn('text-[11px] font-semibold', OVERALL_COLORS[ruleStatus.overallStatus])}
-              >
-                {ruleStatus.overallStatus.replace('_', ' ').toUpperCase()}
+              <statusBadge.Icon className={cn('w-3.5 h-3.5', statusBadge.color)} />
+              <span className={cn('text-[11px] font-semibold', statusBadge.color)}>
+                {statusBadge.label}
               </span>
             </div>
           )}
@@ -309,7 +327,7 @@ function EvalCard({
         <p className="text-[11px] text-[var(--muted-foreground)]">{ruleStatus.summary}</p>
       )}
 
-      {nextStageInfo ? (
+      {isActive && nextStageInfo ? (
         <button
           onClick={() => onAdvance(evaluation)}
           className="flex items-center justify-center gap-2 w-full py-2 rounded-md border border-[var(--border)] text-sm text-[var(--foreground)] hover:bg-white/5 transition-colors"
@@ -317,11 +335,11 @@ function EvalCard({
           Advance to {nextStageInfo.label}
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
-      ) : (
+      ) : isActive ? (
         <div className="text-center text-xs text-[var(--muted-foreground)] py-1">
           {currentStage ? `${currentStage.label} — final stage` : 'Final stage'}
         </div>
-      )}
+      ) : null}
     </div>
   )
 }
@@ -963,8 +981,8 @@ export function PropClient() {
   const payouts = payoutsQuery.data?.payouts ?? []
 
   const activeEvals = evaluations.filter((e) => e.status === 'active')
-  const activeEvalAccountIds = new Set(activeEvals.map((e) => e.accountId))
-  const accountsWithoutEval = accounts.filter((a) => !activeEvalAccountIds.has(a.id))
+  const evalAccountIds = new Set(evaluations.map((e) => e.accountId))
+  const accountsWithoutEval = accounts.filter((a) => !evalAccountIds.has(a.id))
 
   const defaultTemplate = templates.find((t) => t.isDefault) ?? templates[0]
 
@@ -1057,8 +1075,8 @@ export function PropClient() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {/* Active eval cards */}
-            {activeEvals.map((evaluation) => (
+            {/* Eval cards (all statuses) */}
+            {evaluations.map((evaluation) => (
               <EvalCard
                 key={evaluation.id}
                 evaluation={evaluation}
@@ -1087,7 +1105,7 @@ export function PropClient() {
               />
             ))}
             {/* Empty state */}
-            {activeEvals.length === 0 && accountsWithoutEval.length === 0 && (
+            {evaluations.length === 0 && accountsWithoutEval.length === 0 && (
               <div className="col-span-full flex items-center justify-center h-32 rounded-lg border border-dashed border-[var(--border)] text-sm text-[var(--muted-foreground)]">
                 No accounts found. Add a trading account first.
               </div>
