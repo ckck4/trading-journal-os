@@ -2,9 +2,33 @@
   "permissions": {
     "allow": [
       "Bash(npm ls:*)",
-      "Bash(npm install:*)",
       "Bash(node -e:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(dir:*)",
+      "Bash(echo:*)",
+      "Bash(cmd /c \"dir C:\\\\Users\\\\proch\\\\Desktop\\\\TRADINGJOURNAL-ui /B\")",
+      "Bash(cmd /c \"dir C:\\\\Users\\\\proch\\\\Desktop\\\\TRADINGJOURNAL-ui\")",
+      "Bash(cmd /c dir:*)",
+      "Bash(npx shadcn@latest init:*)",
+      "Bash(git -C \"C:/Users/proch/Desktop/TRADINGJOURNAL-ui\" status --short)",
+      "Bash(git -C \"C:/Users/proch/Desktop/TRADINGJOURNAL-ui\" add src/app/layout.tsx src/app/globals.css src/app/page.tsx src/components/providers.tsx)",
+      "Bash(git -C:*)",
+      "Bash(npm install:*)",
+      "Bash(npx next build:*)",
+      "Bash(npm run build:*)",
+      "Bash(Start-Process -FilePath \"npm\" -ArgumentList \"run\",\"dev\" -WorkingDirectory \"C:/Users/proch/Desktop/TRADINGJOURNAL-ui\" -RedirectStandardOutput \"C:/Users/proch/Desktop/dev-server.log\" -RedirectStandardError \"C:/Users/proch/Desktop/dev-server-err.log\" -WindowStyle Hidden)",
+      "Bash(Write-Host \"Dev server started\")",
+      "Bash(netstat:*)",
+      "Bash(cmd /c \"netstat -ano | findstr :3000\")",
+      "Bash(powershell.exe -Command \"Get-NetTCPConnection -LocalPort 3000 | Select-Object LocalAddress,LocalPort,State,OwningProcess\")",
+      "Bash(powershell.exe -Command:*)",
+      "Bash(python3:*)",
+      "Bash(constraint import_batches_user_id_users_id_fk\"\n\nFix 1 — Migration \\(supabase/migrations/20260219000000_sync_auth_users.sql\\):\n  - handle_new_auth_user\\(\\) trigger: fires AFTER INSERT on auth.users,\n    auto-inserts into public.users \\(id, email, display_name, password_hash=''''\\)\n  - One-time backfill: INSERT INTO public.users SELECT from auth.users\n    WHERE NOT EXISTS in public.users — ON CONFLICT DO NOTHING \\(idempotent\\)\n  → Run this SQL in Supabase SQL Editor to apply\n\nFix 2 — run-import.ts:\n  - Add userEmail: string as 5th parameter\n  - Step 0: upsert into public.users before any batch insert \\(safety net\n    for users whose row wasn''t created by the trigger yet\\)\n  - ON CONFLICT \\(id\\) DO NOTHING — preserves existing user data\n\nFix 3 — route.ts:\n  - Extract user.email, guard against missing email → 401\n  - Pass userEmail as 5th arg to runImport\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(xargs:*)",
+      "Bash(ls \"C:\\\\Users\\\\proch\\\\Desktop\\\\TRADINGJOURNAL-ui\\\\node_modules\\\\react-grid-layout\\\\css\"\" 2>/dev/null && ls \"C:UsersprochDesktopTRADINGJOURNAL-uinode_modulesreact-resizablecss\"\")",
+      "Bash(ls:*)"
     ]
   }
 }
