@@ -1,0 +1,143 @@
+=== feat/ui-shell log ===
+42a24f6 fix: full data connectivity after import across all pages
+313696f fix: full data connectivity after import across all pages
+c363716 feat: recalc summaries + invalidate queries after import
+1a318d1 fix: account card status badge updates after configure modal save
+26df042 fix: template save and configure modal template dropdown
+4e7e824 feat(prop): fully configurable template manager with dynamic stages
+1f1bb34 feat: delete evaluation from prop page
+b32b681 docs(status): log prop page fixes
+c39e27b fix: prop page template crash + full eval configuration modal
+b7299f1 docs(status): update ui.md with Phase 4 completion notes
+6e6b261 feat(phase4): Command Center + Prop Firm HQ complete
+e641595 fix: recharts tooltip dark theme styling
+40babb2 fix: KPI card explicit bg fixes hover flash
+133348b fix: KPI card hover use brightness filter
+a65e062 fix: KPI card hover flash final fix
+=== feat/ui-shell files ===
+100644 blob a28ef1d4dcb2ba9ae7a96b811fef2547694f639d	src/app/(app)/analytics/[dimension]/page.tsx
+100644 blob dcb2c1749533dad4dfbc23c0c24c48155336d62e	src/app/(app)/analytics/page.tsx
+100644 blob 84f94f99c14a743ebb655f82ad097addc33adf20	src/app/(app)/coach/page.tsx
+100644 blob 9fa0f1fe531d7e22dcd5e74759f552f7ae882e8f	src/app/(app)/finance/page.tsx
+100644 blob 92a89681f12aa60c112e028ebbb48f6533555feb	src/app/(app)/goals/page.tsx
+100644 blob db0b3c5e4830e44a64b8fd5e61a2936f2628fbd8	src/app/(app)/grading/page.tsx
+100644 blob c60fff1760752ad44a2ea6370f8f689e317f6978	src/app/(app)/journal/[tradeId]/page.tsx
+100644 blob cebc433006b1f3386550f2aefcc7278647ed8e10	src/app/(app)/journal/calendar/page.tsx
+100644 blob 711d6a1921deee5b45442fcaa4bdd54cfbb0adc4	src/app/(app)/journal/page.tsx
+100644 blob 34fd382104a317c9722ea5c05590c47ccaa0f7d9	src/app/(app)/layout.tsx
+100644 blob 00b1e83969badfdcbfa28d2abc5003472de054ab	src/app/(app)/leaks/page.tsx
+100644 blob b6640adbea2afc748ca9cc05656351e548e86bc7	src/app/(app)/ledger/new/page.tsx
+100644 blob ab754035b9ba4af58a6b336b019574de02572097	src/app/(app)/ledger/page.tsx
+100644 blob 81bf304bc9722f949a70caf75b4870a6b79f2f79	src/app/(app)/page.tsx
+100644 blob fbb5508766f33a02773fbed5b587db899f468d6e	src/app/(app)/prop/[evalId]/page.tsx
+100644 blob e21baa70e8313e3efc5c669ebe1d212d26271e19	src/app/(app)/prop/page.tsx
+100644 blob ed9c8341244d4d724dec59045aa605e7de58770f	src/app/(app)/settings/accounts/page.tsx
+100644 blob c3ac5c04fa5b3c8f60277215dccf80599def9291	src/app/(app)/settings/dashboard/page.tsx
+100644 blob 9ef87835f594775a0040cc921e505c98d5dd98c1	src/app/(app)/settings/data/page.tsx
+100644 blob 7e39c96710f528fedd2c87030249e26fc5e8511c	src/app/(app)/settings/grading/page.tsx
+100644 blob b85aeef3a4c1ded49df46aad99bb9c3eea8061f8	src/app/(app)/settings/instruments/page.tsx
+100644 blob b638b8963e7b49019080ee5a75699d1adadb4592	src/app/(app)/settings/layout.tsx
+100644 blob 21a69eb6eeb55a58aa85f042351678696b06d666	src/app/(app)/settings/preferences/page.tsx
+100644 blob 80d253f1e3cbac69f39df1033ffaa07f473c8a2e	src/app/(app)/settings/prop-templates/page.tsx
+100644 blob c407af40114fc3f85ae591bc12ebb80a6aa43c5a	src/app/(app)/settings/routines/page.tsx
+100644 blob c12ccd4f0af153209423401ea7f694aaa1080875	src/app/(app)/settings/sessions/page.tsx
+100644 blob 196522006ffb72b7e4d02cc8758c8a5fae539634	src/app/(app)/settings/strategies/page.tsx
+100644 blob 001b74c27c8017c8caf3c4f3a463821a69d52f84	src/app/(app)/settings/tags/page.tsx
+100644 blob 7d09ec8a404e474884c2427616f6edb320ce4c7a	src/app/(app)/strategies/[id]/page.tsx
+100644 blob e988dc015d70c8908d2f68a0ab02fcb4a31c5b1d	src/app/(app)/strategies/page.tsx
+100644 blob 328adc403a0821e82978e99dd43f22aa5d7f90ff	src/app/(auth)/layout.tsx
+100644 blob ee40352fed543760e93bd7cc5a1d0b7fa857ee2d	src/app/(auth)/login/page.tsx
+100644 blob d7e691055c3ce2e4aa06210d9d31a3150523efc6	src/app/(auth)/register/page.tsx
+100644 blob 9e9705b87a14c480aeada1f0451955bb2b445ead	src/app/api/accounts/[id]/route.ts
+100644 blob 9b6dee11adfa0927269ddb6f6c6aa44427a71816	src/app/api/accounts/route.ts
+100644 blob ae3ce6daf61223a3818af58b6cbdf53e60df961a	src/app/api/analytics/breakdowns/route.ts
+100644 blob 0a6a06fcc2977716058f5c9f394cddea0ac55669	src/app/api/analytics/daily/route.ts
+100644 blob e8f648f52be67b645f327fc2e2ab1bc2e5849812	src/app/api/analytics/recalc/route.ts
+100644 blob c81bb78d08aaa2295d936397b6aa0192e4cd5e25	src/app/api/analytics/summary/route.ts
+100644 blob 03ee0c2b03c63f4c74b71e4638bc89429ec6f691	src/app/api/dashboard/layouts/[id]/route.ts
+100644 blob 09f4ffdd5b168ad3b19fe0be6fda98265654ac40	src/app/api/dashboard/layouts/route.ts
+100644 blob 14eb4a959e24d2b4deb875ae8778307099b2ecd7	src/app/api/dashboard/widgets/route.ts
+100644 blob 96448eab2acee7637673375053b9d02e0919aa40	src/app/api/grading/categories/[id]/route.ts
+100644 blob a4d7f1f76ba0e3eb2d7e49967da19c1090a19b63	src/app/api/grading/rubrics/[id]/categories/route.ts
+100644 blob e02ffbb297f29d4686bd1ed93da3ff221ef687ba	src/app/api/grading/rubrics/[id]/route.ts
+100644 blob f250132a35b555e1a191e1abfce1b4261f6df5bd	src/app/api/grading/rubrics/route.ts
+100644 blob f86543f9f39ed0a7c73e5b15e6e0822b65bd458a	src/app/api/import/route.ts
+100644 blob 9e3dab876b5dd38e0e0afbce821fb07270dcccb0	src/app/api/inngest/route.ts
+100644 blob 63e4d7594aa318c362449c3e5a72dd245e4d649f	src/app/api/instruments/route.ts
+100644 blob 766e79da87d40af0ea6b1b62b3edc0d4d173a2d8	src/app/api/prop/evaluations/[id]/route.ts
+100644 blob aef165c8cd80f92d733a8a26fbea9bd65cb13b9d	src/app/api/prop/evaluations/[id]/status/route.ts
+100644 blob 11229dddbddbb698750b4a0726d9fa21226baaff	src/app/api/prop/evaluations/route.ts
+100644 blob ae9a2329f4ebb5ccf6762da9821518b884b7273d	src/app/api/prop/payouts/[id]/route.ts
+100644 blob e5ffe72e9847d215d08d53e9b4521f3afa400f87	src/app/api/prop/payouts/route.ts
+100644 blob 664c81a348883b6486e9f5f909c85620c4d94899	src/app/api/prop/templates/[id]/route.ts
+100644 blob 5f8c83ec5e3712edf271929a92179191d577f0d3	src/app/api/prop/templates/route.ts
+100644 blob e9c86dcdb3be0ca244cf4d43fbf56d53ea997234	src/app/api/sessions/route.ts
+100644 blob 9b1c701dc4877b2da80754fc0b6f7e32236ce39c	src/app/api/strategies/route.ts
+100644 blob 4296d94be82ac0f350c1b01662ffb9d630fda914	src/app/api/trades/[id]/grade/route.ts
+100644 blob 3a5c6268e7c6367129cfcef709d73ccd7d7f7acc	src/app/api/trades/[id]/route.ts
+100644 blob 4f431214cb5afa0d187d9e4cb76fdb606aefa9ec	src/app/api/trades/route.ts
+100644 blob 718d6fea4835ec2d246af9800eddb7ffb276240c	src/app/favicon.ico
+100644 blob e2181fc35f7a067b7dbe464b17f646d058dad01f	src/app/globals.css
+100644 blob 2a9c2d1bc1d7cf8aa78f06e2a0ad5a7e5568d852	src/app/layout.tsx
+100644 blob b25dc2c5a1c350c8debdeacb6f9658d535f9610e	src/components/analytics/analytics-client.tsx
+100644 blob 356c7686dce43fe122ddf94fa6d192959ecb2077	src/components/analytics/charts.tsx
+100644 blob 69a6aafb4185f2b3cf57c8f69ec86d126ef90db5	src/components/analytics/kpi-cards.tsx
+100644 blob 19c0bf305af5387b4dc23effad0e6ab548dd9142	src/components/dashboard/balance-drawdown-widget.tsx
+100644 blob 586573f0d4a1d3585f8bb961050c82ec95ad3287	src/components/dashboard/command-center-client.tsx
+100644 blob 06e579a4d608f9f3c04f02132e56baf607b5d840	src/components/dashboard/daily-pnl-widget.tsx
+100644 blob 98024ba7683e06b40b0e795cf69212aae1214911	src/components/dashboard/equity-curve-widget.tsx
+100644 blob ec6ce2c5e227a43a3fad690fb015228b4f89780a	src/components/dashboard/goals-widget.tsx
+100644 blob 74afa8216c52e21fb2604b5b2c6abe26b959f7f0	src/components/dashboard/prop-rules-widget.tsx
+100644 blob 7be14c4d063caed9684a0da798fad6b11bbfb1fe	src/components/dashboard/recent-trades-widget.tsx
+100644 blob 7b00b2eb6b71e5bceae5a8b1c3412145e5acee51	src/components/dashboard/win-rate-widget.tsx
+100644 blob 4f9e6644fcbc36b7f421896d67d72842a37089e6	src/components/import/import-modal-root.tsx
+100644 blob 2846e1e2e044fe4e161d95f75fb505a32a8e0fac	src/components/import/import-modal.tsx
+100644 blob 7a3177f6e72962fe9d9c2ac1bd5814a5bdf98713	src/components/journal/grade-section.tsx
+100644 blob 2349733a6a91de635209b6d380959fa94636bddb	src/components/journal/journal-client.tsx
+100644 blob 9548584df82ee3a8c34725fbf5d45ecef70f02d8	src/components/journal/trade-detail-panel.tsx
+100644 blob 812241477bf91b31f483616893851e36b743848b	src/components/layout/app-shell.tsx
+100644 blob 21aa35920ba04f326a7681270f0f170d4066517b	src/components/layout/global-toolbar.tsx
+100644 blob 5ecced89afe76f53e39d24ccc3d9d9fec1e1ffc9	src/components/layout/sidebar.tsx
+100644 blob a149666297edeb982ca3bdb4c433e4ae25199efa	src/components/prop/prop-client.tsx
+100644 blob fd5374e3282c05c246c327571f276b055386010b	src/components/providers.tsx
+100644 blob 733fa996bdd73e6909b88fa58384b9641b024c09	src/components/settings/grading-settings-client.tsx
+100644 blob b5ea4abd1e2028496b915b733ad5485951cbad6a	src/components/ui/button.tsx
+100644 blob 6cb0164e4363df668876f08026847700429b932f	src/components/ui/placeholder-page.tsx
+100644 blob d80a14468c737298b56f404d5c1376f8a4dbe1e8	src/components/ui/tooltip.tsx
+=== feat/import-pipeline log ===
+ae7eadf fix(import-modal): fix file picker by using label+htmlFor instead of programmatic .click()
+b112d16 feat(import): add API route, import modal UI, and global toolbar
+87d3c20 feat(import): add flat-to-flat trade reconstruction + batch orchestrator
+0533389 feat(import): add CSV parser, dedup, account + instrument resolution
+8ea6640 WIP: checkpoint before switching Claude auth
+ee2bbf8 Add Claude Code settings + subagents
+d081eb8 Add Claude project rules
+bb65f5e Add agent rules
+8c4cab3 Initital commit
+=== feat/import-pipeline files ===
+100644 blob bfc0ef3f92c29e20d4a7d1404037ebe7f9348012	src/app/api/import/route.ts
+100644 blob 9e3dab876b5dd38e0e0afbce821fb07270dcccb0	src/app/api/inngest/route.ts
+100644 blob 735a25388ebbfd98add20b99c67f34d78ea8ebcd	src/lib/import/dedupe.ts
+100644 blob fb8ac9634afb337785a01bdea34252074a3ec3d6	src/lib/import/parse-csv.ts
+100644 blob bfccfee4277ac531d0560b8e07b2b01b2e2c9d3e	src/lib/import/reconstruct-trades.ts
+100644 blob 59bc9ba5612fedff11c3e27394ef38bc12fd8ae5	src/lib/import/resolve-account.ts
+100644 blob 698fbe4a735eb1b16598c54982180f8159f6d821	src/lib/import/resolve-instrument.ts
+100644 blob ff2365686bd54bdf47f8fe81431aed6a5bf849ba	src/lib/import/run-import.ts
+=== feat/auth log ===
+20ac615 WIP: checkpoint before switching Claude auth
+ee2bbf8 Add Claude Code settings + subagents
+d081eb8 Add Claude project rules
+bb65f5e Add agent rules
+8c4cab3 Initital commit
+=== feat/auth files ===
+=== feat/trades-api log ===
+5168a16 WIP: checkpoint before switching Claude auth
+ee2bbf8 Add Claude Code settings + subagents
+d081eb8 Add Claude project rules
+bb65f5e Add agent rules
+8c4cab3 Initital commit
+=== feat/trades-api files ===
+100644 blob 9e3dab876b5dd38e0e0afbce821fb07270dcccb0	src/app/api/inngest/route.ts
+=== Current branch ===
+main
+
