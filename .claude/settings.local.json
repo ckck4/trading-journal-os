@@ -25,7 +25,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(node -e:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(ls \"C:\\\\Users\\\\proch\\\\Desktop\\\\TRADINGJOURNAL-ui\\\\node_modules\\\\react-grid-layout\\\\css\"\" 2>/dev/null && ls \"C:UsersprochDesktopTRADINGJOURNAL-uinode_modulesreact-resizablecss\"\")",
+      "Bash(ls:*)"
     ]
   }
 }
