@@ -50,3 +50,8 @@ next-env.d.ts
 # supabase
 supabase/.temp/
 
+# MCP config (contains secrets)
+.claude/mcp.json
+list-tools.mjs
+test-github-mcp.mjs
+test-mcp.mjs
