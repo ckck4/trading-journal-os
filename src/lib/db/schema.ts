@@ -530,6 +530,7 @@ export const propTemplates = pgTable("prop_templates", {
     templateName: varchar("template_name", { length: 100 }).notNull(),
     version: integer("version").notNull().default(1),
     isDefault: boolean("is_default").notNull().default(false),
+    maxLossLimit: numeric("max_loss_limit", { precision: 10, scale: 2 }),
     rulesJson: jsonb("rules_json").notNull(),
     ...timestamps,
 });

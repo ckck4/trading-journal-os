@@ -30,6 +30,7 @@ type EvalRow = {
 type TemplateRow = {
   id: string
   rules_json: unknown
+  max_loss_limit: string | null
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -96,7 +97,7 @@ export async function evaluateRules(
   // 2. Fetch template rules_json
   const { data: tmplData, error: tmplErr } = await admin
     .from('prop_templates')
-    .select('id, rules_json')
+    .select('id, rules_json, max_loss_limit')
     .eq('id', evalRow.template_id)
     .single()
 
@@ -297,9 +298,43 @@ export async function evaluateRules(
     }
   }
 
+  // ─── Rule F: Maximum Loss Limit (MLL) ─────────────────────────────────────
+  // SUM of all days where net_pnl < 0 (absolute value) must not exceed max_loss_limit
+
+  let maxLossLimit: RuleResult
+
+  if (template.max_loss_limit === null) {
+    maxLossLimit = naRule()
+  } else {
+    const threshold = parseFloat(template.max_loss_limit)
+    const warningThreshold = threshold * 0.8
+    const totalLosses = summaries
+      .filter((s) => parseFloat(s.net_pnl) < 0)
+      .reduce((sum, s) => sum + Math.abs(parseFloat(s.net_pnl)), 0)
+
+    const progress = clamp(Math.round((totalLosses / threshold) * 100), 0, 100)
+
+    let status: RuleStatus
+    if (totalLosses >= threshold) {
+      status = 'violation'
+    } else if (totalLosses >= warningThreshold) {
+      status = 'warning'
+    } else {
+      status = 'pass'
+    }
+
+    maxLossLimit = {
+      status,
+      current: Math.round(totalLosses * 100) / 100,
+      threshold,
+      progress,
+      direction: 'toward_limit',
+    }
+  }
+
   // ─── Overall Status ───────────────────────────────────────────────────────
 
-  const allRules = [maxDailyLoss, maxTrailingDrawdown, minTradingDays, consistency, profitTarget]
+  const allRules = [maxDailyLoss, maxTrailingDrawdown, maxLossLimit, minTradingDays, consistency, profitTarget]
 
   const hasViolation = allRules.some((r) => r.status === 'violation')
   const hasWarning = allRules.some((r) => r.status === 'warning')
@@ -321,6 +356,7 @@ export async function evaluateRules(
   const ruleNames = [
     'Max Daily Loss',
     'Max Trailing Drawdown',
+    'Max Loss Limit (MLL)',
     'Min Trading Days',
     'Consistency',
     'Profit Target',
@@ -344,7 +380,7 @@ export async function evaluateRules(
   }
 
   return {
-    rules: { maxDailyLoss, maxTrailingDrawdown, minTradingDays, consistency, profitTarget },
+    rules: { maxDailyLoss, maxTrailingDrawdown, maxLossLimit, minTradingDays, consistency, profitTarget },
     overallStatus,
     summary,
   }

@@ -39,6 +39,7 @@ export interface EvaluateRulesResult {
   rules: {
     maxDailyLoss: RuleResult
     maxTrailingDrawdown: RuleResult
+    maxLossLimit: RuleResult
     minTradingDays: RuleResult
     consistency: RuleResult
     profitTarget: RuleResult
@@ -56,6 +57,7 @@ export interface PropTemplate {
   templateName: string
   version: number
   isDefault: boolean
+  maxLossLimit: number | null
   rulesJson: RulesJson
   createdAt: string
   updatedAt: string

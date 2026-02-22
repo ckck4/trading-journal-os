@@ -76,6 +76,7 @@ const OVERALL_ICONS: Record<OverallStatus, typeof CheckCircle2> = {
 const RULE_LABELS: Record<string, string> = {
   maxDailyLoss: 'Max Daily Loss',
   maxTrailingDrawdown: 'Max Trailing Drawdown',
+  maxLossLimit: 'Max Loss Limit (MLL)',
   minTradingDays: 'Min Trading Days',
   consistency: 'Consistency',
   profitTarget: 'Profit Target',
@@ -415,6 +416,9 @@ function TemplateEditor({
   const [expanded, setExpanded] = useState(false)
   const [firmName, setFirmName] = useState(template.firmName)
   const [templateName, setTemplateName] = useState(template.templateName)
+  const [maxLossLimitStr, setMaxLossLimitStr] = useState(
+    template.maxLossLimit !== null ? String(template.maxLossLimit) : ''
+  )
   const [dirty, setDirty] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -537,6 +541,26 @@ function TemplateEditor({
                 onChange={(e) => { setTemplateName(e.target.value); setDirty(true) }}
               />
             </div>
+          </div>
+
+          {/* Max Loss Limit field */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] text-[var(--muted-foreground)] uppercase tracking-wider">
+              Maximum Loss Limit ($)
+            </label>
+            <div className="relative flex items-center">
+              <span className="absolute left-3 text-sm text-[var(--muted-foreground)] pointer-events-none">$</span>
+              <input
+                type="number"
+                className={inputCls.replace('text-xs', 'text-sm').replace('py-1', 'py-1.5').replace('px-2', 'px-3').concat(' pl-6')}
+                value={maxLossLimitStr}
+                onChange={(e) => { setMaxLossLimitStr(e.target.value); setDirty(true) }}
+                placeholder="Max total drawdown allowed across all trading days"
+              />
+            </div>
+            <p className="text-[10px] text-[var(--muted-foreground)]">
+              Max total drawdown allowed across all trading days
+            </p>
           </div>
 
           {/* Stages */}
@@ -674,7 +698,12 @@ function TemplateEditor({
                   setSaveError(null)
                   setSaving(true)
                   try {
-                    await onSave(template.id, { firmName, templateName, rulesJson: { stages } })
+                    await onSave(template.id, {
+                      firmName,
+                      templateName,
+                      maxLossLimit: maxLossLimitStr ? parseFloat(maxLossLimitStr) : null,
+                      rulesJson: { stages }
+                    })
                     setDirty(false)
                   } catch (err) {
                     setSaveError(err instanceof Error ? err.message : 'Failed to save')
@@ -950,6 +979,7 @@ export function PropClient() {
         body: JSON.stringify({
           firmName: updates.firmName,
           templateName: updates.templateName,
+          maxLossLimit: updates.maxLossLimit,
           rulesJson: updates.rulesJson,
         }),
       })
@@ -1288,6 +1318,7 @@ export function PropClient() {
                       },
                     ],
                   },
+                  maxLossLimit: null,
                   isDefault: false,
                 }
                 fetch('/api/prop/templates', {

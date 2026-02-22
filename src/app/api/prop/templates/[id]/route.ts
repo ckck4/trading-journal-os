@@ -21,7 +21,7 @@ export async function PATCH(
 
     const { id } = await params
     const body = await request.json()
-    const { firmName, templateName, rulesJson, isDefault } = body
+    const { firmName, templateName, rulesJson, isDefault, maxLossLimit } = body
 
     const admin = createAdminClient()
 
@@ -49,6 +49,7 @@ export async function PATCH(
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
     if (firmName !== undefined) updates.firm_name = firmName
     if (templateName !== undefined) updates.template_name = templateName
+    if (maxLossLimit !== undefined) updates.max_loss_limit = maxLossLimit
     if (rulesJson !== undefined) {
       // Bump version on rules change
       const { data: current } = await admin

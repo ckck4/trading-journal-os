@@ -54,6 +54,7 @@ function mapRow(row: Record<string, unknown>) {
     templateName: row.template_name as string,
     version: row.version as number,
     isDefault: row.is_default as boolean,
+    maxLossLimit: row.max_loss_limit ? parseFloat(row.max_loss_limit as string) : null,
     rulesJson: migrateRulesJson(row.rules_json),
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
@@ -134,7 +135,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { firmName, templateName, rulesJson, isDefault } = body
+    const { firmName, templateName, rulesJson, isDefault, maxLossLimit } = body
 
     if (!templateName || !rulesJson) {
       return NextResponse.json(
@@ -164,6 +165,7 @@ export async function POST(request: NextRequest) {
         template_name: templateName,
         version: 1,
         is_default: isDefault ?? false,
+        max_loss_limit: maxLossLimit ?? null,
         rules_json: normalizedRules,
       })
       .select()

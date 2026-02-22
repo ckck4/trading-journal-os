@@ -4,6 +4,21 @@ Last updated: 2026-02-20
 
 ---
 
+## 2026-02-22 — Prop Firm Maximum Loss Limit (MLL) Feature ✅
+
+**Status**: Complete ✅
+**Commit**: fix(prop): add maximum loss limit MLL rule
+
+### What was done
+- **Schema & DB**: Altered `prop_templates` to include `max_loss_limit numeric(10,2)` globally for templates. Updated `src/lib/db/schema.ts` and `PropTemplate` typescript types.
+- **Rule Engine**: Appended MLL evaluation into `src/lib/services/prop-rule-engine.ts`. Evaluates to violation if the absolute sum of all losing days exceeds the configured MLL. Emits a warning at 80% utilization.
+- **API**: Updated the POST and PATCH logic in `src/app/api/prop/templates/route.ts` and `[id]/route.ts` to seamlessly deserialize and patch `maxLossLimit` template boundaries.
+- **UI**: Displayed a brand new `Maximum Loss Limit ($)` input in `src/components/prop/prop-client.tsx` using a clean disabled `$` icon, and securely linked it to the `onSave` logic. `RuleLabels` constant updated to render the MLL inside evaluations accurately.
+
+**Verified by**: tsc ✅ | build ✅ | Browser Subagent ✅
+
+---
+
 ## 2026-02-22 — Prop Firm Consistency Rule Fix ✅
 
 **Status**: Complete ✅
