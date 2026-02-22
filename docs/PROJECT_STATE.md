@@ -7,9 +7,9 @@
 - [x] **Phase 0: Foundation** — ✅ COMPLETE
 - [x] **Phase 1: Import Engine** — ✅ COMPLETE
 - [x] **Phase 1.5: UI Shell & Auth** — ✅ COMPLETE
-- [ ] **Phase 2: Trade Journal** — ⚠️ IN PROGRESS (API merged, UI pending)
-- [ ] **Phase 3: Analytics Lab + Grading** — 🚫 NOT STARTED
-- [ ] **Phase 4: Command Center + Prop Firm HQ** — 🚫 NOT STARTED
+- [x] **Phase 2: Trade Journal** — ✅ COMPLETE
+- [x] **Phase 3: Analytics Lab + Grading** — ✅ COMPLETE (Analytics loads, needs account selected)
+- [x] **Phase 4: Command Center + Prop Firm HQ** — ✅ COMPLETE (Prop HQ showing real data)
 - [ ] **Phase 5: Finance + Ledger + Leak Detector** — 🚫 NOT STARTED
 - [ ] **Phase 6: Strategies + Routines + Goals** — 🚫 NOT STARTED
 - [ ] **Phase 7: AI Coach + Polish** — 🚫 NOT STARTED
@@ -32,10 +32,10 @@
 - **Trades UI**: The backend API for trades is present, but the frontend DataTables and views inside `src/app/trades/` need to be built and wired up.
 
 ### Not Started 🚫
-- All features in Phases 3 through 8. No analytics, no strategy workflows, no prop evaluation engines.
+- All features in Phases 5 through 8. No finance ledger, leak detector, strategy workflows, or AI coach.
 
 ## 3. Current Known Bugs & Blockers
-- None active.
+- **Empty States**: Command Center and Analytics show empty states until the user selects an account in the global toolbar. This is expected behavior, not a bug, but should be noted for UI polish.
 
 ## 4. Key Architectural Decisions
 - **Single Worktree**: All work happens in one main branch (`main`) with strict directory boundaries per agent mapping. Feature branches (`feat/auth`, `feat/ui-shell`, `feat/import-pipeline`, `feat/trades-api`) have been permanently consolidated.
@@ -53,4 +53,4 @@
 - **State**: The `main` branch successfully compiles (`npm run build`). All dependencies from isolated branches have been resolved cleanly in `package.json`.
 
 ## 7. Next Task
-- **Task**: Build the UI for the Trades Journal (Phase 2). Connect the DataTables to the newly merged `trades-api` endpoints.
+- **Task**: Phase 5 (Finance + Ledger + Leak Detector) OR UI Polish pass before continuing with new features.

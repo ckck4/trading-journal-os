@@ -2,15 +2,9 @@
 
 > **Format**: Numbered priority list. One agent session = One task execution. Work from top to bottom.
 
-## 1. Build Trades Journal UI (Phase 2)
-- **What to build**: Implement the frontend for the Trades Journal page (`/trades`). Connect the DataTables to the newly merged `trades-api` endpoints.
-- **Files to touch**:
-  - `src/app/(app)/trades/page.tsx`
-  - `src/components/trades/` (Trade tables, drawers, etc.)
-- **Definition of Done**:
-  - User can view a paginated list of their reconstructed trades.
-  - User can filter trades cleanly using the GlobalToolbar.
-  - `docs/status/ui.md` updated.
+## 1. Phase 5: Finance + Ledger + Leak Detector (OR UI Polish)
+- **What to build**: Build out the initial UI and functionality for the Phase 5 business ledger or execute a deep UI polish pass over existing views.
+- **Action**: Assess whether to pursue rigorous UI polish over the existing `/journal`, `/analytics`, and `/prop` screens, or build the new features for `/ledger`.
 
 ## 2. Execute DB Push and Seed Data
 - **What to build**: Push the Drizzle schema to Supabase and execute the seed script to insert foundational data (instruments, sessions, prop templates).
@@ -35,3 +29,6 @@
 
 ## ✅ Completed Tasks
 - [x] Fix `public.users` Sync Blocker (Migration run in Supabase SQL Editor and trigger attached)
+- [x] Build Trades Journal UI (Phase 2)
+- [x] Build Analytics Lab UI (Phase 3)
+- [x] Build Prop Firm HQ UI (Phase 4)
