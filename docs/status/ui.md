@@ -4,6 +4,19 @@ Last updated: 2026-02-20
 
 ---
 
+## 2026-02-22 — Journal Slide-over Reintegration ✅
+
+**Status**: Complete ✅
+**Commit**: fix(journal): restore trade detail slide-over alongside notebook
+
+### What was done
+- Identified that the `TradeDetailPanel` still existed natively inside `src/components/journal/trade-detail-panel.tsx`.
+- Integrated `trade-detail-panel.tsx` directly into the bottom of `journal-client.tsx`, maintaining z-index precedence so it correctly layers above the `NotebookPanel` layout blocks.
+- Appended a dedicated `Info` (ℹ) button trigger immediately within the `TradeRow` rows component. Propagated click captures orthogonally via `onInfoTrade` mappings tied to a new isolated `detailedTrade` state hook.
+- Ensured existing trade row clicks purely update the Notebook contents. Both interactions live seamlessly together.
+- Substituted `button` elements mapping the info trigger for semantically sound div roles + tabs to satisfy generic Next.js hydration descendant warnings without side-effects.
+
+---
 ## 2026-02-22 — Command Center Layout Optimization ✅
 
 **Status**: Complete ✅

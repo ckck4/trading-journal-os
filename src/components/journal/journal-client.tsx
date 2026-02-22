@@ -2,11 +2,12 @@
 
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowUp, ArrowDown, BookOpen, RefreshCw } from 'lucide-react'
+import { ArrowUp, ArrowDown, BookOpen, RefreshCw, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useFiltersStore, type DatePreset } from '@/stores/filters'
 import type { Trade } from '@/types/trades'
 import { NotebookPanel } from './notebook-panel'
+import { TradeDetailPanel } from './trade-detail-panel'
 
 // ─── Date helpers ────────────────────────────────────────────────────────────
 
@@ -205,9 +206,10 @@ interface TradeRowProps {
   trade: Trade
   isSelected: boolean
   onClick: () => void
+  onInfoClick: (e: React.MouseEvent) => void
 }
 
-function TradeRow({ trade, isSelected, onClick }: TradeRowProps) {
+function TradeRow({ trade, isSelected, onClick, onInfoClick }: TradeRowProps) {
   const isLong = trade.side === 'LONG'
 
   return (
@@ -297,6 +299,29 @@ function TradeRow({ trade, isSelected, onClick }: TradeRowProps) {
         {formatPnl(trade.netPnl)}
       </span>
 
+      {/* Detail button */}
+      <div className="shrink-0 flex items-center justify-center pl-3 pr-1">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={onInfoClick}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              onInfoClick(e as any)
+            }
+          }}
+          className={cn(
+            'p-1.5 flex items-center justify-center rounded-md text-[var(--muted-foreground)]',
+            'hover:bg-[var(--border)] hover:text-[var(--foreground)]',
+            'transition-all duration-150 cursor-pointer'
+          )}
+          title="Trade Details"
+        >
+          <Info size={14} />
+        </div>
+      </div>
+
       {/* Outcome badge */}
       <div className="shrink-0 w-12 flex justify-end">
         <OutcomeBadge outcome={trade.outcome} isOpen={trade.isOpen} />
@@ -312,9 +337,10 @@ interface DayGroupProps {
   trades: Trade[]
   selectedId: string | null
   onSelectTrade: (trade: Trade) => void
+  onInfoTrade: (trade: Trade) => void
 }
 
-function DayGroup({ date, trades, selectedId, onSelectTrade }: DayGroupProps) {
+function DayGroup({ date, trades, selectedId, onSelectTrade, onInfoTrade }: DayGroupProps) {
   const dayPnl = trades.reduce((sum, t) => sum + parseFloat(t.netPnl || '0'), 0)
   const pnlColor =
     dayPnl > 0
@@ -352,6 +378,10 @@ function DayGroup({ date, trades, selectedId, onSelectTrade }: DayGroupProps) {
             trade={trade}
             isSelected={selectedId === trade.id}
             onClick={() => onSelectTrade(trade)}
+            onInfoClick={(e) => {
+              e.stopPropagation()
+              onInfoTrade(trade)
+            }}
           />
         ))}
       </div>
@@ -366,6 +396,7 @@ export function JournalClient() {
     useFiltersStore()
 
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null)
+  const [detailedTrade, setDetailedTrade] = useState<Trade | null>(null)
 
   // Compute effective date range from preset
   const dateRange = useMemo(
@@ -417,7 +448,8 @@ export function JournalClient() {
     setSelectedTrade((prev) => (prev?.id === trade.id ? null : trade))
   }
 
-  const handleClosePanel = () => setSelectedTrade(null)
+  const handleInfoTrade = (trade: Trade) => setDetailedTrade(trade)
+  const handleCloseDetailPanel = () => setDetailedTrade(null)
 
   if (isError) {
     return (
@@ -455,14 +487,18 @@ export function JournalClient() {
                 trades={dayTrades}
                 selectedId={selectedTrade?.id ?? null}
                 onSelectTrade={handleSelectTrade}
+                onInfoTrade={handleInfoTrade}
               />
             ))}
           </div>
         )}
       </div>
 
-      {/* Detail panel (40%) */}
+      {/* Notebook panel (40%) */}
       <NotebookPanel trade={selectedTrade} />
+
+      {/* Slide-over trade detail panel */}
+      <TradeDetailPanel trade={detailedTrade} onClose={handleCloseDetailPanel} />
     </div>
   )
 }
