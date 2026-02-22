@@ -54,4 +54,5 @@ supabase/.temp/
 .claude/mcp.json
 list-tools.mjs
 test-github-mcp.mjs
+test-github-mcp2.mjs
 test-mcp.mjs
