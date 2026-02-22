@@ -239,34 +239,55 @@ export async function runImport(
 
         // ── Step 7.5: Recalculate daily summaries ─────────────────────────
         // Run after trades are written so summaries reflect the new data.
-        // Days within each account are processed sequentially in ascending date
-        // order so that cumulative_pnl is computed correctly (each day reads the
-        // previous day's already-written summary). Different accounts are
-        // processed in parallel since they are fully independent.
+        // We must recalculate not only the days present in the imported fills,
+        // but ALSO all subsequent days for the affected accounts, because
+        // cumulative_pnl relies on the previous days' totals.
         if (insertedFills.length > 0) {
-            // Build per-account set of distinct trading days
-            const accountDayMap = new Map<string, Set<string>>()
+            const accountMinDayMap = new Map<string, string>();
             for (const fill of insertedFills) {
-                if (!accountDayMap.has(fill.accountId)) {
-                    accountDayMap.set(fill.accountId, new Set())
+                const currentMin = accountMinDayMap.get(fill.accountId);
+                if (!currentMin || fill.tradingDay < currentMin) {
+                    accountMinDayMap.set(fill.accountId, fill.tradingDay);
                 }
-                accountDayMap.get(fill.accountId)!.add(fill.tradingDay)
             }
+
             try {
                 await Promise.all(
-                    [...accountDayMap.entries()].map(async ([accountId, daySet]) => {
-                        // Sort ascending so each day sees correct prior cumulative
-                        const days = [...daySet].sort()
-                        for (const tradingDay of days) {
-                            await recalcSummaries(userId, accountId, tradingDay)
+                    [...accountMinDayMap.entries()].map(async ([accountId, minDay]) => {
+                        // 1. Get all trading days >= minDay for this account
+                        const { data: tradeDays } = await supabase
+                            .from("trades")
+                            .select("trading_day")
+                            .eq("user_id", userId)
+                            .eq("account_id", accountId)
+                            .gte("trading_day", minDay);
+
+                        const daySet = new Set<string>();
+                        if (tradeDays) {
+                            for (const row of tradeDays) {
+                                daySet.add(row.trading_day);
+                            }
                         }
-                    })
-                )
-                const totalDays = [...accountDayMap.values()].reduce((n, s) => n + s.size, 0)
-                console.log('[run-import] recalcSummaries complete:', accountDayMap.size, 'account(s),', totalDays, 'day(s)')
+
+                        // 2. Ensure we also include the actual days from the fills
+                        // (in case a day has fills but no closed trades yet)
+                        for (const fill of insertedFills) {
+                            if (fill.accountId === accountId) {
+                                daySet.add(fill.tradingDay);
+                            }
+                        }
+
+                        // 3. Sort ascending so each day sees correct prior cumulative
+                        const days = [...daySet].sort();
+                        for (const tradingDay of days) {
+                            await recalcSummaries(userId, accountId, tradingDay);
+                        }
+                    }),
+                );
+                console.log("[run-import] recalcSummaries complete for", accountMinDayMap.size, "account(s)");
             } catch (recalcErr) {
                 // Non-fatal — trades are persisted; summaries are stale but recoverable
-                console.error('[run-import] recalcSummaries error (non-fatal):', recalcErr)
+                console.error("[run-import] recalcSummaries error (non-fatal):", recalcErr);
             }
         }
 
