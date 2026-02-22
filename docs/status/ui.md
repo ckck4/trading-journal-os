@@ -4,6 +4,20 @@ Last updated: 2026-02-20
 
 ---
 
+## 2026-02-22 — Command Center Layout Optimization ✅
+
+**Status**: Complete ✅
+**Commit**: fix(dashboard): remove customize mode, fixed layout only
+
+### What was done
+- **Customization Deprecation**: Re-wrote `src/components/dashboard/command-center-client.tsx` to completely remove the `react-grid-layout` ecosystem, purging all dynamic block handling, drag-and-drop operations, and custom layouts configuration arrays.
+- **Backend Clean-up (frontend side)**: Severed all usages of the deprecated `/api/dashboard/layouts` route. Ripped out `layoutsQuery`, the layout saving mutations, hooks, state variables, and icons representing customization intent (`Settings2`, `Save`, `RotateCcw`, `Check`, `X`).
+- **Fixed Layout Solidification**: The front page Command Center dashboard represents a rigid layout configuration displaying the 7 essential component widgets (Balance / Drawdown, Equity Curve, Daily P&L, Win Rate, Prop Rules, Recent Trades, Goals) reliably rendering on all loads instantly, without any editing interfaces.
+
+**Verified by**: tsc ✅ | build ✅ | Browser Subagent ✅
+
+---
+
 ## 2026-02-22 — Trade Journal Permanent Notebook Layout ✅
 
 **Status**: Complete ✅
