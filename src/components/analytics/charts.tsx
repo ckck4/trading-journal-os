@@ -9,9 +9,10 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   Cell,
 } from 'recharts'
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import type { DayResult, BreakdownEntry } from '@/types/analytics'
 
 // ─── Formatting helpers ───────────────────────────────────────────────────────
@@ -67,12 +68,35 @@ function EmptyState() {
   )
 }
 
-const TOOLTIP_STYLE = {
-  backgroundColor: '#0d0f14',
-  border: '1px solid #2a2f3e',
-  borderRadius: '6px',
-  fontSize: '12px',
-  color: '#e8eaf0',
+function CustomAnalyticsTooltip({ active, payload, label, formatter, labelFormatter }: any) {
+  if (active && payload && payload.length) {
+    const formattedLabel = labelFormatter ? labelFormatter(label) : label
+    return (
+      <div style={{ backgroundColor: '#14171E', border: '1px solid #2A2F3E', borderRadius: '6px', padding: '8px 12px', fontSize: '12px', color: '#E8EAF0' }}>
+        <div style={{ marginBottom: '4px', fontWeight: 500 }}>{formattedLabel}</div>
+        {payload.map((entry: any, index: number) => {
+          const val = entry.value
+          let color = '#E8EAF0'
+          if (typeof val === 'number') {
+            if (val > 0) color = '#22C55E'
+            else if (val < 0) color = '#EF4444'
+          } else if (typeof val === 'string' && val.includes('$')) {
+            const num = parseFloat(val.replace(/[$,]/g, ''))
+            if (num > 0) color = '#22C55E'
+            else if (num < 0) color = '#EF4444'
+          }
+          const [fmtVal, fmtName] = formatter ? formatter(val, entry.name, entry) : [val, entry.name]
+          return (
+            <div key={index} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', color }}>
+              <span style={{ color: '#8B92A8' }}>{fmtName}</span>
+              <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{fmtVal}</span>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+  return null
 }
 
 // ─── a. Equity Curve ─────────────────────────────────────────────────────────
@@ -102,11 +126,11 @@ export function EquityCurveChart({ days }: { days: DayResult[] }) {
             tickLine={false}
             width={70}
           />
-          <Tooltip
+          <RechartsTooltip
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={(value: any) => [fmtDollar(value ?? 0), 'Cumulative P&L']}
             labelFormatter={fmtLabel}
-            contentStyle={TOOLTIP_STYLE}
+            content={<CustomAnalyticsTooltip />}
             cursor={{ fill: 'rgba(255,255,255,0.05)' }}
           />
           <Line
@@ -150,11 +174,11 @@ export function DailyPnlChart({ days }: { days: DayResult[] }) {
             tickLine={false}
             width={70}
           />
-          <Tooltip
+          <RechartsTooltip
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={(value: any) => [fmtDollar(value ?? 0), 'Net P&L']}
             labelFormatter={fmtLabel}
-            contentStyle={TOOLTIP_STYLE}
+            content={<CustomAnalyticsTooltip />}
             cursor={{ fill: 'rgba(255,255,255,0.05)' }}
           />
           <Bar dataKey="netPnl" radius={[2, 2, 0, 0]}>
@@ -219,61 +243,71 @@ export function CalendarHeatmap({ days }: { days: DayResult[] }) {
 
   return (
     <ChartCard title="Calendar Heatmap">
-      <div className="overflow-x-auto">
-        <div className="flex gap-1 min-w-0">
-          {/* Day labels column */}
-          <div className="flex flex-col gap-1 shrink-0 pt-5">
-            {DAY_LABELS.map((label, i) => (
-              <div
-                key={i}
-                className="w-5 h-6 flex items-center justify-center text-[10px] text-[var(--muted-foreground)]"
-              >
-                {label}
-              </div>
-            ))}
-          </div>
-          {/* Weeks */}
-          {weeks.map((week, wi) => {
-            const firstCell = week.find((d) => d !== null)
-            const showMonth =
-              firstCell &&
-              (wi === 0 || new Date(firstCell + 'T12:00:00').getDate() <= 7)
-
-            return (
-              <div key={wi} className="flex flex-col gap-1 shrink-0">
-                <div className="h-5 flex items-center">
-                  {showMonth && (
-                    <span className="text-[10px] text-[var(--muted-foreground)] whitespace-nowrap">
-                      {new Date(firstCell + 'T12:00:00').toLocaleString('en-US', { month: 'short' })}
-                    </span>
-                  )}
+      <TooltipProvider delayDuration={100}>
+        <div className="overflow-x-auto">
+          <div className="flex gap-1 min-w-0">
+            {/* Day labels column */}
+            <div className="flex flex-col gap-1 shrink-0 pt-5">
+              {DAY_LABELS.map((label, i) => (
+                <div
+                  key={i}
+                  className="w-5 h-6 flex items-center justify-center text-[10px] text-[var(--muted-foreground)]"
+                >
+                  {label}
                 </div>
-                {week.map((dateStr, di) => {
-                  if (!dateStr) {
-                    return <div key={di} className="w-6 h-6 rounded" style={{ background: 'transparent' }} />
-                  }
-                  const dayData = dayMap.get(dateStr)
-                  const color = dayData
-                    ? getCalendarCellColor(dayData.netPnl, maxMagnitude)
-                    : 'rgba(26,30,40,0.4)'
-                  return (
-                    <div
-                      key={di}
-                      className="w-6 h-6 rounded cursor-default"
-                      style={{ background: color }}
-                      title={
-                        dayData
-                          ? `${dateStr}: ${dayData.netPnl >= 0 ? '+' : ''}$${dayData.netPnl.toFixed(2)}`
-                          : dateStr
-                      }
-                    />
-                  )
-                })}
-              </div>
-            )
-          })}
+              ))}
+            </div>
+            {/* Weeks */}
+            {weeks.map((week, wi) => {
+              const firstCell = week.find((d) => d !== null)
+              const showMonth =
+                firstCell &&
+                (wi === 0 || new Date(firstCell + 'T12:00:00').getDate() <= 7)
+
+              return (
+                <div key={wi} className="flex flex-col gap-1 shrink-0">
+                  <div className="h-5 flex items-center">
+                    {showMonth && (
+                      <span className="text-[10px] text-[var(--muted-foreground)] whitespace-nowrap">
+                        {new Date(firstCell + 'T12:00:00').toLocaleString('en-US', { month: 'short' })}
+                      </span>
+                    )}
+                  </div>
+                  {week.map((dateStr, di) => {
+                    if (!dateStr) {
+                      return <div key={di} className="w-6 h-6 rounded" style={{ background: 'transparent' }} />
+                    }
+                    const dayData = dayMap.get(dateStr)
+                    const color = dayData
+                      ? getCalendarCellColor(dayData.netPnl, maxMagnitude)
+                      : 'rgba(26,30,40,0.4)'
+                    return (
+                      <Tooltip key={di}>
+                        <TooltipTrigger asChild>
+                          <div
+                            className="w-6 h-6 rounded cursor-default"
+                            style={{ background: color }}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent
+                          className="border-[#2A2F3E] bg-[#14171E] px-3 py-2 text-xs shadow-md"
+                          sideOffset={4}
+                        >
+                          <span style={{ color: dayData ? (dayData.netPnl > 0 ? '#22C55E' : dayData.netPnl < 0 ? '#EF4444' : '#E8EAF0') : '#E8EAF0' }}>
+                            {dayData
+                              ? `${dateStr}: ${dayData.netPnl >= 0 ? '+' : ''}$${dayData.netPnl.toFixed(2)}`
+                              : dateStr}
+                          </span>
+                        </TooltipContent>
+                      </Tooltip>
+                    )
+                  })}
+                </div>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      </TooltipProvider>
     </ChartCard>
   )
 }
@@ -320,10 +354,10 @@ export function RMultipleHistogram({ rMultiples }: { rMultiples: number[] }) {
             allowDecimals={false}
             width={30}
           />
-          <Tooltip
+          <RechartsTooltip
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={(value: any) => [value ?? 0, 'Trades']}
-            contentStyle={TOOLTIP_STYLE}
+            content={<CustomAnalyticsTooltip />}
             cursor={{ fill: 'rgba(255,255,255,0.05)' }}
           />
           <Bar dataKey="count" radius={[2, 2, 0, 0]}>
@@ -380,14 +414,14 @@ export function BreakdownBarChart({
             tickLine={false}
             width={80}
           />
-          <Tooltip
+          <RechartsTooltip
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={(value: any, _name: any, props: any) => {
               const entry = props?.payload as BreakdownEntry | undefined
               const wr = entry?.winRate != null ? ` (${entry.winRate.toFixed(0)}% WR)` : ''
               return [`${fmtDollar(value ?? 0)}${wr}`, 'Net P&L']
             }}
-            contentStyle={TOOLTIP_STYLE}
+            content={<CustomAnalyticsTooltip />}
             cursor={{ fill: 'rgba(255,255,255,0.05)' }}
           />
           <Bar dataKey="netPnl" radius={[0, 2, 2, 0]}>
@@ -445,10 +479,10 @@ export function DurationHistogram({ durations }: { durations: number[] }) {
             allowDecimals={false}
             width={30}
           />
-          <Tooltip
+          <RechartsTooltip
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={(value: any) => [value ?? 0, 'Trades']}
-            contentStyle={TOOLTIP_STYLE}
+            content={<CustomAnalyticsTooltip />}
             cursor={{ fill: 'rgba(255,255,255,0.05)' }}
           />
           <Bar dataKey="count" fill="#3B82F6" fillOpacity={0.75} radius={[2, 2, 0, 0]} />

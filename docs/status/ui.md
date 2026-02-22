@@ -4,6 +4,20 @@ Last updated: 2026-02-20
 
 ---
 
+## 2026-02-22 — Analytics Tooltips Fix ✅
+
+**Status**: Complete ✅
+**Commit**: fix(analytics): dark theme tooltips with color-coded values
+
+### What was done
+- **KpiCards**: Added `TooltipProvider`, `Tooltip`, `TooltipTrigger`, and `TooltipContent` wrappers inside `KpiCard` component in `src/components/analytics/kpi-cards.tsx` to display full metrics. Value colors dynamically update (`#22C55E` for >0, `#EF4444` for <0) and background strictly set to `#14171E` with `#2A2F3E` stroke.
+- **Charts**: Replaced Recharts standard component default config with a bespoke `<CustomAnalyticsTooltip>` component in `src/components/analytics/charts.tsx`. Now renders a dark theme tooltip matching spec on all `LineChart` and `BarChart` instances.
+- **Calendar Heatmap**: Ripped out standard native HTML `title` attributes and replaced them with shadcn `@/components/ui/tooltip` implementations for uniform style over hovering daily P&L blocks.
+
+**Verified by**: tsc ✅ | build ✅ | Browser Subagent ✅
+
+---
+
 ## 2026-02-22 — Prop Firm Maximum Loss Limit (MLL) Feature ✅
 
 **Status**: Complete ✅

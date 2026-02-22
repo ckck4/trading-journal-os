@@ -1,6 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import type { AnalyticsSummary } from '@/types/analytics'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -42,12 +43,16 @@ function KpiCard({
   label,
   children,
   className,
+  tooltipValue,
+  tooltipContent,
 }: {
   label: string
   children: React.ReactNode
   className?: string
+  tooltipValue?: number
+  tooltipContent?: React.ReactNode
 }) {
-  return (
+  const content = (
     <div
       className={cn(
         'rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-4 flex flex-col gap-1 transition-colors duration-150 hover:bg-white/5',
@@ -59,6 +64,32 @@ function KpiCard({
       </span>
       {children}
     </div>
+  )
+
+  if (!tooltipContent && tooltipValue === undefined) {
+    return content
+  }
+
+  let color = '#E8EAF0'
+  if (tooltipValue !== undefined && !isNaN(tooltipValue)) {
+    if (tooltipValue > 0) color = '#22C55E'
+    else if (tooltipValue < 0) color = '#EF4444'
+  }
+
+  return (
+    <TooltipProvider delayDuration={100}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {content}
+        </TooltipTrigger>
+        <TooltipContent
+          className="border-[#2A2F3E] bg-[#14171E] px-3 py-2 text-xs shadow-md"
+          sideOffset={4}
+        >
+          <span style={{ color }}>{tooltipContent ?? tooltipValue}</span>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }
 
@@ -100,14 +131,14 @@ export function KpiCards({ summary, isLoading }: KpiCardsProps) {
     summary.profitFactor >= 1.5
       ? 'text-profit'
       : summary.profitFactor >= 1.0
-      ? 'text-warning'
-      : 'text-loss'
+        ? 'text-warning'
+        : 'text-loss'
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
       {/* Net P&L */}
-      <KpiCard label="Net P&L">
+      <KpiCard label="Net P&L" tooltipValue={summary.netPnl} tooltipContent={`Net P&L: ${fmt$(summary.netPnl)}`}>
         <span
           className={cn(
             'text-2xl font-mono font-semibold tracking-tight',
@@ -119,7 +150,7 @@ export function KpiCards({ summary, isLoading }: KpiCardsProps) {
       </KpiCard>
 
       {/* Win Rate */}
-      <KpiCard label="Win Rate">
+      <KpiCard label="Win Rate" tooltipValue={summary.winRate} tooltipContent={`Win Rate: ${fmtPct(summary.winRate)} (${summary.winCount} Wins / ${summary.lossCount} Losses)`}>
         <span className="text-2xl font-mono font-semibold tracking-tight">
           {fmtPct(summary.winRate)}
         </span>
@@ -131,14 +162,14 @@ export function KpiCards({ summary, isLoading }: KpiCardsProps) {
       </KpiCard>
 
       {/* Profit Factor */}
-      <KpiCard label="Profit Factor">
+      <KpiCard label="Profit Factor" tooltipValue={summary.profitFactor === 9999 ? 0 : summary.profitFactor - 1} tooltipContent={`Gross Profit / Gross Loss: ${summary.profitFactor === 9999 ? '∞' : summary.profitFactor.toFixed(2)}`}>
         <span className={cn('text-2xl font-mono font-semibold tracking-tight', pfClass)}>
           {summary.profitFactor === 9999 ? '∞' : summary.profitFactor.toFixed(2)}
         </span>
       </KpiCard>
 
       {/* Avg R-Multiple */}
-      <KpiCard label="Avg R-Multiple">
+      <KpiCard label="Avg R-Multiple" tooltipValue={summary.avgR} tooltipContent={`Avg R-Multiple: ${summary.avgR >= 0 ? '+' : ''}${summary.avgR.toFixed(2)}R`}>
         <span
           className={cn(
             'text-2xl font-mono font-semibold tracking-tight',
