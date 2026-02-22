@@ -4,6 +4,22 @@ Last updated: 2026-02-20
 
 ---
 
+## 2026-02-22 — Trade Journal Permanent Notebook Layout ✅
+
+**Status**: Complete ✅
+**Commit**: feat(journal): add always-visible notebook panel
+
+### What was done
+- **Layout Restructuring**: Updated `src/components/journal/journal-client.tsx` to transition from a slide-over details panel to a permanent 60/40 width split layout (`flex-row`). The left side houses the grouped trades list, retaining its selection logic.
+- **NotebookPanel Component**: Created a new `NotebookPanel` component (`src/components/journal/notebook-panel.tsx`) occupying the right 40% of the screen.
+  - Dynamically displays "Trade Notes" with symbol and date or "Daily Journal" if no trade is selected.
+  - Features a `textarea` utilizing `JetBrains Mono` and explicit dark theme aesthetics (`#14171E` background, `#2A2F3E` border, `#E8EAF0` text).
+- **API Integration**: Linked the "Save Notes" button directly to the existing `PATCH /api/trades/[id]` endpoint, transmitting the modified notes string and displaying a transient "Saved ✓" confirmation UI. State syncs automatically when new trades are selected.
+
+**Verified by**: tsc ✅ | build ✅ | Browser Subagent ✅
+
+---
+
 ## 2026-02-22 — Analytics Tooltips Fix ✅
 
 **Status**: Complete ✅

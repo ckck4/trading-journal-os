@@ -6,7 +6,7 @@ import { ArrowUp, ArrowDown, BookOpen, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useFiltersStore, type DatePreset } from '@/stores/filters'
 import type { Trade } from '@/types/trades'
-import { TradeDetailPanel } from './trade-detail-panel'
+import { NotebookPanel } from './notebook-panel'
 
 // ─── Date helpers ────────────────────────────────────────────────────────────
 
@@ -320,8 +320,8 @@ function DayGroup({ date, trades, selectedId, onSelectTrade }: DayGroupProps) {
     dayPnl > 0
       ? 'text-[var(--color-green)]'
       : dayPnl < 0
-      ? 'text-[var(--color-red)]'
-      : 'text-[var(--muted-foreground)]'
+        ? 'text-[var(--color-red)]'
+        : 'text-[var(--muted-foreground)]'
 
   return (
     <div className="space-y-1.5">
@@ -439,9 +439,9 @@ export function JournalClient() {
   }
 
   return (
-    <div className="flex flex-1 min-h-0 overflow-hidden">
-      {/* Main list */}
-      <div className="flex-1 overflow-y-auto">
+    <div className="flex flex-1 min-h-0 overflow-hidden flex-row">
+      {/* Main list (60%) */}
+      <div className="w-[60%] overflow-y-auto border-r border-[var(--border)]">
         {isLoading ? (
           <LoadingSkeleton />
         ) : trades.length === 0 ? (
@@ -461,8 +461,8 @@ export function JournalClient() {
         )}
       </div>
 
-      {/* Detail panel */}
-      <TradeDetailPanel trade={selectedTrade} onClose={handleClosePanel} />
+      {/* Detail panel (40%) */}
+      <NotebookPanel trade={selectedTrade} />
     </div>
   )
 }
