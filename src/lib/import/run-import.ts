@@ -243,48 +243,66 @@ export async function runImport(
         // but ALSO all subsequent days for the affected accounts, because
         // cumulative_pnl relies on the previous days' totals.
         if (insertedFills.length > 0) {
-            const accountMinDayMap = new Map<string, string>();
-            for (const fill of insertedFills) {
-                const currentMin = accountMinDayMap.get(fill.accountId);
-                if (!currentMin || fill.tradingDay < currentMin) {
-                    accountMinDayMap.set(fill.accountId, fill.tradingDay);
-                }
-            }
-
             try {
-                await Promise.all(
-                    [...accountMinDayMap.entries()].map(async ([accountId, minDay]) => {
-                        // 1. Get all trading days >= minDay for this account
-                        const { data: tradeDays } = await supabase
-                            .from("trades")
-                            .select("trading_day")
-                            .eq("user_id", userId)
-                            .eq("account_id", accountId)
-                            .gte("trading_day", minDay);
+                // 1. Get the actual trade IDs created or updated by this batch
+                const { data: batchFills } = await supabase
+                    .from("fills")
+                    .select("trade_id")
+                    .eq("import_batch_id", batchId)
+                    .not("trade_id", "is", null);
 
-                        const daySet = new Set<string>();
-                        if (tradeDays) {
-                            for (const row of tradeDays) {
-                                daySet.add(row.trading_day);
+                const validTradeIds = [...new Set((batchFills || []).map(f => f.trade_id))];
+
+                if (validTradeIds.length > 0) {
+                    // 2. The account_id must come from the trades themselves
+                    const { data: touchedTrades } = await supabase
+                        .from("trades")
+                        .select("account_id, trading_day")
+                        .in("id", validTradeIds);
+
+                    if (touchedTrades) {
+                        const accountMinDayMap = new Map<string, string>();
+                        for (const trade of touchedTrades) {
+                            const currentMin = accountMinDayMap.get(trade.account_id);
+                            if (!currentMin || trade.trading_day < currentMin) {
+                                accountMinDayMap.set(trade.account_id, trade.trading_day);
                             }
                         }
 
-                        // 2. Ensure we also include the actual days from the fills
-                        // (in case a day has fills but no closed trades yet)
-                        for (const fill of insertedFills) {
-                            if (fill.accountId === accountId) {
-                                daySet.add(fill.tradingDay);
-                            }
-                        }
+                        await Promise.all(
+                            [...accountMinDayMap.entries()].map(async ([accountId, minDay]) => {
+                                // 3. Get all trading days >= minDay for this account
+                                const { data: tradeDays } = await supabase
+                                    .from("trades")
+                                    .select("trading_day")
+                                    .eq("user_id", userId)
+                                    .eq("account_id", accountId)
+                                    .gte("trading_day", minDay);
 
-                        // 3. Sort ascending so each day sees correct prior cumulative
-                        const days = [...daySet].sort();
-                        for (const tradingDay of days) {
-                            await recalcSummaries(userId, accountId, tradingDay);
-                        }
-                    }),
-                );
-                console.log("[run-import] recalcSummaries complete for", accountMinDayMap.size, "account(s)");
+                                const daySet = new Set<string>();
+                                if (tradeDays) {
+                                    for (const row of tradeDays) {
+                                        daySet.add(row.trading_day);
+                                    }
+                                }
+
+                                // Ensure we also include the actual days from the trades
+                                for (const trade of touchedTrades) {
+                                    if (trade.account_id === accountId) {
+                                        daySet.add(trade.trading_day);
+                                    }
+                                }
+
+                                // 4. Sort ascending so each day sees correct prior cumulative
+                                const days = [...daySet].sort();
+                                for (const tradingDay of days) {
+                                    await recalcSummaries(userId, accountId, tradingDay);
+                                }
+                            }),
+                        );
+                        console.log("[run-import] recalcSummaries complete for", accountMinDayMap.size, "account(s)");
+                    }
+                }
             } catch (recalcErr) {
                 // Non-fatal — trades are persisted; summaries are stale but recoverable
                 console.error("[run-import] recalcSummaries error (non-fatal):", recalcErr);
