@@ -237,19 +237,20 @@ export async function evaluateRules(
   }
 
   // ─── Rule D: Consistency ──────────────────────────────────────────────────
-  // No single day > X% of total profit
-  // Only meaningful when total profit is positive
+  // No single day > (consistency_threshold / 100) * profit_target
+  // Only meaningful when there is a profit target and positive days
 
   let consistency: RuleResult
 
-  if (stageRules.consistencyPct === null) {
+  if (stageRules.consistencyPct === null || stageRules.profitTarget === null) {
     consistency = naRule()
   } else {
     const threshold = stageRules.consistencyPct
-    const totalNetPnl = summaries.reduce((sum, s) => sum + parseFloat(s.net_pnl), 0)
+    const profitTarget = stageRules.profitTarget
+    const maxAllowedPnl = (threshold / 100) * Math.max(0, profitTarget)
     const positiveDays = summaries.filter((s) => parseFloat(s.net_pnl) > 0)
 
-    if (totalNetPnl <= 0 || positiveDays.length === 0) {
+    if (positiveDays.length === 0 || maxAllowedPnl <= 0) {
       consistency = {
         status: 'pending',
         current: 0,
@@ -259,10 +260,10 @@ export async function evaluateRules(
       }
     } else {
       const maxDayPnl = Math.max(...positiveDays.map((s) => parseFloat(s.net_pnl)))
-      const maxDayPct = (maxDayPnl / totalNetPnl) * 100
+      const maxDayPct = (maxDayPnl / profitTarget) * 100
       const roundedPct = Math.round(maxDayPct * 10) / 10
-      const progress = clamp(Math.round((maxDayPct / threshold) * 100), 0, 100)
-      const status: RuleStatus = maxDayPct > threshold ? 'violation' : 'pass'
+      const progress = clamp(Math.round((maxDayPnl / maxAllowedPnl) * 100), 0, 100)
+      const status: RuleStatus = maxDayPnl > maxAllowedPnl ? 'violation' : 'pass'
 
       consistency = {
         status,

@@ -4,6 +4,27 @@ Last updated: 2026-02-20
 
 ---
 
+## 2026-02-22 — Prop Firm Consistency Rule Fix ✅
+
+**Status**: Complete ✅
+**Commit**: fix(prop): consistency rule treats value as % not $
+
+### What was done
+
+#### Server: Consistency Rule Calculation (`src/lib/services/prop-rule-engine.ts`)
+- Fixed logic so the "Consistency" rule interprets the configured value as a percentage instead of a dollar amount.
+- The rule now dynamically calculates the maximum allowed single-day P&L by multiplying the configured percentage by the target profit (`(consistencyPct / 100) * Math.max(0, profitTarget)`).
+- Previous logic was statically comparing the single day's percentage out of the current total profit against the configuration, which did not align with actual Prop Firm parameters.
+
+#### Client: Template Editor UI (`src/components/prop/prop-client.tsx`)
+- Updated the label for the Consistency field to: `"Max % of profit target allowed in a single day"`.
+- Inserted a disabled `%` sign suffix inside the number input wrapper to clearly indicate the expected unit.
+- Applied `min={1}` and `max={100}` constraints to the input HTML element.
+
+**Verified by**: tsc ✅ | build ✅ | Browser Subagent ✅
+
+---
+
 ## 2026-02-20 — Full Data Connectivity After Import ✅
 
 **Status**: Complete ✅

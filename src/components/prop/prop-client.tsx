@@ -101,21 +101,21 @@ function RuleRow({ label, rule }: { label: string; rule: RuleResult }) {
     rule.status === 'violation'
       ? 'bg-[var(--color-red)]'
       : rule.status === 'warning'
-      ? 'bg-[var(--color-yellow)]'
-      : rule.direction === 'toward_limit'
-      ? 'bg-[var(--color-green)]'
-      : 'bg-[var(--color-accent-primary)]'
+        ? 'bg-[var(--color-yellow)]'
+        : rule.direction === 'toward_limit'
+          ? 'bg-[var(--color-green)]'
+          : 'bg-[var(--color-accent-primary)]'
 
   const currentLabel =
     rule.threshold === null
       ? 'N/A'
       : rule.direction === 'toward_limit'
-      ? `${fmt$(rule.current)} / ${fmt$(rule.threshold)}`
-      : label === 'Min Trading Days'
-      ? `${rule.current} / ${rule.threshold} days`
-      : label === 'Consistency'
-      ? `${rule.current}% / ${rule.threshold}%`
-      : `${fmt$(rule.current)} / ${fmt$(rule.threshold)}`
+        ? `${fmt$(rule.current)} / ${fmt$(rule.threshold)}`
+        : label === 'Min Trading Days'
+          ? `${rule.current} / ${rule.threshold} days`
+          : label === 'Consistency'
+            ? `${rule.current}% / ${rule.threshold}%`
+            : `${fmt$(rule.current)} / ${fmt$(rule.threshold)}`
 
   return (
     <div className="flex flex-col gap-1">
@@ -395,7 +395,7 @@ const RULE_FIELDS: Array<{ key: keyof StageRules; label: string; placeholder: st
   { key: 'maxDailyLoss', label: 'Max Daily Loss ($)', placeholder: '-1500' },
   { key: 'maxTrailingDrawdown', label: 'Max Trailing Drawdown ($)', placeholder: '-2000' },
   { key: 'minTradingDays', label: 'Min Trading Days', placeholder: '10' },
-  { key: 'consistencyPct', label: 'Consistency (%)', placeholder: '30' },
+  { key: 'consistencyPct', label: 'Max % of profit target allowed in a single day', placeholder: '30' },
 ]
 
 const inputCls =
@@ -459,7 +459,7 @@ function TemplateEditor({
     if (target < 0 || target >= stages.length) return
     setStages((prev) => {
       const next = [...prev]
-      ;[next[idx], next[target]] = [next[target], next[idx]]
+        ;[next[idx], next[target]] = [next[target], next[idx]]
       return next
     })
     setDirty(true)
@@ -608,13 +608,20 @@ function TemplateEditor({
                         <Toggle enabled={enabled} onToggle={() => toggleRule(idx, key)} />
                         <span className="text-xs text-[var(--muted-foreground)] flex-1">{label}</span>
                         {enabled ? (
-                          <input
-                            type="number"
-                            value={stage.rules[key] ?? ''}
-                            onChange={(e) => setRuleVal(idx, key, e.target.value)}
-                            placeholder={placeholder}
-                            className={cn(inputCls, 'w-24 text-right')}
-                          />
+                          <div className="relative flex items-center">
+                            <input
+                              type="number"
+                              min={key === 'consistencyPct' ? 1 : undefined}
+                              max={key === 'consistencyPct' ? 100 : undefined}
+                              value={stage.rules[key] ?? ''}
+                              onChange={(e) => setRuleVal(idx, key, e.target.value)}
+                              placeholder={placeholder}
+                              className={cn(inputCls, 'w-24 text-right', key === 'consistencyPct' && 'pr-6')}
+                            />
+                            {key === 'consistencyPct' && (
+                              <span className="absolute right-2 text-xs text-[var(--muted-foreground)] pointer-events-none">%</span>
+                            )}
+                          </div>
                         ) : (
                           <span className="w-24 text-right text-xs text-[var(--muted-foreground)]/40">N/A</span>
                         )}
@@ -1045,7 +1052,7 @@ export function PropClient() {
             setConfigureForm((f) => ({ ...f, startDate: data.earliestTradingDay! }))
           }
         })
-        .catch(() => {})
+        .catch(() => { })
     }
   }
 
@@ -1086,11 +1093,11 @@ export function PropClient() {
                 onConfigure={(ev) => {
                   const acct = ev.account
                     ? {
-                        id: ev.accountId,
-                        name: ev.account.name,
-                        broker: ev.account.broker,
-                        startingBalance: ev.account.startingBalance,
-                      }
+                      id: ev.accountId,
+                      name: ev.account.name,
+                      broker: ev.account.broker,
+                      startingBalance: ev.account.startingBalance,
+                    }
                     : { id: ev.accountId, name: 'Unknown', broker: '' }
                   openConfigureModal(acct, ev)
                 }}
