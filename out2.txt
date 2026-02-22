@@ -1,0 +1,18 @@
+
+=== Testing GitHub MCP ===
+
+(node:26420) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Initialized...
+Got tools list...
+Calling get_file_contents...
+Received call result.
+PASS: true
+OUTPUT:
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\n  \"name\": \"README.md\",\n  \"path\": \"README.md\",\n  \"sha\": \"e215bc4ccf138bbc38ad58ad57e92135484b3c0f\",\n  \"size\": 1450,\n  \"url\": \"https://api.github.com/repos/ckck4/trading-journal-os/contents/README.md?ref=main\",\n  \"html_url\": \"https://github.com/ckck4/trading-journal-os/blob/main/README.md\",\n  \"git_url\": \"https://api.github.com/repos/ckck4/trading-journal-os/git/blobs/e215bc4ccf138bbc38ad58ad57e92135484b3c0f\",\n  \"download_url\": \"https://raw.githubusercontent.com/ckck4/trading-journal-os/main/README.md\",\n  \"type\": \"file\",\n  \"content\": \"This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).\\n\\n## Getting Started\\n\\nFirst, run the development server:\\n\\n```bash\\nnpm run dev\\n# or\\nyarn dev\\n# or\\npnpm dev\\n# or\\nbun dev\\n```\\n\\nOpen [http://localhost:3000](http://localhost:30...
+
+Process exited with code null

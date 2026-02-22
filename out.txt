@@ -1,0 +1,9 @@
+=== Fetching tools for GitHub ===
+(node:38120) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+=== Testing GitHub ===
+PASS: false
+OUTPUT:
+Timeout waiting for MCP response
+
