@@ -21,6 +21,7 @@ type DailySummaryRow = {
  * Recalculates and upserts the daily_summaries row for a given user/account/day.
  * Pure server function — caller must ensure auth before calling.
  * Uses adminClient internally (bypasses RLS — user_id always set explicitly).
+ * Note: tradingDay MUST be a raw 'YYYY-MM-DD' postgres date string to prevent UTC timezone shift bugs.
  */
 export async function recalcSummaries(
   userId: string,
