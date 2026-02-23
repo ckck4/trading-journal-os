@@ -16,7 +16,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
         const adminClient = createAdminClient();
         const { data, error } = await adminClient
-            .from("payouts")
+            .from("finance_payouts")
             .update(body)
             .eq("id", id)
             .eq("user_id", user.id)
@@ -44,7 +44,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
         const adminClient = createAdminClient();
         const { error } = await adminClient
-            .from("payouts")
+            .from("finance_payouts")
             .delete()
             .eq("id", id)
             .eq("user_id", user.id);

@@ -15,7 +15,7 @@ export async function GET() {
         // Fetch all data needed
         const [expensesRes, payoutsRes, subsRes] = await Promise.all([
             adminClient.from("expenses").select("*").eq("user_id", user.id),
-            adminClient.from("payouts").select("*").eq("user_id", user.id),
+            adminClient.from("finance_payouts").select("*").eq("user_id", user.id),
             adminClient.from("subscriptions").select("*").eq("user_id", user.id).eq("is_active", true)
         ]);
 

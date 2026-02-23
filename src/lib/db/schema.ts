@@ -834,6 +834,19 @@ export const expenses = pgTable("expenses", {
     ...timestamps,
 });
 
+export const financePayouts = pgTable("finance_payouts", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+    accountId: uuid("account_id").references(() => accounts.id, { onDelete: "set null" }),
+    amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+    date: date("date").notNull(),
+    status: text("status").notNull(), // 'pending', 'received', 'rejected'
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const subscriptions = pgTable("subscriptions", {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id")

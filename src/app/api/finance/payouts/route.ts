@@ -12,7 +12,7 @@ export async function GET() {
 
         const adminClient = createAdminClient();
         const { data, error } = await adminClient
-            .from("payouts")
+            .from("finance_payouts")
             .select("*, accounts(name)")
             .eq("user_id", user.id)
             .order("date", { ascending: false });
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
 
         const adminClient = createAdminClient();
         const { data, error } = await adminClient
-            .from("payouts")
+            .from("finance_payouts")
             .insert({
                 user_id: user.id,
                 amount,
