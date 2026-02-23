@@ -1,6 +1,7 @@
 # API Status
 
 ## Recent Updates
+- **Phase 5 Finance API Implementation**: Completed implementation of all Finance Manager API routes (`/api/finance/expenses`, `/api/finance/subscriptions`, `/api/finance/payouts`, `/api/finance/overview`, `/api/finance/cashflow`, `/api/finance/settings`). The `overview` and `cashflow` endpoints contain complex server-side aggregations mapping expenses, subs, and payouts safely across rolling 6/12 month windows and YTD calculations.
 - **Phase 5 Foundation**: Added 5 new schema tables (`expenses`, `subscriptions`, `payouts`, `ledger_entries`, `finance_settings`) with RLS policies, created API route stubs for `/api/finance/*`, `/api/ledger/*`, and `/api/insights/*`, and updated sidebar navigation with placeholder pages.
 - **`runImport` Incorrect Account Recalc Fix**: Addressed a critical bug where imported CSVs recalculated PnL against an arbitrary cached/wrong account object (`c039...`) by completely refactoring Step 7.5 to directly select `trade_id` mapping out of `fills` to ensure strict 1:1 `accountId` assignment from verified trades. Corrupt `daily_summaries` were flushed and synced properly.
 - **`runImport` Cross-day PnL Recalc Fix**: Fixed a bug where `daily_summaries` was only recalculating the specific trading days present in an imported CSV. Now, `runImport` finds the earliest `trading_day` affected for an account and recalculates ALL subsequent days in chronological order, ensuring `cumulative_pnl` stays perfectly in sync across all dates.
