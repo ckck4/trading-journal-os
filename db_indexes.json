@@ -1,0 +1,38 @@
+[
+  {
+    "index_name": "daily_summaries_pkey",
+    "column_name": "id",
+    "is_unique": true,
+    "is_primary": true
+  },
+  {
+    "index_name": "daily_summaries_unique",
+    "column_name": "account_id",
+    "is_unique": true,
+    "is_primary": false
+  },
+  {
+    "index_name": "daily_summaries_unique",
+    "column_name": "trading_day",
+    "is_unique": true,
+    "is_primary": false
+  },
+  {
+    "index_name": "daily_summaries_unique",
+    "column_name": "user_id",
+    "is_unique": true,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_daily_summaries_day",
+    "column_name": "trading_day",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_daily_summaries_day",
+    "column_name": "user_id",
+    "is_unique": false,
+    "is_primary": false
+  }
+]
