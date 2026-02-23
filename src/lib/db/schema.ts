@@ -815,3 +815,68 @@ export const eventLog = pgTable(
         index("idx_event_log_entity").on(t.entityType, t.entityId),
     ]
 );
+
+// ============================================================
+// 27. Finance & Insights (Phase 5)
+// ============================================================
+export const expenses = pgTable("expenses", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+    amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+    category: text("category").notNull(),
+    vendor: text("vendor"),
+    description: text("description"),
+    date: date("date").notNull(),
+    tags: text("tags").array(),
+    isRecurring: boolean("is_recurring").default(false),
+    ...timestamps,
+});
+
+export const subscriptions = pgTable("subscriptions", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    provider: text("provider"),
+    amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+    billingCycle: text("billing_cycle").notNull(),
+    nextBillingDate: date("next_billing_date"),
+    category: text("category"),
+    isActive: boolean("is_active").default(true),
+    ...timestamps,
+});
+
+export const ledgerEntries = pgTable("ledger_entries", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+    description: text("description"),
+    category: text("category"),
+    date: date("date").notNull(),
+    source: text("source").default("manual"),
+    referenceId: uuid("reference_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const financeSettings = pgTable("finance_settings", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+        .notNull()
+        .unique()
+        .references(() => users.id, { onDelete: "cascade" }),
+    fiscalYearStart: integer("fiscal_year_start").notNull().default(1),
+    vendorPresets: text("vendor_presets").array(),
+    customTags: text("custom_tags").array(),
+    ...timestamps,
+});
+
+export type Expense = typeof expenses.$inferSelect;
+export type Subscription = typeof subscriptions.$inferSelect;
+export type LedgerEntry = typeof ledgerEntries.$inferSelect;
+export type FinanceSettings = typeof financeSettings.$inferSelect;

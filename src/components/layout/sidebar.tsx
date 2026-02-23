@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight,
   User,
+  Zap,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -31,16 +32,17 @@ export interface NavItem {
 
 const mainNavItems: NavItem[] = [
   { label: 'Command Center', icon: LayoutDashboard, href: '/' },
-  { label: 'Trade Journal',  icon: BookOpen,        href: '/journal' },
-  { label: 'Analytics Lab',  icon: BarChart2,       href: '/analytics' },
-  { label: 'Strategies',     icon: Layers,          href: '/strategies' },
-  { label: 'Prop Firm HQ',   icon: Building2,       href: '/prop' },
-  { label: 'Finance Manager',icon: DollarSign,      href: '/finance' },
-  { label: 'Business Ledger',icon: BookMarked,      href: '/ledger' },
-  { label: 'Grading',        icon: Award,           href: '/grading' },
-  { label: 'Leak Detector',  icon: Search,          href: '/leaks' },
-  { label: 'AI Coach',       icon: Bot,             href: '/coach' },
-  { label: 'Goals',          icon: Target,          href: '/goals' },
+  { label: 'Trade Journal', icon: BookOpen, href: '/journal' },
+  { label: 'Analytics Lab', icon: BarChart2, href: '/analytics' },
+  { label: 'Strategies', icon: Layers, href: '/strategies' },
+  { label: 'Prop Firm HQ', icon: Building2, href: '/prop' },
+  { label: 'Finance', icon: DollarSign, href: '/finance' },
+  { label: 'Ledger', icon: BookOpen, href: '/ledger' },
+  { label: 'Insights', icon: Zap, href: '/insights' },
+  { label: 'Grading', icon: Award, href: '/grading' },
+  { label: 'Leak Detector', icon: Search, href: '/leaks' },
+  { label: 'AI Coach', icon: Bot, href: '/coach' },
+  { label: 'Goals', icon: Target, href: '/goals' },
 ]
 
 interface SidebarProps {
@@ -138,8 +140,8 @@ function SidebarItem({ item, active, collapsed, variant = 'default' }: SidebarIt
         active
           ? 'bg-[var(--color-accent-muted)] text-[var(--sidebar-primary)] shadow-[inset_0_0_0_1px_var(--color-accent-muted)]'
           : variant === 'action'
-          ? 'text-[var(--sidebar-primary)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-primary)]'
-          : 'text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)]'
+            ? 'text-[var(--sidebar-primary)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-primary)]'
+            : 'text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)]'
       )}
     >
       <Icon
