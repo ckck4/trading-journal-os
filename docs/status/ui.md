@@ -489,3 +489,24 @@ Last updated: 2026-02-24
    - Removed standard `use-toast` dependence in favor of standard resilient alerts per system spec.
 
 **Verified by**: build ✅ | tsc --noEmit ✅ | browser_subagent ✅ | database `execute_sql` ✅
+
+---
+
+## Phase 6 � Business Ledger Page ?
+
+Last updated: 2026-02-24
+
+### Completed Components
+1. **API Endpoints**:
+   - `GET /api/ledger`: Built a unified aggregation endpoint fetching data from `trades`, `expenses`, `finance_payouts`, `subscriptions`, `ledger_entries`, and `prop_evaluations`. Computes 8 KPIs (Total Revenue, Total Expenses, Net Profit, ROI, Monthly Recurring, Total Funding, Funded Accounts, Payback Period) and 5 Prop Firm Funnel stats.
+   - `POST /api/ledger`: Handles manual entry creation.
+   - `PATCH /api/ledger/[id]` & `DELETE /api/ledger/[id]`: Manages editing and deletion of explicitly manual entries with Next.js 15 dynamic Route handler parsing (`await params`).
+2. **Business Ledger UI**:
+   - `src/components/ledger/ledger-client.tsx`: Implemented standard AppRouter `page.tsx` rendering a high-density financial dashboard.
+   - Features 8 KPI Cards with specialized Tailwind semantic colors (emerald/rose).
+   - Dynamic Prop Firm Lifecycle Funnel visualizing e-vals purchased down to funded accounts.
+   - Expense Breakdown Pie Chart via `recharts` with CustomTooltip component.
+   - Unified "All Entries" Table showcasing mixed origin data (trades, payouts, expenses, manual) sorted chronologically with categorized badge labeling.
+   - Add/Edit/Delete Modals hooked to `@tanstack/react-query` mutations, and CSV Export.
+
+**Verified by**: build ? | browser_subagent ?

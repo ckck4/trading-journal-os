@@ -1,14 +1,7 @@
-import { PlaceholderPage } from '@/components/ui/placeholder-page'
-import { Receipt } from 'lucide-react'
+import { LedgerClient } from "@/components/ledger/ledger-client";
 
-export const metadata = { title: 'Business Ledger' }
+export const metadata = { title: "Business Ledger | Trading Journal OS" };
 
 export default function LedgerPage() {
-  return (
-    <PlaceholderPage
-      title="Business Ledger"
-      description="Expense and revenue entries table, revenue vs expenses chart, ROI card, and monthly P&L statement."
-      icon={Receipt}
-    />
-  )
+  return <LedgerClient />;
 }
