@@ -191,7 +191,7 @@ export function OverviewTab() {
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2A2F3E" />
                                     <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                                     <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                                    <Tooltip content={<CustomTooltip />} />
+                                    <Tooltip content={<CustomTooltip />} wrapperStyle={{ outline: 'none' }} />
                                     <Bar dataKey="amount" name="Expenses" fill="#EF4444" radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
@@ -211,7 +211,7 @@ export function OverviewTab() {
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2A2F3E" />
                                     <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                                     <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                                    <Tooltip content={<CustomTooltip />} />
+                                    <Tooltip content={<CustomTooltip />} wrapperStyle={{ outline: 'none' }} />
                                     <Bar dataKey="amount" name="Revenue" fill="#22C55E" radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
@@ -235,7 +235,7 @@ export function OverviewTab() {
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2A2F3E" />
                                     <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                                     <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                                    <Tooltip content={<CustomTooltip />} />
+                                    <Tooltip content={<CustomTooltip />} wrapperStyle={{ outline: 'none' }} />
                                     <Line type="monotone" dataKey="amount" name="Net Profit" stroke="#3B82F6" strokeWidth={2} dot={{ r: 4, fill: '#3B82F6' }} />
                                 </LineChart>
                             </ResponsiveContainer>
@@ -272,6 +272,7 @@ export function OverviewTab() {
                                             border: '1px solid #2A2F3E',
                                             color: '#E8EAF0'
                                         }}
+                                        wrapperStyle={{ outline: 'none' }}
                                     />
                                 </PieChart>
                             </ResponsiveContainer>
