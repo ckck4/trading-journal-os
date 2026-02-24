@@ -5,6 +5,9 @@ import { OverviewTab } from "./overview-tab";
 import { ExpensesTab } from "./expenses-tab";
 import { SubscriptionsTab } from "./subscriptions-tab";
 import { PayoutsTab } from "./payouts-tab";
+import { CashFlowTab } from "./cashflow-tab";
+import { ReportsTab } from "./reports-tab";
+import { SettingsTab } from "./settings-tab";
 
 export function FinanceClient() {
     return (
@@ -46,13 +49,13 @@ export function FinanceClient() {
                 </TabsContent>
 
                 <TabsContent value="cashflow" className="space-y-4">
-                    <div className="text-muted-foreground text-sm">Cash Flow tab coming soon</div>
+                    <CashFlowTab />
                 </TabsContent>
                 <TabsContent value="reports" className="space-y-4">
-                    <div className="text-muted-foreground text-sm">Reports tab coming soon</div>
+                    <ReportsTab />
                 </TabsContent>
                 <TabsContent value="settings" className="space-y-4">
-                    <div className="text-muted-foreground text-sm">Settings tab coming soon</div>
+                    <SettingsTab />
                 </TabsContent>
             </Tabs>
         </div>

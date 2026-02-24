@@ -468,7 +468,24 @@ Last updated: 2026-02-24
 2. **Payouts Account Select Population**:
    - Fixed the empty dropdown in the Add Payout dialog on the `<PayoutsTab />` by correctly accessing `json.accounts` instead of `json.data` from the `/api/accounts` endpoint.
    - Added fallback `isLoading` and `empty` states for proper UI feedback.
-3. **Tooltip Styling**:
+### Tooltip Styling
    - Applied dark theme formatting `#14171E` background, `#2A2F3E` border, `#E8EAF0` text, and conditional positive/negative coloring (`#22C55E` / `#EF4444`) to chart tooltips within `src/components/finance/overview-tab.tsx`. 
 
 **Verified by**: build ✅ | tsc --noEmit ✅
+
+---
+
+## Phase 6 — Finance Manager Final Tabs (Cash Flow, Reports, Settings) ✅
+
+Last updated: 2026-02-24
+
+### Completed Components
+1. **Cash Flow Tab**:
+   - `src/components/finance/cashflow-tab.tsx`: Implements real-time analysis rendering Net Cash Position and burn rates. Subagent browser verified Sankey charts and bar charts layout.
+2. **Reports Tab**:
+   - `src/components/finance/reports-tab.tsx`: 4 robust performance report cards (Monthly, Yearly, Subscriptions, Prop Firm Profitability). Handles dynamic `generateHtml` for seamless print-ready layouts.
+3. **Settings Tab**:
+   - `src/components/finance/settings-tab.tsx`: Read and write configurations for `fiscal_year_start`, `vendor_presets`, and `custom_tags` via `/api/finance/settings`. Checked and confirmed persisted properly to Supabase.
+   - Removed standard `use-toast` dependence in favor of standard resilient alerts per system spec.
+
+**Verified by**: build ✅ | tsc --noEmit ✅ | browser_subagent ✅ | database `execute_sql` ✅
