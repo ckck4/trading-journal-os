@@ -453,3 +453,22 @@ Last updated: 2026-02-19
 **Verified by**: build ✅ (0 errors, 0 warnings, 25 files, 3726 insertions) | tsc --noEmit ✅ | browser ⚠️ (manual required) | DB query ⚠️ (manual required — run POST /api/analytics/recalc after importing data)
 
 **Next**: Phase 4 — Command Center + Prop Firm HQ. First action: run POST /api/analytics/recalc in browser to populate daily_summaries for existing import data.
+
+---
+
+## Phase 5 — Finance Hub UI Polish Fixes ✅
+
+Last updated: 2026-02-24
+
+### Completed Polish Tasks
+1. **Recurring Expense to Subscription**:
+   - Added `addToSubscriptions` state to the `<ExpensesTab />` form.
+   - When marking an expense as recurring, users now see a conditional "Also add to subscriptions" checkbox.
+   - On submission, if checked, it automatically hits `POST /api/finance/subscriptions` to duplicate the entry in the subscriptions list under the appropriate vendor/category.
+2. **Payouts Account Select Population**:
+   - Fixed the empty dropdown in the Add Payout dialog on the `<PayoutsTab />` by correctly accessing `json.accounts` instead of `json.data` from the `/api/accounts` endpoint.
+   - Added fallback `isLoading` and `empty` states for proper UI feedback.
+3. **Tooltip Styling**:
+   - Applied dark theme formatting `#14171E` background, `#2A2F3E` border, `#E8EAF0` text, and conditional positive/negative coloring (`#22C55E` / `#EF4444`) to chart tooltips within `src/components/finance/overview-tab.tsx`. 
+
+**Verified by**: build ✅ | tsc --noEmit ✅
