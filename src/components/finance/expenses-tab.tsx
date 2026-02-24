@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2, Check, Loader2, Plus } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Expense = {
     id: string;
@@ -41,6 +42,7 @@ export function ExpensesTab() {
     const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
     const [tags, setTags] = useState("");
     const [isRecurring, setIsRecurring] = useState(false);
+    const [addToSubscriptions, setAddToSubscriptions] = useState(false);
 
     const { data: expenses, isLoading } = useQuery({
         queryKey: ["finance", "expenses"],
@@ -123,7 +125,26 @@ export function ExpensesTab() {
         if (selectedExpense) {
             updateMutation.mutate({ id: selectedExpense.id, data: payload });
         } else {
-            createMutation.mutate(payload);
+            createMutation.mutate(payload, {
+                onSuccess: () => {
+                    if (isRecurring && addToSubscriptions) {
+                        fetch("/api/finance/subscriptions", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                name: vendor || description || "New Subscription",
+                                provider: vendor || null,
+                                amount: parseFloat(amount),
+                                billing_cycle: "monthly",
+                                category,
+                                is_active: true
+                            }),
+                        }).then(() => {
+                            queryClient.invalidateQueries({ queryKey: ["finance", "subscriptions"] });
+                        }).catch(console.error);
+                    }
+                }
+            });
         }
     };
 
@@ -136,6 +157,7 @@ export function ExpensesTab() {
         setDate(exp.date);
         setTags(exp.tags?.join(", ") || "");
         setIsRecurring(exp.is_recurring);
+        setAddToSubscriptions(false);
         setIsDialogOpen(true);
     };
 
@@ -148,6 +170,7 @@ export function ExpensesTab() {
         setDate(new Date().toISOString().split("T")[0]);
         setTags("");
         setIsRecurring(false);
+        setAddToSubscriptions(false);
         setIsDialogOpen(true);
     };
 
@@ -296,9 +319,21 @@ export function ExpensesTab() {
                                     </datalist>
                                 )}
                             </div>
-                            <div className="flex items-center space-x-2">
-                                <Switch id="recurring" checked={isRecurring} onCheckedChange={setIsRecurring} />
-                                <Label htmlFor="recurring">Recurring Expense</Label>
+                            <div className="space-y-4">
+                                <div className="flex items-center space-x-2">
+                                    <Switch id="recurring" checked={isRecurring} onCheckedChange={setIsRecurring} />
+                                    <Label htmlFor="recurring">Recurring Expense</Label>
+                                </div>
+                                {isRecurring && !selectedExpense && (
+                                    <div className="flex items-center space-x-2 ml-6">
+                                        <Checkbox
+                                            id="add-to-sub"
+                                            checked={addToSubscriptions}
+                                            onCheckedChange={(checked) => setAddToSubscriptions(checked as boolean)}
+                                        />
+                                        <Label htmlFor="add-to-sub" className="text-muted-foreground font-normal">Also add to subscriptions</Label>
+                                    </div>
+                                )}
                             </div>
                             <Button type="submit" className="w-full" disabled={isSubmitting}>
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

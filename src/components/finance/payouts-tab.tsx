@@ -54,13 +54,13 @@ export function PayoutsTab() {
         }
     });
 
-    const { data: accounts } = useQuery({
+    const { data: accounts, isLoading: isLoadingAccounts } = useQuery({
         queryKey: ["accounts"],
         queryFn: async () => {
             const res = await fetch("/api/accounts");
             if (!res.ok) return [];
             const json = await res.json();
-            return (json.data || []) as Account[];
+            return (json.accounts || []) as Account[];
         }
     });
 
@@ -252,9 +252,15 @@ export function PayoutsTab() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="none">-- None --</SelectItem>
-                                            {accounts?.map((acc: Account) => (
-                                                <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>
-                                            ))}
+                                            {isLoadingAccounts ? (
+                                                <SelectItem value="loading" disabled>Loading accounts...</SelectItem>
+                                            ) : accounts?.length === 0 ? (
+                                                <SelectItem value="empty" disabled>No accounts found</SelectItem>
+                                            ) : (
+                                                accounts?.map((acc: Account) => (
+                                                    <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>
+                                                ))
+                                            )}
                                         </SelectContent>
                                     </Select>
                                 </div>

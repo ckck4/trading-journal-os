@@ -43,19 +43,22 @@ export function OverviewTab() {
     };
 
     const CustomTooltip = ({ active, payload, label }: any) => {
-        if (active && payload && payload.length) {
-            return (
-                <div className="bg-[#14171E] border border-[#2A2F3E] rounded-md p-3 shadow-md">
-                    <p className="text-sm font-medium mb-1">{label}</p>
-                    {payload.map((pl: any, i: number) => (
-                        <p key={i} className="text-sm font-mono" style={{ color: pl.color }}>
-                            {pl.name}: {formatCurrency(pl.value)}
-                        </p>
-                    ))}
-                </div>
-            );
-        }
-        return null;
+        if (!active || !payload?.length) return null;
+        const value = payload[0]?.value ?? 0;
+        const color = value >= 0 ? '#22C55E' : '#EF4444';
+        return (
+            <div style={{
+                background: '#14171E',
+                border: '1px solid #2A2F3E',
+                borderRadius: '6px',
+                padding: '8px 12px'
+            }}>
+                <p style={{ color: '#E8EAF0', marginBottom: 4 }}>{label}</p>
+                <p style={{ color, fontFamily: 'JetBrains Mono' }}>
+                    ${Math.abs(value).toFixed(2)}
+                </p>
+            </div>
+        );
     };
 
     const COLORS = ['#3B82F6', '#22C55E', '#EF4444', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4'];
@@ -263,7 +266,13 @@ export function OverviewTab() {
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
-                                    <Tooltip content={<CustomTooltip />} />
+                                    <Tooltip
+                                        contentStyle={{
+                                            background: '#14171E',
+                                            border: '1px solid #2A2F3E',
+                                            color: '#E8EAF0'
+                                        }}
+                                    />
                                 </PieChart>
                             </ResponsiveContainer>
                         ) : (
