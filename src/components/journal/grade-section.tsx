@@ -1,319 +1,310 @@
 'use client'
 
-import { useState } from 'react'
-import { TrendingUp, Star } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { TrendingUp, Check } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
-import type { Rubric, RubricCategory, TradeGrade } from '@/types/grading'
-
-// ─── Live score computation ────────────────────────────────────────────────────
-
-function computeLiveScore(
-  scores: Record<string, number>,
-  categories: RubricCategory[]
-): { numeric: number; letter: string } {
-  if (!categories.length) return { numeric: 0, letter: 'D' }
-  let weightedSum = 0
-  let totalWeight = 0
-  for (const cat of categories) {
-    const score = scores[cat.id] ?? 0
-    const maxScore = cat.maxScore > 0 ? cat.maxScore : 1
-    weightedSum += (score / maxScore) * cat.weight
-    totalWeight += cat.weight
-  }
-  const numeric = totalWeight > 0 ? (weightedSum / totalWeight) * 100 : 0
-  const rounded = Math.round(numeric * 10) / 10
-  const letter = rounded >= 90 ? 'A' : rounded >= 75 ? 'B' : rounded >= 60 ? 'C' : 'D'
-  return { numeric: rounded, letter }
-}
-
-// ─── Letter grade badge style ──────────────────────────────────────────────────
-
-function letterGradeBadgeClass(grade: string): string {
-  if (grade === 'A') return 'bg-[var(--color-green-muted)] text-[var(--color-green)]'
-  if (grade === 'B') return 'bg-[var(--color-blue)]/15 text-[var(--color-blue)]'
-  if (grade === 'C') return 'bg-[var(--color-yellow-muted)] text-[var(--color-yellow)]'
-  return 'bg-[var(--color-red-muted)] text-[var(--color-red)]'
-}
-
-// ─── Grade Editor ──────────────────────────────────────────────────────────────
-
-function GradeEditor({
-  rubric,
-  initialScores,
-  isSaving,
-  onSave,
-  onCancel,
-}: {
-  rubric: Rubric
-  initialScores: Record<string, number>
-  isSaving: boolean
-  onSave: (scores: Record<string, number>) => void
-  onCancel: () => void
-}) {
-  const [scores, setScores] = useState<Record<string, number>>(initialScores)
-
-  const live = computeLiveScore(scores, rubric.categories)
-
-  return (
-    <div className="space-y-4">
-      {/* Live score preview */}
-      <div className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-[var(--secondary)]">
-        <span
-          className={cn(
-            'inline-flex items-center justify-center w-9 h-9 rounded-lg text-base font-bold',
-            letterGradeBadgeClass(live.letter)
-          )}
-        >
-          {live.letter}
-        </span>
-        <div>
-          <span className="text-lg font-mono font-semibold text-[var(--foreground)]">
-            {live.numeric.toFixed(1)}
-          </span>
-          <span className="text-sm text-[var(--muted-foreground)]"> / 100</span>
-        </div>
-      </div>
-
-      {/* Category sliders */}
-      <div className="space-y-3">
-        {rubric.categories.map((cat) => {
-          const value = scores[cat.id] ?? 0
-          return (
-            <div key={cat.id} className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-[var(--foreground)]">{cat.name}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-[var(--muted-foreground)]">
-                    {cat.weight}% weight
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      min={0}
-                      max={cat.maxScore}
-                      value={value}
-                      onChange={(e) => {
-                        const n = Math.min(cat.maxScore, Math.max(0, parseInt(e.target.value) || 0))
-                        setScores((prev) => ({ ...prev, [cat.id]: n }))
-                      }}
-                      className="w-12 text-right bg-[var(--secondary)] text-sm font-mono text-[var(--foreground)] border border-[var(--border)] rounded px-1.5 py-0.5 focus:outline-none focus:border-[var(--ring)]"
-                    />
-                    <span className="text-[11px] text-[var(--muted-foreground)]">
-                      /{cat.maxScore}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={cat.maxScore}
-                step={1}
-                value={value}
-                onChange={(e) =>
-                  setScores((prev) => ({ ...prev, [cat.id]: parseInt(e.target.value) }))
-                }
-                className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
-                style={{
-                  background: `linear-gradient(to right, var(--color-accent-primary) ${(value / cat.maxScore) * 100}%, var(--border) ${(value / cat.maxScore) * 100}%)`,
-                  accentColor: 'var(--color-accent-primary)',
-                }}
-              />
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center gap-2 pt-1">
-        <button
-          onClick={() => onSave(scores)}
-          disabled={isSaving}
-          className="flex-1 py-2 rounded-md bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          {isSaving ? 'Saving…' : 'Save Grade'}
-        </button>
-        <button
-          onClick={onCancel}
-          className="px-3 py-2 rounded-md border border-[var(--border)] text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  )
-}
-
-// ─── Main GradeSection ─────────────────────────────────────────────────────────
+import type { TradeGrade, Confluence } from '@/types/grading'
 
 interface GradeSectionProps {
   tradeId: string
+  strategyId: string
 }
 
-export function GradeSection({ tradeId }: GradeSectionProps) {
-  const queryClient = useQueryClient()
-  const [editorOpen, setEditorOpen] = useState(false)
+const GRADES = ['A+', 'A', 'B+', 'B', 'B-', 'C'] as const
+type GradeValue = typeof GRADES[number]
 
-  // Fetch default rubric
-  const { data: rubricsData } = useQuery<{ rubrics: Rubric[] }>({
-    queryKey: ['grading-rubrics'],
-    queryFn: () => fetch('/api/grading/rubrics').then((r) => r.json()),
+function getGradeColor(grade: string, isSelected: boolean): string {
+  if (!isSelected) return 'bg-[var(--secondary)] text-[var(--muted-foreground)] border-transparent'
+  switch (grade) {
+    case 'A+': return 'bg-[#22C55E] text-white border-transparent shadow-[#22C55E]/20 shadow-lg' // green
+    case 'A': return 'bg-[#22C55E]/90 text-white border-transparent' // lighter green
+    case 'B+': return 'bg-[#3B82F6] text-white border-transparent' // blue
+    case 'B': return 'bg-[#E8EAF0] text-black border-transparent' // neutral
+    case 'B-': return 'bg-[#F59E0B] text-white border-transparent' // amber
+    case 'C': return 'bg-[#EF4444] text-white border-transparent' // red
+    default: return 'bg-[var(--primary)] text-white border-transparent'
+  }
+}
+
+export function GradeSection({ tradeId, strategyId }: GradeSectionProps) {
+  const queryClient = useQueryClient()
+
+  // 1. Fetch Grade
+  const { data: gradeData, isLoading: isLoadingGrade } = useQuery<{ data: TradeGrade & { confluence_ids: string[] } }>({
+    queryKey: ['trade-grade', tradeId],
+    queryFn: async () => {
+      const res = await fetch(`/api/trades/${tradeId}/grade`)
+      if (!res.ok) throw new Error('Failed to fetch trade grade')
+      return res.json()
+    },
+    staleTime: 0, // Always fetch fresh to ensure sync with panel open
+  })
+
+  // 2. Fetch Confluences
+  const { data: confluencesData, isLoading: isLoadingConfluences } = useQuery<{ data: Confluence[] }>({
+    queryKey: ['confluences', strategyId],
+    queryFn: async () => {
+      if (!strategyId) return { data: [] }
+      const res = await fetch(`/api/confluences?strategy_id=${strategyId}`)
+      if (!res.ok) throw new Error('Failed to fetch confluences')
+      return res.json()
+    },
+    enabled: !!strategyId,
     staleTime: 5 * 60 * 1000,
   })
-  const defaultRubric = rubricsData?.rubrics?.find((r) => r.isDefault) ?? null
 
-  // Fetch existing grade
-  const { data: gradeData, refetch: refetchGrade } = useQuery<{ grade: TradeGrade | null }>({
-    queryKey: ['trade-grade', tradeId],
-    queryFn: () =>
-      fetch(`/api/trades/${tradeId}/grade`).then((r) => {
-        if (!r.ok) return { grade: null }
-        return r.json()
-      }),
-    staleTime: 30_000,
+  const confluences = confluencesData?.data || []
+  const existingGrade = gradeData?.data
+
+  // Form State
+  const [grade, setGrade] = useState<GradeValue | null>(null)
+  const [scores, setScores] = useState({
+    risk_management_score: '',
+    execution_score: '',
+    discipline_score: '',
+    strategy_score: '',
+    efficiency_score: ''
   })
-  const existingGrade = gradeData?.grade ?? null
+  const [notes, setNotes] = useState('')
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set())
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
-  // Save mutation
-  const gradeMutation = useMutation({
-    mutationFn: async (scores: Record<string, number>) => {
-      if (!defaultRubric) throw new Error('No rubric')
+  // Pre-fill from existing grade
+  useEffect(() => {
+    if (existingGrade) {
+      setGrade(existingGrade.grade as GradeValue)
+      setScores({
+        risk_management_score: existingGrade.riskManagementScore?.toString() || '',
+        execution_score: existingGrade.executionScore?.toString() || '',
+        discipline_score: existingGrade.disciplineScore?.toString() || '',
+        strategy_score: existingGrade.strategyScore?.toString() || '',
+        efficiency_score: existingGrade.efficiencyScore?.toString() || ''
+      })
+      setNotes(existingGrade.notes || '')
+      if (existingGrade.confluence_ids) {
+        setCheckedIds(new Set(existingGrade.confluence_ids))
+      }
+    } else {
+      // Reset if no grade
+      setGrade(null)
+      setScores({
+        risk_management_score: '',
+        execution_score: '',
+        discipline_score: '',
+        strategy_score: '',
+        efficiency_score: ''
+      })
+      setNotes('')
+      setCheckedIds(new Set())
+    }
+  }, [existingGrade])
+
+  // Save Mutation
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!grade) throw new Error("Grade is required")
+      const payload = {
+        grade,
+        risk_management_score: scores.risk_management_score ? parseFloat(scores.risk_management_score) : null,
+        execution_score: scores.execution_score ? parseFloat(scores.execution_score) : null,
+        discipline_score: scores.discipline_score ? parseFloat(scores.discipline_score) : null,
+        strategy_score: scores.strategy_score ? parseFloat(scores.strategy_score) : null,
+        efficiency_score: scores.efficiency_score ? parseFloat(scores.efficiency_score) : null,
+        notes: notes || null,
+        confluence_ids: Array.from(checkedIds)
+      }
       const res = await fetch(`/api/trades/${tradeId}/grade`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ categoryScores: scores, rubricId: defaultRubric.id }),
+        body: JSON.stringify(payload)
       })
-      if (!res.ok) throw new Error('Grade save failed')
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Failed to save grade')
+      }
       return res.json()
     },
+    onMutate: () => setSaveStatus('saving'),
     onSuccess: () => {
-      refetchGrade()
-      setEditorOpen(false)
+      setSaveStatus('saved')
+      // Invalidate related lists
       queryClient.invalidateQueries({ queryKey: ['trades'] })
+      queryClient.invalidateQueries({ queryKey: ['grading-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['trade-grade', tradeId] })
+      setTimeout(() => setSaveStatus('idle'), 2000)
     },
+    onError: () => {
+      setSaveStatus('error')
+      setTimeout(() => setSaveStatus('idle'), 3000)
+    }
   })
 
-  // ── No rubric configured ──
-  if (!defaultRubric) {
-    return (
-      <div
-        className={cn(
-          'flex items-start gap-3 rounded-md border border-dashed border-[var(--border)]',
-          'px-4 py-3 bg-[var(--secondary)]/40'
-        )}
-      >
-        <TrendingUp size={16} className="text-[var(--muted-foreground)] shrink-0 mt-0.5" />
-        <div className="text-sm text-[var(--muted-foreground)]">
-          No grading rubric configured.{' '}
-          <span className="text-[var(--primary)]">
-            Set a default rubric in Settings → Grading.
-          </span>
-        </div>
-      </div>
-    )
+  const toggleConfluence = (id: string) => {
+    const next = new Set(checkedIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setCheckedIds(next)
   }
 
-  // ── Editor open ──
-  if (editorOpen) {
-    const initialScores: Record<string, number> = existingGrade
-      ? existingGrade.categoryScores
-      : Object.fromEntries(
-          defaultRubric.categories.map((c) => [c.id, Math.floor(c.maxScore / 2)])
-        )
-
-    return (
-      <GradeEditor
-        rubric={defaultRubric}
-        initialScores={initialScores}
-        isSaving={gradeMutation.isPending}
-        onSave={(scores) => gradeMutation.mutate(scores)}
-        onCancel={() => setEditorOpen(false)}
-      />
-    )
+  const handleScoreChange = (field: keyof typeof scores, val: string) => {
+    // Only allow numbers, max 100
+    if (val !== '' && (isNaN(Number(val)) || Number(val) < 0 || Number(val) > 100)) return
+    setScores(prev => ({ ...prev, [field]: val }))
   }
 
-  // ── Has existing grade, editor closed ──
-  if (existingGrade) {
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center gap-3">
-          <span
-            className={cn(
-              'inline-flex items-center justify-center w-12 h-12 rounded-xl text-2xl font-bold',
-              letterGradeBadgeClass(existingGrade.letterGrade)
-            )}
-          >
-            {existingGrade.letterGrade}
-          </span>
-          <div>
-            <div className="text-lg font-mono font-semibold text-[var(--foreground)]">
-              {existingGrade.numericScore.toFixed(1)}
-              <span className="text-sm text-[var(--muted-foreground)] font-normal"> / 100</span>
-            </div>
-            <div className="text-[11px] text-[var(--muted-foreground)] flex items-center gap-1">
-              <Star size={9} className="text-[var(--primary)]" />
-              {defaultRubric.name}
-            </div>
-          </div>
-          <button
-            onClick={() => setEditorOpen(true)}
-            className="ml-auto text-xs px-2.5 py-1.5 rounded border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--primary)] transition-colors"
-          >
-            Edit
-          </button>
-        </div>
-
-        {/* Category score breakdown */}
-        {defaultRubric.categories.length > 0 && (
-          <div className="space-y-1.5">
-            {defaultRubric.categories.map((cat) => {
-              const score = existingGrade.categoryScores[cat.id] ?? 0
-              const pct = cat.maxScore > 0 ? (score / cat.maxScore) * 100 : 0
-              return (
-                <div key={cat.id} className="space-y-0.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-[var(--muted-foreground)]">{cat.name}</span>
-                    <span className="text-[11px] font-mono text-[var(--foreground)]">
-                      {score}/{cat.maxScore}
-                    </span>
-                  </div>
-                  <div className="h-1 w-full rounded-full bg-[var(--secondary)]">
-                    <div
-                      className="h-1 rounded-full transition-all"
-                      style={{
-                        width: `${pct}%`,
-                        background: 'var(--color-accent-primary)',
-                      }}
-                    />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-    )
+  if (isLoadingGrade) {
+    return <div className="text-sm text-[var(--muted-foreground)]">Loading grade...</div>
   }
 
-  // ── No grade yet, editor closed ──
   return (
-    <div
-      className={cn(
-        'flex items-center justify-between rounded-md border border-dashed border-[var(--border)]',
-        'px-4 py-3 bg-[var(--secondary)]/40'
-      )}
-    >
-      <div className="flex items-center gap-2">
-        <TrendingUp size={15} className="text-[var(--muted-foreground)] shrink-0" />
-        <span className="text-sm text-[var(--muted-foreground)]">Not graded yet</span>
+    <div className="space-y-6">
+
+      {/* ── Confluences ── */}
+      <div className="space-y-3">
+        <h4 className="text-xs font-semibold uppercase text-[var(--muted-foreground)] tracking-wide">
+          Confluences Present
+        </h4>
+
+        {!strategyId ? (
+          <div className="text-sm px-3 py-2.5 bg-[var(--color-blue)]/10 text-[var(--color-blue)] rounded border border-[var(--color-blue)]/20">
+            Tag this trade with a strategy to see confluences.
+          </div>
+        ) : isLoadingConfluences ? (
+          <div className="text-sm text-[var(--muted-foreground)]">Loading confluences...</div>
+        ) : confluences.length === 0 ? (
+          <div className="text-sm px-3 py-2.5 bg-[var(--secondary)] text-[var(--muted-foreground)] rounded border border-[var(--border)]">
+            No confluences defined for this strategy yet. Add them in the Strategies page.
+          </div>
+        ) : (
+          <div className="space-y-1 bg-[var(--secondary)]/30 rounded-md border border-[var(--border)] overflow-hidden">
+            {confluences.map(ci => (
+              <label
+                key={ci.id}
+                className="flex items-center justify-between px-3 py-2 hover:bg-[var(--secondary)] cursor-pointer transition-colors border-b border-[var(--border)] last:border-0 group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-4 h-4 rounded-sm border flex items-center justify-center transition-colors",
+                    checkedIds.has(ci.id)
+                      ? "bg-[var(--primary)] border-[var(--primary)] text-white"
+                      : "border-[var(--muted-foreground)]/40 bg-transparent group-hover:border-[var(--muted-foreground)]"
+                  )}>
+                    {checkedIds.has(ci.id) && <Check size={12} strokeWidth={3} />}
+                  </div>
+                  <span className={cn(
+                    "text-sm transition-colors",
+                    checkedIds.has(ci.id) ? "text-[var(--foreground)]" : "text-[var(--muted-foreground)]"
+                  )}>
+                    {ci.name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] uppercase text-[var(--muted-foreground)] px-1.5 py-0.5 rounded bg-[var(--background)] border border-[var(--border)]">
+                    {ci.category}
+                  </span>
+                </div>
+              </label>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* ── Category Scores ── */}
+      <div className="space-y-3">
+        <h4 className="text-xs font-semibold uppercase text-[var(--muted-foreground)] tracking-wide">
+          Category Scores
+        </h4>
+        <div className="grid grid-cols-1 gap-1.5">
+          {Object.entries({
+            risk_management_score: 'Risk Management',
+            execution_score: 'Execution',
+            discipline_score: 'Discipline',
+            strategy_score: 'Strategy',
+            efficiency_score: 'Efficiency'
+          }).map(([key, label]) => (
+            <div key={key} className="flex items-center justify-between px-3 py-1.5 bg-[var(--secondary)]/50 rounded-md border border-[var(--border)]">
+              <span className="text-sm font-medium text-[var(--foreground)]">{label}</span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={scores[key as keyof typeof scores]}
+                  onChange={(e) => handleScoreChange(key as keyof typeof scores, e.target.value)}
+                  placeholder="—"
+                  className={cn(
+                    "w-12 h-7 bg-[var(--background)] border border-[var(--border)] rounded text-right px-2 font-mono text-xs text-[var(--foreground)]",
+                    "focus:border-[var(--ring)] focus:ring-1 focus:ring-[var(--ring)] focus:outline-none placeholder:text-[var(--muted-foreground)]/50"
+                  )}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Grade Selector ── */}
+      <div className="space-y-3">
+        <h4 className="text-xs font-semibold uppercase text-[var(--muted-foreground)] tracking-wide">
+          Grade
+        </h4>
+        <div className="flex gap-1">
+          {GRADES.map((g) => {
+            const isSelected = grade === g
+            return (
+              <button
+                key={g}
+                onClick={() => setGrade(g)}
+                className={cn(
+                  "flex-1 py-2 rounded-md font-bold text-sm border transition-all duration-200",
+                  getGradeColor(g, isSelected),
+                  !isSelected && "hover:bg-[var(--secondary)]/80 hover:text-[var(--foreground)] border-[var(--border)]"
+                )}
+              >
+                {g}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Notes ── */}
+      <div className="space-y-3">
+        <h4 className="text-xs font-semibold uppercase text-[var(--muted-foreground)] tracking-wide">
+          Notes
+        </h4>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Grading notes..."
+          rows={3}
+          className={cn(
+            'w-full resize-none rounded-md border border-[var(--border)]',
+            'bg-[var(--secondary)]/50 text-[var(--foreground)]',
+            'px-3 py-2 text-sm placeholder:text-[var(--muted-foreground)]',
+            'focus:outline-none focus:ring-1 focus:ring-[var(--ring)] focus:border-[var(--ring)]',
+            'transition-colors duration-150'
+          )}
+        />
+      </div>
+
+      {/* ── Save ── */}
       <button
-        onClick={() => setEditorOpen(true)}
-        className="text-xs px-2.5 py-1.5 rounded bg-[var(--primary)] text-white hover:opacity-90 transition-opacity"
+        onClick={() => saveMutation.mutate()}
+        disabled={saveStatus === 'saving' || !grade}
+        className={cn(
+          "w-full py-2.5 rounded-md text-sm font-semibold transition-all",
+          grade
+            ? "bg-[var(--primary)] text-white hover:opacity-90 shadow-sm"
+            : "bg-[var(--secondary)] text-[var(--muted-foreground)] cursor-not-allowed border border-[var(--border)]"
+        )}
       >
-        Grade this trade
+        {saveStatus === 'saving' ? 'Saving...' :
+          saveStatus === 'saved' ? 'Grade saved ✓' :
+            saveStatus === 'error' ? 'Error saving grade' : 'Save Grade'}
       </button>
+
     </div>
   )
 }

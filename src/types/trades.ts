@@ -36,6 +36,7 @@ export type Trade = {
   feesTotal: string
   netPnl: string
   rMultiple: string | null
+  grade: string | null
   strategyId: string | null
   outcome: string | null
   notes: string | null

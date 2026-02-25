@@ -44,6 +44,7 @@ type RawTradeRow = {
   fees_total: string
   net_pnl: string
   r_multiple: string | null
+  grade: string | null
   strategy_id: string | null
   outcome: string | null
   notes: string | null
@@ -99,6 +100,7 @@ export async function GET(request: NextRequest) {
         fees_total,
         net_pnl,
         r_multiple,
+        grade,
         strategy_id,
         outcome,
         notes,
@@ -149,6 +151,7 @@ export async function GET(request: NextRequest) {
       feesTotal: t.fees_total,
       netPnl: t.net_pnl,
       rMultiple: t.r_multiple,
+      grade: t.grade,
       strategyId: t.strategy_id,
       outcome: t.outcome,
       notes: t.notes,

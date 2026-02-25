@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import type { RubricCategory } from '@/types/grading'
+import type { RubricCategory } from '@/types/grading-legacy'
 
 type RawCategoryRow = {
   id: string

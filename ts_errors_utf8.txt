@@ -1,0 +1,11 @@
+﻿src/app/api/grading/categories/[id]/route.ts(4,15): error TS2305: Module '"@/types/grading"' has no exported member 'RubricCategory'.
+src/app/api/grading/rubrics/[id]/categories/route.ts(4,15): error TS2305: Module '"@/types/grading"' has no exported member 'RubricCategory'.
+src/app/api/grading/rubrics/route.ts(4,15): error TS2305: Module '"@/types/grading"' has no exported member 'Rubric'.
+src/app/api/grading/rubrics/route.ts(4,23): error TS2305: Module '"@/types/grading"' has no exported member 'RubricCategory'.
+src/app/api/trades/route.ts(131,11): error TS2322: Type '{ id: string; accountId: string; instrumentId: string | null; rootSymbol: string; tradingDay: string; entryTime: string; exitTime: string | null; durationSeconds: number | null; sessionId: string | null; ... 17 more ...; tags: { ...; }[]; }[]' is not assignable to type 'Trade[]'.
+  Property 'grade' is missing in type '{ id: string; accountId: string; instrumentId: string | null; rootSymbol: string; tradingDay: string; entryTime: string; exitTime: string | null; durationSeconds: number | null; sessionId: string | null; ... 17 more ...; tags: { ...; }[]; }' but required in type 'Trade'.
+src/components/settings/grading-settings-client.tsx(7,15): error TS2305: Module '"@/types/grading"' has no exported member 'Rubric'.
+src/components/settings/grading-settings-client.tsx(7,23): error TS2305: Module '"@/types/grading"' has no exported member 'RubricCategory'.
+src/components/settings/grading-settings-client.tsx(288,35): error TS7006: Parameter 'cat' implicitly has an 'any' type.
+src/lib/services/grading.ts(1,15): error TS2305: Module '"@/types/grading"' has no exported member 'RubricCategory'.
+src/lib/services/grading.ts(1,31): error TS2305: Module '"@/types/grading"' has no exported member 'ComputeGradeResult'.

@@ -598,7 +598,7 @@ export function TradeDetailPanel({ trade, onClose }: TradeDetailPanelProps) {
               {/* ── Grade ─────────────────────────────────────────────────── */}
               <section>
                 <SectionHeader title="Grade" />
-                <GradeSection tradeId={trade.id} />
+                <GradeSection tradeId={trade.id} strategyId={strategyId} />
               </section>
 
             </div>

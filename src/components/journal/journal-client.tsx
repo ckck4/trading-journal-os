@@ -137,6 +137,31 @@ function OutcomeBadge({ outcome, isOpen }: { outcome: string | null; isOpen: boo
   )
 }
 
+function GradeBadge({ grade }: { grade: string | null }) {
+  if (!grade) return null
+
+  const getGradeStyle = (g: string) => {
+    switch (g) {
+      case 'A+': return 'bg-[#22C55E]/15 text-[#22C55E] border-[#22C55E]/30'
+      case 'A': return 'bg-[#22C55E]/10 text-[#22C55E] border-[#22C55E]/20'
+      case 'B+': return 'bg-[#3B82F6]/15 text-[#3B82F6] border-[#3B82F6]/30'
+      case 'B': return 'bg-[#E8EAF0]/20 text-[var(--foreground)] border-[#E8EAF0]/40'
+      case 'B-': return 'bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/30'
+      case 'C': return 'bg-[#EF4444]/15 text-[#EF4444] border-[#EF4444]/30'
+      default: return 'bg-[var(--muted)] text-[var(--muted-foreground)] border-[var(--border)]'
+    }
+  }
+
+  return (
+    <span className={cn(
+      "inline-flex items-center justify-center rounded px-1.5 py-0.5 text-[10px] font-bold font-mono border",
+      getGradeStyle(grade)
+    )}>
+      {grade}
+    </span>
+  )
+}
+
 // ─── Loading skeleton ────────────────────────────────────────────────────────
 
 function Skeleton({ className }: { className?: string }) {
@@ -262,9 +287,10 @@ function TradeRow({ trade, isSelected, onClick, onInfoClick }: TradeRowProps) {
         {trade.fillsCount} fill{trade.fillsCount !== 1 ? 's' : ''}
       </span>
 
-      {/* Tags */}
-      {trade.tags.length > 0 && (
-        <div className="hidden lg:flex items-center gap-1 overflow-hidden">
+      {/* Tags & Grade */}
+      {(trade.tags.length > 0 || trade.grade) && (
+        <div className="hidden lg:flex items-center gap-1.5 overflow-hidden">
+          {trade.grade && <GradeBadge grade={trade.grade} />}
           {trade.tags.slice(0, 2).map((tag) => (
             <span
               key={tag.id}

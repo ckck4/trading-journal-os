@@ -1,4 +1,4 @@
-import type { RubricCategory, ComputeGradeResult } from '@/types/grading'
+import type { RubricCategory, ComputeGradeResult } from '@/types/grading-legacy'
 
 /**
  * Converts a numeric score (0-100) to a letter grade.
