@@ -145,6 +145,9 @@ export const strategies = pgTable(
             .references(() => users.id, { onDelete: "cascade" }),
         name: varchar("name", { length: 100 }).notNull(),
         description: text("description"),
+        status: text("status").notNull().default("active"),
+        entryRules: text("entry_rules"),
+        invalidationConditions: text("invalidation_conditions"),
         isActive: boolean("is_active").notNull().default(true),
         version: integer("version").notNull().default(1),
         ...timestamps,
@@ -893,3 +896,4 @@ export type Expense = typeof expenses.$inferSelect;
 export type Subscription = typeof subscriptions.$inferSelect;
 export type LedgerEntry = typeof ledgerEntries.$inferSelect;
 export type FinanceSettings = typeof financeSettings.$inferSelect;
+export type Strategy = typeof strategies.$inferSelect;

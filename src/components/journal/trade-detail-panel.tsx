@@ -201,16 +201,17 @@ export function TradeDetailPanel({ trade, onClose }: TradeDetailPanelProps) {
   }, [isOpen, onClose])
 
   // Strategies query
-  const { data: strategiesData } = useQuery({
+  const { data: strategiesData, isLoading } = useQuery({
     queryKey: ['strategies'],
     queryFn: async () => {
       const res = await fetch('/api/strategies')
       if (!res.ok) throw new Error('Failed to fetch strategies')
-      return res.json() as Promise<{ strategies: Strategy[] }>
+      return res.json() as Promise<{ data: Strategy[] }>
     },
     staleTime: 5 * 60 * 1000,
   })
-  const strategies = strategiesData?.strategies ?? []
+  const strategies = strategiesData?.data ?? []
+  const isLoadingStrategies = isLoading
 
   // PATCH mutation
   const patchMutation = useMutation({
@@ -229,6 +230,8 @@ export function TradeDetailPanel({ trade, onClose }: TradeDetailPanelProps) {
     onSuccess: () => {
       // Invalidate trades list so it refetches with updated data
       queryClient.invalidateQueries({ queryKey: ['trades'] })
+      // Invalidate strategies so stats update in real time
+      queryClient.invalidateQueries({ queryKey: ['strategies'] })
     },
   })
 
@@ -481,11 +484,15 @@ export function TradeDetailPanel({ trade, onClose }: TradeDetailPanelProps) {
                         )}
                       >
                         <option value="">No strategy</option>
-                        {strategies.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.name}
-                          </option>
-                        ))}
+                        {isLoadingStrategies ? (
+                          <option disabled>Loading...</option>
+                        ) : (
+                          strategies.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name}
+                            </option>
+                          ))
+                        )}
                       </select>
                       <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]">
                         <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
@@ -574,10 +581,10 @@ export function TradeDetailPanel({ trade, onClose }: TradeDetailPanelProps) {
                         style={
                           tag.color
                             ? {
-                                borderColor: tag.color + '60',
-                                backgroundColor: tag.color + '20',
-                                color: tag.color,
-                              }
+                              borderColor: tag.color + '60',
+                              backgroundColor: tag.color + '20',
+                              color: tag.color,
+                            }
                             : undefined
                         }
                       >
