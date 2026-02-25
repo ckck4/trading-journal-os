@@ -1,14 +1,7 @@
-import { PlaceholderPage } from '@/components/ui/placeholder-page'
-import { Layers } from 'lucide-react'
+import { StrategiesClient } from '@/components/strategies/strategies-client'
 
-export const metadata = { title: 'Strategies' }
+export const metadata = { title: 'Strategies | Trading Journal OS' }
 
 export default function StrategiesPage() {
-  return (
-    <PlaceholderPage
-      title="Strategies"
-      description="Strategy card grid with win rate badge, trade count, and mini sparkline. Click to open playbook detail."
-      icon={Layers}
-    />
-  )
+  return <StrategiesClient />
 }
