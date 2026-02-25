@@ -38,7 +38,6 @@ const mainNavItems: NavItem[] = [
   { label: 'Prop Firm HQ', icon: Building2, href: '/prop' },
   { label: 'Finance', icon: DollarSign, href: '/finance' },
   { label: 'Ledger', icon: BookOpen, href: '/ledger' },
-  { label: 'Insights', icon: Zap, href: '/insights' },
   { label: 'Grading', icon: Award, href: '/grading' },
   { label: 'Leak Detector', icon: Search, href: '/leaks' },
   { label: 'AI Coach', icon: Bot, href: '/coach' },
