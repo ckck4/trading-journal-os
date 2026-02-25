@@ -1,6 +1,7 @@
 # API Status
 
 ## Recent Updates
+- **Phase 7 Grading Foundation**: Created database tables `confluences`, `trade_confluences`, and `trade_grades`. Added backend implementation for `/api/confluences`, `/api/confluences/[id]`, `/api/trades/[id]/grade`, and `/api/grading/summary` to support grading logic.
 - **Phase 6 Goals & Habits**: Created database tables `goals`, `habits`, and `habit_completions`. Added backend implementation for `/api/goals` and `/api/habits` offering end-to-end CRUD operations synced directly via the Supabase Admin client to respect user_id constraints. Implemented complex habit streaking metrics and goal progress logic dynamically calculated inside the API.
 - **Phase 6 Strategies Foundation**: Implemented `strategies` schema migration with new `entry_rules` and `invalidation_conditions` columns. Created `GET`, `POST`, `PATCH`, and `DELETE` endpoints for `/api/strategies`, including profit calculations (`tradeCount`, `totalPnl`, `winRate`, `profitFactor`). Updated `PATCH /api/trades/[id]` to process `strategy_id` assignments. Added Strategy selection dropdown to the trade detail panel.
 - **Phase 5 Finance API Implementation**: Completed implementation of all Finance Manager API routes (`/api/finance/expenses`, `/api/finance/subscriptions`, `/api/finance/payouts`, `/api/finance/overview`, `/api/finance/cashflow`, `/api/finance/settings`). The `overview` and `cashflow` endpoints contain complex server-side aggregations mapping expenses, subs, and payouts safely across rolling 6/12 month windows and YTD calculations.

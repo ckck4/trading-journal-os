@@ -1,265 +1,153 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { computeGrade } from '@/lib/services/grading'
-import type { RubricCategory, TradeGrade, Rubric } from '@/types/grading'
+import { z } from 'zod'
 
-type RawCategoryRow = {
-  id: string
-  rubric_id: string
-  name: string
-  weight: string
-  max_score: number
-  sort_order: number
-  description: string | null
-}
+const GradeSchema = z.object({
+  grade: z.enum(['A+', 'A', 'B+', 'B', 'B-', 'C']),
+  risk_management_score: z.number().optional().nullable(),
+  execution_score: z.number().optional().nullable(),
+  discipline_score: z.number().optional().nullable(),
+  strategy_score: z.number().optional().nullable(),
+  efficiency_score: z.number().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  confluence_ids: z.array(z.string().uuid()).optional().default([]),
+})
 
-type RawGradeRow = {
-  id: string
-  trade_id: string
-  rubric_id: string
-  category_scores: Record<string, number>
-  numeric_score: string
-  letter_grade: string
-  confluence_results: unknown[]
-  notes: string | null
-  created_at: string
-  updated_at: string
-}
-
-type RawRubricRow = {
-  id: string
-  user_id: string
-  name: string
-  is_default: boolean
-  created_at: string
-  updated_at: string
-}
-
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: Request, props: { params: Promise<{ id: string }> }) {
   try {
+    const params = await props.params;
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user?.id) {
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id: tradeId } = await params
-    const adminClient = createAdminClient()
+    const tradeId = params.id
 
-    // Verify trade ownership
-    const { data: tradeRow, error: tradeError } = await adminClient
-      .from('trades')
-      .select('id, user_id')
-      .eq('id', tradeId)
-      .single()
-
-    if (tradeError || !tradeRow) {
-      return NextResponse.json({ error: 'Trade not found' }, { status: 404 })
-    }
-    if ((tradeRow as unknown as { user_id: string }).user_id !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // Fetch grade
-    const { data: gradeRow, error: gradeError } = await adminClient
+    // Fetch trade grade
+    const { data: gradeData, error: gradeError } = await supabase
       .from('trade_grades')
-      .select('id, trade_id, rubric_id, category_scores, numeric_score, letter_grade, confluence_results, notes, created_at, updated_at')
+      .select('*')
       .eq('trade_id', tradeId)
+      .eq('user_id', user.id)
       .maybeSingle()
 
     if (gradeError) {
-      console.error('[trades/grade GET] grade error:', gradeError)
-      return NextResponse.json({ error: 'Failed to fetch grade' }, { status: 500 })
+      console.error('Error fetching trade grade:', gradeError)
+      return NextResponse.json({ error: 'Failed to fetch trade grade' }, { status: 500 })
     }
 
-    if (!gradeRow) {
-      return NextResponse.json({ grade: null })
+    // Fetch selected confluences
+    const { data: confluencesData, error: confError } = await supabase
+      .from('trade_confluences')
+      .select('confluence_id')
+      .eq('trade_id', tradeId)
+      .eq('user_id', user.id)
+
+    if (confError) {
+      console.error('Error fetching trade confluences:', confError)
+      return NextResponse.json({ error: 'Failed to fetch trade confluences' }, { status: 500 })
     }
 
-    const grade = gradeRow as unknown as RawGradeRow
-
-    // Fetch rubric + categories for context
-    const { data: rubricRow } = await adminClient
-      .from('grading_rubrics')
-      .select('id, user_id, name, is_default, created_at, updated_at')
-      .eq('id', grade.rubric_id)
-      .single()
-
-    const { data: categoryRows } = await adminClient
-      .from('grading_rubric_categories')
-      .select('id, rubric_id, name, weight, max_score, sort_order, description')
-      .eq('rubric_id', grade.rubric_id)
-      .order('sort_order', { ascending: true })
-
-    const rubric: Rubric | undefined = rubricRow
-      ? (() => {
-          const raw = rubricRow as unknown as RawRubricRow
-          return {
-            id: raw.id,
-            userId: raw.user_id,
-            name: raw.name,
-            isDefault: raw.is_default,
-            createdAt: raw.created_at,
-            updatedAt: raw.updated_at,
-            categories: ((categoryRows ?? []) as RawCategoryRow[]).map((c) => ({
-              id: c.id,
-              rubricId: c.rubric_id,
-              name: c.name,
-              weight: parseFloat(c.weight ?? '0'),
-              maxScore: c.max_score,
-              sortOrder: c.sort_order,
-              description: c.description,
-            })),
-          }
-        })()
-      : undefined
-
-    const result: TradeGrade = {
-      id: grade.id,
-      tradeId: grade.trade_id,
-      rubricId: grade.rubric_id,
-      categoryScores: grade.category_scores ?? {},
-      numericScore: parseFloat(grade.numeric_score ?? '0'),
-      letterGrade: grade.letter_grade,
-      confluenceResults: grade.confluence_results ?? [],
-      notes: grade.notes,
-      createdAt: grade.created_at,
-      updatedAt: grade.updated_at,
-      rubric,
-    }
-
-    return NextResponse.json({ grade: result })
-  } catch (error) {
-    console.error('[trades/grade GET] error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({
+      data: {
+        ...(gradeData || {}),
+        confluence_ids: confluencesData ? confluencesData.map((c: any) => c.confluence_id) : []
+      }
+    })
+  } catch (error: any) {
+    console.error('Failed to get grade:', error)
+    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: Request, props: { params: Promise<{ id: string }> }) {
   try {
+    const params = await props.params;
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user?.id) {
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id: tradeId } = await params
+    const tradeId = params.id
+    const body = await req.json()
+    const parsed = GradeSchema.safeParse(body)
+
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid payload', details: parsed.error.issues }, { status: 400 })
+    }
+
+    const {
+      grade, risk_management_score, execution_score, discipline_score,
+      strategy_score, efficiency_score, notes, confluence_ids
+    } = parsed.data
+
     const adminClient = createAdminClient()
 
-    // Verify trade ownership
-    const { data: tradeRow, error: tradeError } = await adminClient
-      .from('trades')
-      .select('id, user_id')
-      .eq('id', tradeId)
-      .single()
-
-    if (tradeError || !tradeRow) {
-      return NextResponse.json({ error: 'Trade not found' }, { status: 404 })
-    }
-    if ((tradeRow as unknown as { user_id: string }).user_id !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    let body: { categoryScores?: Record<string, number>; rubricId?: string; notes?: string }
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
-    }
-
-    if (!body.rubricId) {
-      return NextResponse.json({ error: 'rubricId is required' }, { status: 400 })
-    }
-    if (!body.categoryScores || typeof body.categoryScores !== 'object') {
-      return NextResponse.json({ error: 'categoryScores is required' }, { status: 400 })
-    }
-
-    // Verify rubric belongs to user
-    const { data: rubricRow, error: rubricError } = await adminClient
-      .from('grading_rubrics')
-      .select('id, user_id')
-      .eq('id', body.rubricId)
-      .single()
-
-    if (rubricError || !rubricRow) {
-      return NextResponse.json({ error: 'Rubric not found' }, { status: 404 })
-    }
-    if ((rubricRow as unknown as { user_id: string }).user_id !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // Fetch rubric categories to compute grade server-side
-    const { data: categoryRows, error: catsError } = await adminClient
-      .from('grading_rubric_categories')
-      .select('id, rubric_id, name, weight, max_score, sort_order, description')
-      .eq('rubric_id', body.rubricId)
-      .order('sort_order', { ascending: true })
-
-    if (catsError) {
-      console.error('[trades/grade POST] categories error:', catsError)
-      return NextResponse.json({ error: 'Failed to fetch rubric categories' }, { status: 500 })
-    }
-
-    const categories: RubricCategory[] = ((categoryRows ?? []) as RawCategoryRow[]).map((c) => ({
-      id: c.id,
-      rubricId: c.rubric_id,
-      name: c.name,
-      weight: parseFloat(c.weight ?? '0'),
-      maxScore: c.max_score,
-      sortOrder: c.sort_order,
-      description: c.description,
-    }))
-
-    // Compute grade server-side — never trust client-computed scores
-    const gradeResult = computeGrade(body.categoryScores, categories)
-
-    // Upsert — unique constraint is on trade_id
-    const { data: upserted, error: upsertError } = await adminClient
+    // 1. Upsert trade_grades
+    const { data: upsertedGrade, error: gradeError } = await adminClient
       .from('trade_grades')
-      .upsert(
-        {
-          trade_id: tradeId,
-          rubric_id: body.rubricId,
-          category_scores: gradeResult.categoryScores,
-          numeric_score: gradeResult.numericScore.toString(),
-          letter_grade: gradeResult.letterGrade,
-          confluence_results: [],
-          notes: body.notes ?? null,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'trade_id' }
-      )
-      .select('id, trade_id, rubric_id, category_scores, numeric_score, letter_grade, created_at, updated_at')
+      .upsert({
+        user_id: user.id,
+        trade_id: tradeId,
+        grade,
+        risk_management_score,
+        execution_score,
+        discipline_score,
+        strategy_score,
+        efficiency_score,
+        notes,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'trade_id' })
+      .select()
       .single()
 
-    if (upsertError) {
-      console.error('[trades/grade POST] upsert error:', upsertError)
-      return NextResponse.json({ error: 'Failed to save grade' }, { status: 500 })
-    }
+    if (gradeError) throw gradeError
 
-    const raw = upserted as unknown as RawGradeRow
+    // 2. Update trades.grade column
+    const { error: tradeUpdateError } = await adminClient
+      .from('trades')
+      .update({ grade })
+      .eq('id', tradeId)
+      .eq('user_id', user.id)
+
+    if (tradeUpdateError) throw tradeUpdateError
+
+    // 3. Replace trade_confluences
+    // First delete existing
+    await adminClient
+      .from('trade_confluences')
+      .delete()
+      .eq('trade_id', tradeId)
+      .eq('user_id', user.id)
+
+    // Then insert new if any
+    if (confluence_ids && confluence_ids.length > 0) {
+      const inserts = confluence_ids.map(id => ({
+        user_id: user.id,
+        trade_id: tradeId,
+        confluence_id: id
+      }))
+
+      const { error: confInsertError } = await adminClient
+        .from('trade_confluences')
+        .insert(inserts)
+
+      if (confInsertError) throw confInsertError
+    }
 
     return NextResponse.json({
-      grade: {
-        id: raw.id,
-        tradeId: raw.trade_id,
-        rubricId: raw.rubric_id,
-        categoryScores: raw.category_scores,
-        numericScore: parseFloat(raw.numeric_score ?? '0'),
-        letterGrade: raw.letter_grade,
-        createdAt: raw.created_at,
-        updatedAt: raw.updated_at,
-      },
+      data: {
+        ...upsertedGrade,
+        confluence_ids
+      }
     })
-  } catch (error) {
-    console.error('[trades/grade POST] error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Failed to save grade:', error)
+    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })
   }
 }

@@ -285,6 +285,7 @@ export const trades = pgTable(
 
         // Outcome
         outcome: varchar("outcome", { length: 10 }),
+        grade: text("grade"),
 
         // Notes
         notes: text("notes"),
@@ -415,27 +416,65 @@ export const gradingRubricCategories = pgTable("grading_rubric_categories", {
 });
 
 // ============================================================
-// 13. Trade Grades
+// 13. Trade Grading (Phase 7)
 // ============================================================
+export const confluences = pgTable("confluences", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+    strategyId: uuid("strategy_id")
+        .notNull()
+        .references(() => strategies.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    weight: numeric("weight", { precision: 5, scale: 2 }).notNull().default("1.0"),
+    category: text("category").notNull().default("Execution"),
+    ...timestamps,
+});
+
+export const tradeConfluences = pgTable(
+    "trade_confluences",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+        userId: uuid("user_id")
+            .notNull()
+            .references(() => users.id, { onDelete: "cascade" }),
+        tradeId: uuid("trade_id")
+            .notNull()
+            .references(() => trades.id, { onDelete: "cascade" }),
+        confluenceId: uuid("confluence_id")
+            .notNull()
+            .references(() => confluences.id, { onDelete: "cascade" }),
+        createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => [unique("trade_confluences_trade_confluence").on(t.tradeId, t.confluenceId)]
+);
+
 export const tradeGrades = pgTable(
     "trade_grades",
     {
         id: uuid("id").primaryKey().defaultRandom(),
+        userId: uuid("user_id")
+            .notNull()
+            .references(() => users.id, { onDelete: "cascade" }),
         tradeId: uuid("trade_id")
             .notNull()
             .references(() => trades.id, { onDelete: "cascade" }),
-        rubricId: uuid("rubric_id")
-            .notNull()
-            .references(() => gradingRubrics.id),
-        categoryScores: jsonb("category_scores").notNull().default("[]"),
-        numericScore: numeric("numeric_score", { precision: 5, scale: 2 }).notNull(),
-        letterGrade: varchar("letter_grade", { length: 2 }).notNull(),
-        confluenceResults: jsonb("confluence_results").default("[]"),
+        grade: text("grade").notNull(),
+        riskManagementScore: numeric("risk_management_score", { precision: 5, scale: 2 }),
+        executionScore: numeric("execution_score", { precision: 5, scale: 2 }),
+        disciplineScore: numeric("discipline_score", { precision: 5, scale: 2 }),
+        strategyScore: numeric("strategy_score", { precision: 5, scale: 2 }),
+        efficiencyScore: numeric("efficiency_score", { precision: 5, scale: 2 }),
         notes: text("notes"),
         ...timestamps,
     },
     (t) => [unique("trade_grades_trade_id").on(t.tradeId)]
 );
+
+export type Confluence = typeof confluences.$inferSelect;
+export type TradeConfluence = typeof tradeConfluences.$inferSelect;
+export type TradeGrade = typeof tradeGrades.$inferSelect;
 
 // ============================================================
 // 14. Grade Roll-ups (materialized/cached)
