@@ -34,12 +34,12 @@ const mainNavItems: NavItem[] = [
   { label: 'Command Center', icon: LayoutDashboard, href: '/' },
   { label: 'Trade Journal', icon: BookOpen, href: '/journal' },
   { label: 'Analytics Lab', icon: BarChart2, href: '/analytics' },
+  { label: 'Grading', icon: Target, href: '/grading' },
   { label: 'Prop Firm HQ', icon: Building2, href: '/prop' },
   { label: 'Strategies', icon: BookMarked, href: '/strategies' },
   { label: 'Goals', icon: Target, href: '/goals' },
   { label: 'Finance', icon: DollarSign, href: '/finance' },
   { label: 'Ledger', icon: BookOpen, href: '/ledger' },
-  { label: 'Grading', icon: Award, href: '/grading' },
   { label: 'Leak Detector', icon: Search, href: '/leaks' },
   { label: 'AI Coach', icon: Bot, href: '/coach' },
 ]

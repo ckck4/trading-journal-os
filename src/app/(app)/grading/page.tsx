@@ -1,14 +1,14 @@
-import { PlaceholderPage } from '@/components/ui/placeholder-page'
-import { Award } from 'lucide-react'
+import { GradingClient } from '@/components/grading/grading-client'
 
-export const metadata = { title: 'Grading Overview' }
+export const metadata = {
+  title: 'Grading | Trading Journal OS',
+  description: 'Your performance scorecards calculated from actual trades',
+}
 
 export default function GradingPage() {
   return (
-    <PlaceholderPage
-      title="Grading Overview"
-      description="Daily, weekly, and monthly average grade roll-ups, distribution chart, and grade trend over time."
-      icon={Award}
-    />
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <GradingClient />
+    </div>
   )
 }
