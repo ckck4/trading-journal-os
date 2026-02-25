@@ -148,6 +148,7 @@ export const strategies = pgTable(
         status: text("status").notNull().default("active"),
         entryRules: text("entry_rules"),
         invalidationConditions: text("invalidation_conditions"),
+        gradingRules: jsonb("grading_rules").notNull().default("[]"),
         isActive: boolean("is_active").notNull().default(true),
         version: integer("version").notNull().default(1),
         ...timestamps,

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns'
+import Link from 'next/link'
 import { Target, Download, Settings } from 'lucide-react'
 import { Line, LineChart, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, XAxis, YAxis, Tooltip, Area, AreaChart, Bar, BarChart } from 'recharts'
 import { Button } from '@/components/ui/button'
@@ -80,7 +81,6 @@ const getOverallScore = (trade: TradeGrade) => {
 
 export function GradingClient() {
     const [weights, setWeights] = useState<CategoryWeights>(DEFAULT_WEIGHTS)
-    const [weightsDialogOpen, setWeightsDialogOpen] = useState(false)
     const [activeTab, setActiveTab] = useState<'today' | 'week' | 'month' | 'lifetime'>('today')
 
     // Load weights from local storage
@@ -287,9 +287,11 @@ export function GradingClient() {
                     <p className="text-[var(--muted-foreground)]">Your performance scorecards calculated from actual trades.</p>
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
-                    <Button variant="outline" onClick={() => setWeightsDialogOpen(true)} className="flex-1 sm:flex-none">
-                        <Settings className="w-4 h-4 mr-2" /> Customize Weights
-                    </Button>
+                    <Link href="/grading/configure" className="flex-1 sm:flex-none">
+                        <Button variant="outline" className="w-full">
+                            <Settings className="w-4 h-4 mr-2" /> Customize & Configure
+                        </Button>
+                    </Link>
                     <Button variant="outline" onClick={exportCSV} className="flex-1 sm:flex-none">
                         <Download className="w-4 h-4 mr-2" /> Export Report
                     </Button>
@@ -495,17 +497,7 @@ export function GradingClient() {
                 </div>
             </div>
 
-            {/* Weights Dialog */}
-            <WeightsDialog
-                open={weightsDialogOpen}
-                onOpenChange={setWeightsDialogOpen}
-                weights={weights}
-                onSave={(w: CategoryWeights) => {
-                    setWeights(w)
-                    localStorage.setItem('grading-weights', JSON.stringify(w))
-                    setWeightsDialogOpen(false)
-                }}
-            />
+            {/* Weights Configure Link is in Header now */}
         </div>
     )
 }
@@ -584,63 +576,4 @@ function CategoryRow({ name, score, weight }: { name: string, score: number, wei
     )
 }
 
-function WeightsDialog({ open, onOpenChange, weights, onSave }: any) {
-    const [localWeights, setLocalWeights] = useState<CategoryWeights>(weights)
 
-    useEffect(() => {
-        if (open) setLocalWeights(weights)
-    }, [open, weights])
-
-    const total = Object.values(localWeights).reduce((a, b) => a + (Number(b) || 0), 0)
-    const isValid = total === 100
-
-    const handleChange = (key: keyof CategoryWeights, val: string) => {
-        setLocalWeights((prev: CategoryWeights) => ({
-            ...prev,
-            [key]: val === '' ? 0 : Number(val)
-        }))
-    }
-
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle>Customize Category Weights</DialogTitle>
-                    <DialogDescription>
-                        Weights must add up to 100%. These local settings dictate your final overall grade calculations.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                    {[
-                        { k: 'risk_management', label: 'Risk Management' },
-                        { k: 'execution', label: 'Execution' },
-                        { k: 'discipline', label: 'Discipline' },
-                        { k: 'strategy', label: 'Strategy' },
-                        { k: 'efficiency', label: 'Efficiency' }
-                    ].map(({ k, label }) => (
-                        <div key={k} className="flex items-center justify-between">
-                            <Label>{label}</Label>
-                            <div className="flex items-center gap-2">
-                                <Input
-                                    type="number"
-                                    value={localWeights[k as keyof CategoryWeights] || ''}
-                                    onChange={(e) => handleChange(k as keyof CategoryWeights, e.target.value)}
-                                    className="w-20 text-right font-mono"
-                                    min="0"
-                                    max="100"
-                                />
-                                <span className="text-[var(--muted-foreground)]">%</span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-                <DialogFooter className="sm:justify-between items-center sm:items-center">
-                    <div className={cn("text-sm font-semibold font-mono", isValid ? "text-[#22C55E]" : "text-[#EF4444]")}>
-                        Total: {total}%
-                    </div>
-                    <Button disabled={!isValid} onClick={() => onSave(localWeights)}>Save changes</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
-}

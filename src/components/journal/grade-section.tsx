@@ -6,6 +6,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import type { TradeGrade, Confluence } from '@/types/grading'
 
+type GradingRule = {
+  grade: 'A+' | 'A' | 'B+' | 'B' | 'B-' | 'C'
+  type: 'specific' | 'threshold'
+  required_confluence_ids?: string[]
+  min_count?: number
+}
+
 interface GradeSectionProps {
   tradeId: string
   strategyId: string
@@ -57,8 +64,22 @@ export function GradeSection({ tradeId, strategyId }: GradeSectionProps) {
   const confluences = confluencesData?.data || []
   const existingGrade = gradeData?.data
 
+  // 3. Fetch Strategy Rules
+  const { data: strategyData } = useQuery<{ data: { grading_rules: GradingRule[] } }>({
+    queryKey: ['strategy', strategyId],
+    queryFn: async () => {
+      if (!strategyId) return { data: { grading_rules: [] } }
+      const res = await fetch(`/api/strategies/${strategyId}`)
+      if (!res.ok) throw new Error('Failed to fetch strategy')
+      return res.json()
+    },
+    enabled: !!strategyId,
+    staleTime: 5 * 60 * 1000,
+  })
+
   // Form State
   const [grade, setGrade] = useState<GradeValue | null>(null)
+  const [autoGraded, setAutoGraded] = useState(false)
   const [scores, setScores] = useState({
     risk_management_score: '',
     execution_score: '',
@@ -145,6 +166,32 @@ export function GradeSection({ tradeId, strategyId }: GradeSectionProps) {
     if (next.has(id)) next.delete(id)
     else next.add(id)
     setCheckedIds(next)
+
+    // Evaluate Auto-grading
+    const rules = strategyData?.data?.grading_rules || []
+    if (rules.length > 0) {
+      let matchedGrade: GradeValue | null = null
+      for (const rule of rules) {
+        if (rule.type === 'specific' && rule.required_confluence_ids) {
+          const hasAll = rule.required_confluence_ids.every((cid: string) => next.has(cid))
+          if (hasAll) {
+            matchedGrade = rule.grade as GradeValue
+            break
+          }
+        } else if (rule.type === 'threshold' && rule.min_count !== undefined) {
+          if (next.size >= rule.min_count) {
+            matchedGrade = rule.grade as GradeValue
+            break
+          }
+        }
+      }
+      if (matchedGrade) {
+        setGrade(matchedGrade)
+        setAutoGraded(true)
+      } else {
+        setAutoGraded(false)
+      }
+    }
   }
 
   const handleScoreChange = (field: keyof typeof scores, val: string) => {
@@ -255,7 +302,10 @@ export function GradeSection({ tradeId, strategyId }: GradeSectionProps) {
             return (
               <button
                 key={g}
-                onClick={() => setGrade(g)}
+                onClick={() => {
+                  setGrade(g)
+                  setAutoGraded(false)
+                }}
                 className={cn(
                   "flex-1 py-2 rounded-md font-bold text-sm border transition-all duration-200",
                   getGradeColor(g, isSelected),
@@ -267,6 +317,11 @@ export function GradeSection({ tradeId, strategyId }: GradeSectionProps) {
             )
           })}
         </div>
+        {autoGraded && (
+          <p className="text-[10px] text-[var(--muted-foreground)] text-center mt-1 animate-in fade-in slide-in-from-top-1">
+            Auto-graded · tap to override
+          </p>
+        )}
       </div>
 
       {/* ── Notes ── */}
