@@ -639,26 +639,7 @@ export const businessEntries = pgTable("business_entries", {
     ...timestamps,
 });
 
-// ============================================================
-// 20. Goals
-// ============================================================
-export const goals = pgTable("goals", {
-    id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id")
-        .notNull()
-        .references(() => users.id, { onDelete: "cascade" }),
-    name: varchar("name", { length: 200 }).notNull(),
-    goalType: varchar("goal_type", { length: 20 }).notNull(),
-    metric: varchar("metric", { length: 50 }).notNull(),
-    targetValue: numeric("target_value", { precision: 14, scale: 4 }).notNull(),
-    targetOperator: varchar("target_operator", { length: 5 }).notNull().default(">="),
-    period: varchar("period", { length: 20 }).notNull(),
-    isActive: boolean("is_active").notNull().default(true),
-    currentValue: numeric("current_value", { precision: 14, scale: 4 }),
-    currentStreak: integer("current_streak").notNull().default(0),
-    bestStreak: integer("best_streak").notNull().default(0),
-    ...timestamps,
-});
+// Old goals table removed to favor Phase 6 definition at the bottom of the file
 
 // ============================================================
 // 21. Routines
@@ -897,3 +878,56 @@ export type Subscription = typeof subscriptions.$inferSelect;
 export type LedgerEntry = typeof ledgerEntries.$inferSelect;
 export type FinanceSettings = typeof financeSettings.$inferSelect;
 export type Strategy = typeof strategies.$inferSelect;
+
+// ============================================================
+// 28. Goals & Habits (Phase 6)
+// ============================================================
+export const goals = pgTable("goals", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    description: text("description"),
+    goalType: text("goal_type").notNull().default("performance"),
+    metric: text("metric"),
+    unit: text("unit"),
+    targetValue: numeric("target_value", { precision: 10, scale: 2 }).notNull(),
+    currentValue: numeric("current_value", { precision: 10, scale: 2 }).notNull().default("0"),
+    deadline: date("deadline"),
+    status: text("status").notNull().default("active"),
+    ...timestamps,
+});
+
+export const habits = pgTable("habits", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    frequency: text("frequency").notNull().default("daily"),
+    category: text("category").notNull().default("preparation"),
+    isActive: boolean("is_active").default(true),
+    ...timestamps,
+});
+
+export const habitCompletions = pgTable(
+    "habit_completions",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+        userId: uuid("user_id")
+            .notNull()
+            .references(() => users.id, { onDelete: "cascade" }),
+        habitId: uuid("habit_id")
+            .notNull()
+            .references(() => habits.id, { onDelete: "cascade" }),
+        completedDate: date("completed_date").notNull(),
+        createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => [unique("habit_completions_habit_date").on(t.habitId, t.completedDate)]
+);
+
+export type Goal = typeof goals.$inferSelect;
+export type Habit = typeof habits.$inferSelect;
+export type HabitCompletion = typeof habitCompletions.$inferSelect;

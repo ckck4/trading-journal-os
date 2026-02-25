@@ -1,14 +1,11 @@
-import { PlaceholderPage } from '@/components/ui/placeholder-page'
-import { Target } from 'lucide-react'
+import { Metadata } from 'next'
+import { GoalsClient } from '@/components/goals/goals-client'
 
-export const metadata = { title: 'Goals' }
+export const metadata: Metadata = {
+  title: 'Goals & Habits | Trading Journal OS',
+  description: 'Set targets, build habits, and track your progress'
+}
 
 export default function GoalsPage() {
-  return (
-    <PlaceholderPage
-      title="Goals"
-      description="Active goal cards with progress bars, streak counters, and target vs actual. Add new goals via modal."
-      icon={Target}
-    />
-  )
+  return <GoalsClient />
 }
