@@ -12,10 +12,10 @@ export async function GET() {
 
         const adminClient = createAdminClient();
 
-        // 1. Fetch Trades
+        // 1. Fetch Trading PnL (for summary metrics only, not line items)
         const { data: trades, error: tradesErr } = await adminClient
             .from("trades")
-            .select("id, trading_day, net_pnl, root_symbol")
+            .select("net_pnl")
             .eq("user_id", user.id);
         if (tradesErr) throw tradesErr;
 
@@ -58,19 +58,7 @@ export async function GET() {
         // --- Compute Entries ---
         const combinedEntries: any[] = [];
 
-        trades?.forEach(t => {
-            const netPnl = parseFloat(t.net_pnl || "0");
-            if (netPnl === 0) return;
-            combinedEntries.push({
-                id: `trade_${t.id}`,
-                date: t.trading_day,
-                type: netPnl > 0 ? "income" : "expense",
-                amount: Math.abs(netPnl),
-                description: t.root_symbol || "Trade",
-                category: "Trading",
-                source: "trade"
-            });
-        });
+        // Trades are intentionally excluded from line items as per user request
 
         expenses?.forEach(e => {
             combinedEntries.push({
@@ -120,6 +108,12 @@ export async function GET() {
             if (c.type === "income") totalRevenue += c.amount;
             if (c.type === "expense") totalExpenses += c.amount;
         });
+
+        // Add positive trading PnL to totalRevenue
+        const totalTradingPnl = trades?.reduce((sum, t) => sum + parseFloat(t.net_pnl || "0"), 0) || 0;
+        if (totalTradingPnl > 0) {
+            totalRevenue += totalTradingPnl;
+        }
 
         const netProfit = totalRevenue - totalExpenses;
         const roi = totalExpenses > 0 ? (netProfit / totalExpenses) * 100 : 0;

@@ -17,7 +17,8 @@ import {
     Pencil,
     Trash2,
     ChevronRight,
-    Loader2
+    Loader2,
+    Info,
 } from "lucide-react";
 import {
     PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer
@@ -27,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
     Dialog,
     DialogContent,
@@ -361,7 +363,32 @@ export function LedgerClient() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Payback Period</CardTitle>
+                        <div className="flex items-center gap-1.5">
+                            <CardTitle className="text-sm font-medium">Payback Period</CardTitle>
+                            <TooltipProvider delayDuration={100}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Info className="h-[14px] w-[14px] text-muted-foreground/60 hover:text-muted-foreground cursor-help" />
+                                    </TooltipTrigger>
+                                    <TooltipContent
+                                        side="top"
+                                        className="max-w-[280px] bg-[#14171E] border-[#2A2F3E] text-[#E8EAF0] text-sm leading-relaxed p-3 shadow-xl"
+                                    >
+                                        <div className="space-y-2">
+                                            <p className="font-semibold">Calculated as: Total Expenses ÷ (Net Profit ÷ 12)</p>
+                                            <p>The estimated number of months until your total trading business expenses are fully recovered by your net profit.</p>
+                                            <p className="text-muted-foreground/80 mt-1">
+                                                {paybackPeriod === null ? "Your business is not yet profitable. Focus on reducing expenses or increasing payout frequency." :
+                                                    paybackPeriod <= 6 ? "Excellent — you are recovering costs quickly." :
+                                                        paybackPeriod <= 12 ? "Good — on track to break even within a year." :
+                                                            paybackPeriod <= 24 ? "Moderate — consider reviewing your expense structure." :
+                                                                "High — your expenses may be outpacing your returns."}
+                                            </p>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
                         <Clock className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
