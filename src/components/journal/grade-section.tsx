@@ -280,6 +280,7 @@ export function GradeSection({ tradeId, strategyId }: GradeSectionProps) {
             {confluences.map(ci => (
               <label
                 key={ci.id}
+                onClick={() => toggleConfluence(ci.id)}
                 className="flex items-center justify-between px-3 py-2 hover:bg-[var(--secondary)] cursor-pointer transition-colors border-b border-[var(--border)] last:border-0 group"
               >
                 <div className="flex items-center gap-3">
