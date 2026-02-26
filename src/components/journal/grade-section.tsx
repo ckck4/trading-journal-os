@@ -8,9 +8,10 @@ import type { TradeGrade, Confluence } from '@/types/grading'
 
 type GradingRule = {
   grade: 'A+' | 'A' | 'B+' | 'B' | 'B-' | 'C'
-  type: 'specific' | 'threshold'
+  type: 'specific' | 'threshold' | 'exact'
   required_confluence_ids?: string[]
   min_count?: number
+  exact_count?: number
 }
 
 interface GradeSectionProps {
@@ -209,6 +210,11 @@ export function GradeSection({ tradeId, strategyId }: GradeSectionProps) {
           }
         } else if (rule.type === 'threshold' && rule.min_count !== undefined) {
           if (next.size >= rule.min_count) {
+            matchedGrade = rule.grade as GradeValue
+            break
+          }
+        } else if (rule.type === 'exact' && rule.exact_count !== undefined) {
+          if (next.size === rule.exact_count) {
             matchedGrade = rule.grade as GradeValue
             break
           }

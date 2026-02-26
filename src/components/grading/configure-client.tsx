@@ -292,9 +292,10 @@ function ScoringRubricSection() {
 type GradingRule = {
     id: string
     grade: string
-    type: 'specific' | 'threshold'
+    type: 'specific' | 'threshold' | 'exact'
     required_confluence_ids?: string[]
     min_count?: number
+    exact_count?: number
 }
 
 function GradingRulesSection({ initialStrategyId }: { initialStrategyId: string }) {
@@ -574,7 +575,9 @@ function GradingRulesSection({ initialStrategyId }: { initialStrategyId: string 
                                                 <p className="text-sm text-[var(--muted-foreground)] mt-1">
                                                     {rule.type === 'threshold'
                                                         ? `Requires at least ${rule.min_count} of ${confluences.length} confluences.`
-                                                        : `Requires ${rule.required_confluence_ids?.length || 0} specific confluences.`
+                                                        : rule.type === 'exact'
+                                                            ? `Requires exactly ${rule.exact_count} of ${confluences.length} confluences.`
+                                                            : `Requires ${rule.required_confluence_ids?.length || 0} specific confluences.`
                                                     }
                                                 </p>
                                             </div>
@@ -662,8 +665,9 @@ function AddRuleDialog({ open, onOpenChange, confluences, onAdd }: {
     onAdd: (rule: Omit<GradingRule, 'id'>) => void
 }) {
     const [grade, setGrade] = useState('A')
-    const [ruleType, setRuleType] = useState<'specific' | 'threshold'>('threshold')
+    const [ruleType, setRuleType] = useState<'specific' | 'threshold' | 'exact'>('threshold')
     const [minCount, setMinCount] = useState(1)
+    const [exactCount, setExactCount] = useState(1)
     const [reqIds, setReqIds] = useState<string[]>([])
 
     const toggleReq = (id: string) => {
@@ -679,13 +683,16 @@ function AddRuleDialog({ open, onOpenChange, confluences, onAdd }: {
             grade,
             type: ruleType,
             min_count: ruleType === 'threshold' ? minCount : undefined,
+            exact_count: ruleType === 'exact' ? exactCount : undefined,
             required_confluence_ids: ruleType === 'specific' ? reqIds : undefined
         })
     }
 
     const isRuleValid = ruleType === 'threshold'
         ? (minCount > 0 && minCount <= confluences.length)
-        : (reqIds.length > 0)
+        : ruleType === 'exact'
+            ? (exactCount > 0 && exactCount <= confluences.length)
+            : (reqIds.length > 0)
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -717,7 +724,7 @@ function AddRuleDialog({ open, onOpenChange, confluences, onAdd }: {
 
                     <div className="space-y-3">
                         <Label>Rule Type</Label>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-3 gap-4">
                             <div>
                                 <input type="radio" value="threshold" checked={ruleType === 'threshold'} onChange={() => setRuleType('threshold')} id="opt-threshold" className="peer sr-only" />
                                 <label htmlFor="opt-threshold" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-[var(--secondary)] peer-checked:border-[var(--primary)] cursor-pointer">
@@ -727,9 +734,16 @@ function AddRuleDialog({ open, onOpenChange, confluences, onAdd }: {
                             </div>
                             <div>
                                 <input type="radio" value="specific" checked={ruleType === 'specific'} onChange={() => setRuleType('specific')} id="opt-specific" className="peer sr-only" />
-                                <label htmlFor="opt-specific" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-[var(--secondary)] peer-checked:border-[var(--primary)] cursor-pointer">
+                                <label htmlFor="opt-specific" className="flex flex-col items-center justify-between text-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-[var(--secondary)] peer-checked:border-[var(--primary)] cursor-pointer">
                                     <span className="text-sm font-semibold">Specific</span>
                                     <span className="text-xs text-[var(--muted-foreground)] mt-1">Exact combinations</span>
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" value="exact" checked={ruleType === 'exact'} onChange={() => setRuleType('exact')} id="opt-exact" className="peer sr-only" />
+                                <label htmlFor="opt-exact" className="flex flex-col items-center justify-between text-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-[var(--secondary)] peer-checked:border-[var(--primary)] cursor-pointer">
+                                    <span className="text-sm font-semibold">Exact Count</span>
+                                    <span className="text-xs text-[var(--muted-foreground)] mt-1">Exactly X confs</span>
                                 </label>
                             </div>
                         </div>
@@ -747,6 +761,22 @@ function AddRuleDialog({ open, onOpenChange, confluences, onAdd }: {
                                         {Array.from({ length: Math.max(1, confluences.length) }).map((_, i) => (
                                             <SelectItem key={i + 1} value={String(i + 1)}>
                                                 At least {i + 1} of {confluences.length} confluences
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        ) : ruleType === 'exact' ? (
+                            <div className="space-y-3">
+                                <Label>Select Exact Count</Label>
+                                <Select value={String(exactCount)} onValueChange={(v) => setExactCount(Number(v))}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Array.from({ length: Math.max(1, confluences.length) }).map((_, i) => (
+                                            <SelectItem key={i + 1} value={String(i + 1)}>
+                                                Exactly {i + 1} of {confluences.length} confluences
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
