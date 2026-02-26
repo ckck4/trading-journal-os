@@ -149,6 +149,7 @@ export const strategies = pgTable(
         entryRules: text("entry_rules"),
         invalidationConditions: text("invalidation_conditions"),
         gradingRules: jsonb("grading_rules").notNull().default("[]"),
+        categoryOverrides: jsonb("category_overrides"),
         isActive: boolean("is_active").notNull().default(true),
         version: integer("version").notNull().default(1),
         ...timestamps,
@@ -910,6 +911,8 @@ export const financeSettings = pgTable("finance_settings", {
     fiscalYearStart: integer("fiscal_year_start").notNull().default(1),
     vendorPresets: text("vendor_presets").array(),
     customTags: text("custom_tags").array(),
+    gradingWeights: jsonb("grading_weights").notNull().default('{"Risk Management":25,"Execution":20,"Discipline":25,"Strategy":15,"Efficiency":15}'),
+    gradingRubric: jsonb("grading_rubric"),
     ...timestamps,
 });
 

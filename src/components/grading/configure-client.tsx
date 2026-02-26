@@ -1,23 +1,35 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react'
+import React, { useState, useEffect, Suspense, useMemo } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { ArrowLeft, Save, Plus, Trash2, ArrowUp, ArrowDown, Settings2 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import type { Confluence } from '@/types/grading'
 
 export function ConfigureClient() {
+    return (
+        <Suspense fallback={<div className="p-8 text-[var(--muted-foreground)]">Loading configuration...</div>}>
+            <ConfigureContent />
+        </Suspense>
+    )
+}
+
+function ConfigureContent() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const initialStrategyId = searchParams.get('strategy') || ''
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8 pb-20">
+        <div className="max-w-6xl mx-auto space-y-8 pb-32">
             {/* Header */}
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => router.push('/grading')}>
@@ -29,12 +41,23 @@ export function ConfigureClient() {
                 </div>
             </div>
 
-            <CategoryWeightsSection />
-            <ScoringRubricSection />
-            <GradingRulesSection />
+            <div className="grid gap-8 lg:grid-cols-12 items-start">
+                <div className="lg:col-span-4 space-y-8">
+                    <CategoryWeightsSection />
+                    <ScoringRubricSection />
+                </div>
+                <div className="lg:col-span-8">
+                    <GradingRulesSection initialStrategyId={initialStrategyId} />
+                </div>
+            </div>
         </div>
     )
 }
+
+// ============================================================================
+// Section A: Global Category Weights
+// ============================================================================
+type WeightItem = { id: string, name: string, weight: number }
 
 function CategoryWeightsSection() {
     const queryClient = useQueryClient()
@@ -47,54 +70,115 @@ function CategoryWeightsSection() {
         }
     })
 
-    const weights = settingsData?.data?.grading_weights || {
-        risk_management: 25,
-        execution: 20,
-        discipline: 25,
-        strategy: 15,
-        efficiency: 15
-    }
-
-    const [localWeights, setLocalWeights] = useState(weights)
+    const [localWeights, setLocalWeights] = useState<WeightItem[]>([])
 
     useEffect(() => {
         if (settingsData?.data?.grading_weights) {
-            setLocalWeights(settingsData.data.grading_weights)
+            const parsed = Object.entries(settingsData.data.grading_weights).map(([k, v]) => ({
+                id: crypto.randomUUID(),
+                name: k,
+                weight: Number(v) || 0
+            }))
+            setLocalWeights(parsed.length > 0 ? parsed : [
+                { id: crypto.randomUUID(), name: 'Risk Management', weight: 25 },
+                { id: crypto.randomUUID(), name: 'Execution', weight: 20 },
+                { id: crypto.randomUUID(), name: 'Discipline', weight: 25 },
+                { id: crypto.randomUUID(), name: 'Strategy', weight: 15 },
+                { id: crypto.randomUUID(), name: 'Efficiency', weight: 15 }
+            ])
+        } else if (settingsData) {
+            setLocalWeights([
+                { id: crypto.randomUUID(), name: 'Risk Management', weight: 25 },
+                { id: crypto.randomUUID(), name: 'Execution', weight: 20 },
+                { id: crypto.randomUUID(), name: 'Discipline', weight: 25 },
+                { id: crypto.randomUUID(), name: 'Strategy', weight: 15 },
+                { id: crypto.randomUUID(), name: 'Efficiency', weight: 15 }
+            ])
         }
-    }, [settingsData?.data?.grading_weights])
+    }, [settingsData])
 
-    const total: number = Object.values(localWeights).reduce((a: number, b: any) => a + (Number(b) || 0), 0)
+    const total = localWeights.reduce((sum, item) => sum + item.weight, 0)
     const isValid = total === 100
 
     const updateSettings = useMutation({
-        mutationFn: async (newWeights: any) => {
+        mutationFn: async (weightsArray: WeightItem[]) => {
+            const payloadObj = weightsArray.reduce((acc, curr) => {
+                const key = curr.name.trim() || 'Unnamed Category'
+                acc[key] = curr.weight
+                return acc
+            }, {} as Record<string, number>)
+
             const res = await fetch('/api/finance/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ grading_weights: newWeights })
+                body: JSON.stringify({ grading_weights: payloadObj })
             })
             if (!res.ok) throw new Error('Failed to update weights')
             return res.json()
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['finance-settings'] })
-            // Ensure grading dashboard gets the update too
-            localStorage.setItem('grading-weights', JSON.stringify(localWeights))
         }
     })
 
-    const handleChange = (key: string, val: string) => {
-        setLocalWeights((prev: any) => ({ ...prev, [key]: val === '' ? 0 : Number(val) }))
+    const addCategory = () => {
+        setLocalWeights([...localWeights, { id: crypto.randomUUID(), name: 'New Category', weight: 0 }])
     }
 
-    if (isLoading) return <Card><CardContent className="p-6">Loading...</CardContent></Card>
+    const removeCategory = (id: string) => {
+        setLocalWeights(localWeights.filter(w => w.id !== id))
+    }
+
+    const updateCategory = (id: string, field: 'name' | 'weight', value: string | number) => {
+        setLocalWeights(localWeights.map(w => w.id === id ? { ...w, [field]: value } : w))
+    }
+
+    if (isLoading) return <Card><CardContent className="p-6">Loading weights...</CardContent></Card>
 
     return (
-        <Card>
-            <CardHeader className="flex flex-row items-start sm:items-center justify-between">
+        <Card className="flex flex-col">
+            <CardHeader className="flex flex-row items-start justify-between pb-4">
                 <div>
-                    <CardTitle>Category Weights</CardTitle>
-                    <CardDescription>Weights must add up to exactly 100%.</CardDescription>
+                    <CardTitle className="text-lg">Global Category Weights</CardTitle>
+                    <CardDescription>Define how scores are weighted globally.</CardDescription>
+                </div>
+            </CardHeader>
+            <CardContent className="flex-1 space-y-4">
+                <div className="space-y-3">
+                    {localWeights.map((w) => (
+                        <div key={w.id} className="flex items-center gap-2">
+                            <Input
+                                value={w.name}
+                                onChange={(e) => updateCategory(w.id, 'name', e.target.value)}
+                                className="flex-1"
+                                placeholder="Category Name"
+                            />
+                            <div className="relative w-24 flex-shrink-0">
+                                <Input
+                                    type="number"
+                                    value={w.weight === 0 ? '' : w.weight}
+                                    onChange={(e) => updateCategory(w.id, 'weight', e.target.value === '' ? 0 : Number(e.target.value))}
+                                    className="pr-6 text-right font-mono"
+                                    min="0" max="100"
+                                />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--muted-foreground)]">%</span>
+                            </div>
+                            <Button variant="ghost" size="icon" className="shrink-0 text-[var(--muted-foreground)] hover:text-[var(--color-red)]" onClick={() => removeCategory(w.id)}>
+                                <Trash2 className="w-4 h-4" />
+                            </Button>
+                        </div>
+                    ))}
+                </div>
+                <Button variant="outline" size="sm" onClick={addCategory} className="w-full mt-2 border-dashed">
+                    <Plus className="w-4 h-4 mr-2" /> Add Category
+                </Button>
+            </CardContent>
+            <CardFooter className="pt-4 border-t flex items-center justify-between bg-[var(--secondary)]/30">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-[var(--muted-foreground)]">Total Weight:</span>
+                    <span className={cn("text-base font-mono font-bold", isValid ? "text-[var(--color-green)]" : "text-[var(--color-red)]")}>
+                        {total}%
+                    </span>
                 </div>
                 <Button
                     disabled={!isValid || updateSettings.isPending}
@@ -104,88 +188,127 @@ function CategoryWeightsSection() {
                     <Save className="w-4 h-4 mr-2" />
                     {updateSettings.isPending ? 'Saving...' : 'Save Weights'}
                 </Button>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-4 max-w-sm">
-                    {[
-                        { k: 'risk_management', label: 'Risk Management' },
-                        { k: 'execution', label: 'Execution' },
-                        { k: 'discipline', label: 'Discipline' },
-                        { k: 'strategy', label: 'Strategy' },
-                        { k: 'efficiency', label: 'Efficiency' }
-                    ].map(({ k, label }) => (
-                        <div key={k} className="flex items-center justify-between">
-                            <Label>{label}</Label>
-                            <div className="flex items-center gap-2">
-                                <Input
-                                    type="number"
-                                    value={localWeights[k] || ''}
-                                    onChange={(e) => handleChange(k, e.target.value)}
-                                    className="w-20 text-right font-mono"
-                                    min="0"
-                                    max="100"
-                                />
-                                <span className="text-[var(--muted-foreground)]">%</span>
-                            </div>
-                        </div>
-                    ))}
-                    <div className="pt-4 mt-4 border-t flex justify-between items-center">
-                        <span className="text-sm font-semibold">Total</span>
-                        <span className={cn("text-sm font-mono font-bold", isValid ? "text-[#22C55E]" : "text-[#EF4444]")}>
-                            {total}%
-                        </span>
-                    </div>
-                </div>
-            </CardContent>
+            </CardFooter>
         </Card>
     )
 }
+
+// ============================================================================
+// Section C: Scoring Rubric
+// ============================================================================
+const DEFAULT_RUBRIC = [
+    { grade: 'A+', label: 'Excellent', color: '#22C55E' },
+    { grade: 'A', label: 'Great', color: '#22C55E' },
+    { grade: 'B+', label: 'Good', color: '#3B82F6' },
+    { grade: 'B', label: 'Average', color: '#E8EAF0' },
+    { grade: 'B-', label: 'Poor', color: '#F59E0B' },
+    { grade: 'C', label: 'Critical', color: '#EF4444' }
+]
 
 function ScoringRubricSection() {
+    const queryClient = useQueryClient()
+    const { data: settingsData, isLoading } = useQuery({
+        queryKey: ['finance-settings'],
+        queryFn: async () => {
+            const res = await fetch('/api/finance/settings')
+            if (!res.ok) throw new Error('Failed to fetch settings')
+            return res.json()
+        }
+    })
+
+    const [labels, setLabels] = useState<Record<string, string>>({})
+
+    useEffect(() => {
+        if (settingsData?.data?.grading_rubric) {
+            setLabels(settingsData.data.grading_rubric)
+        } else {
+            // init from defaults
+            const init: Record<string, string> = {}
+            DEFAULT_RUBRIC.forEach(r => { init[r.grade] = r.label })
+            setLabels(init)
+        }
+    }, [settingsData])
+
+    const updateSettings = useMutation({
+        mutationFn: async (newRubric: any) => {
+            const res = await fetch('/api/finance/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ grading_rubric: newRubric })
+            })
+            if (!res.ok) throw new Error('Failed to update rubric')
+            return res.json()
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['finance-settings'] })
+        }
+    })
+
+    if (isLoading) return <Card><CardContent className="p-6">Loading rubric...</CardContent></Card>
+
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Scoring Rubric</CardTitle>
-                <CardDescription>System-wide grading thresholds (fixed for now).</CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between pb-4">
+                <div>
+                    <CardTitle className="text-lg">Scoring Rubric</CardTitle>
+                    <CardDescription>Customize the labels for each grade bracket.</CardDescription>
+                </div>
+                <Button
+                    disabled={updateSettings.isPending}
+                    onClick={() => updateSettings.mutate(labels)}
+                    size="sm"
+                >
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Labels
+                </Button>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                    <div className="border rounded bg-[#22C55E]/10 border-[#22C55E]/30 p-3 text-center">
-                        <div className="text-[#22C55E] font-mono font-bold text-lg">90-100</div>
-                        <div className="text-xs text-[#22C55E] uppercase tracking-wider mt-1">Excellent</div>
-                    </div>
-                    <div className="border rounded bg-[#3B82F6]/10 border-[#3B82F6]/30 p-3 text-center">
-                        <div className="text-[#3B82F6] font-mono font-bold text-lg">75-89</div>
-                        <div className="text-xs text-[#3B82F6] uppercase tracking-wider mt-1">Good</div>
-                    </div>
-                    <div className="border rounded bg-[#F59E0B]/10 border-[#F59E0B]/30 p-3 text-center">
-                        <div className="text-[#F59E0B] font-mono font-bold text-lg">60-74</div>
-                        <div className="text-xs text-[#F59E0B] uppercase tracking-wider mt-1">Average</div>
-                    </div>
-                    <div className="border rounded bg-[#F97316]/10 border-[#F97316]/30 p-3 text-center">
-                        <div className="text-[#F97316] font-mono font-bold text-lg">40-59</div>
-                        <div className="text-xs text-[#F97316] uppercase tracking-wider mt-1">Poor</div>
-                    </div>
-                    <div className="border rounded bg-[#EF4444]/10 border-[#EF4444]/30 p-3 text-center">
-                        <div className="text-[#EF4444] font-mono font-bold text-lg">0-39</div>
-                        <div className="text-xs text-[#EF4444] uppercase tracking-wider mt-1">Critical</div>
-                    </div>
+                <div className="space-y-3">
+                    {DEFAULT_RUBRIC.map((item) => (
+                        <div key={item.grade} className="flex items-center gap-3">
+                            <div
+                                className="w-10 h-8 rounded shrink-0 flex items-center justify-center font-bold font-mono text-sm border shadow-sm"
+                                style={{ backgroundColor: `${item.color}15`, color: item.color, borderColor: `${item.color}30` }}
+                            >
+                                {item.grade}
+                            </div>
+                            <Input
+                                value={labels[item.grade] || ''}
+                                onChange={(e) => setLabels({ ...labels, [item.grade]: e.target.value })}
+                                placeholder={item.label}
+                                className="h-8 text-sm"
+                            />
+                        </div>
+                    ))}
                 </div>
             </CardContent>
-        </Card>
+        </Card >
     )
 }
 
+// ============================================================================
+// Section B: Strategy Grading Rules
+// ============================================================================
 type GradingRule = {
-    grade: 'A+' | 'A' | 'B+' | 'B' | 'B-' | 'C'
+    id: string
+    grade: string
     type: 'specific' | 'threshold'
     required_confluence_ids?: string[]
     min_count?: number
 }
 
-function GradingRulesSection() {
+function GradingRulesSection({ initialStrategyId }: { initialStrategyId: string }) {
     const queryClient = useQueryClient()
-    const [selectedStrategyId, setSelectedStrategyId] = useState<string>('')
+    const [strategyId, setStrategyId] = useState<string>(initialStrategyId)
+    const [localRules, setLocalRules] = useState<GradingRule[]>([])
+    const [localOverrides, setLocalOverrides] = useState<WeightItem[]>([])
+    const [enableOverrides, setEnableOverrides] = useState(false)
+    const [isAddRuleOpen, setIsAddRuleOpen] = useState(false)
+
+    // Form stuff for adding confluences
+    const [newConfName, setNewConfName] = useState('')
+    const [newConfWeight, setNewConfWeight] = useState('1.0')
+    const [newConfCat, setNewConfCat] = useState('Execution')
 
     const { data: strategiesData } = useQuery({
         queryKey: ['strategies'],
@@ -197,185 +320,460 @@ function GradingRulesSection() {
     })
 
     const { data: confluencesData } = useQuery({
-        queryKey: ['confluences'],
+        queryKey: ['confluences', strategyId],
         queryFn: async () => {
-            const res = await fetch('/api/confluences')
+            if (!strategyId) return { data: [] }
+            const res = await fetch(`/api/confluences?strategy_id=${strategyId}`)
             if (!res.ok) throw new Error('Failed to fetch confluences')
             return res.json()
-        }
+        },
+        enabled: !!strategyId
     })
 
     const strategies = strategiesData?.data || []
     const confluences: Confluence[] = confluencesData?.data || []
-
-    const selectedStrategy = strategies.find((s: any) => s.id === selectedStrategyId)
-    const [localRules, setLocalRules] = useState<GradingRule[]>([])
+    const selectedStrategy = strategies.find((s: any) => s.id === strategyId)
 
     useEffect(() => {
         if (selectedStrategy) {
-            setLocalRules(selectedStrategy.grading_rules || [])
+            // Rules
+            const parsedRules = (selectedStrategy.grading_rules || []).map((r: any) => ({
+                id: crypto.randomUUID(),
+                ...r
+            }))
+            setLocalRules(parsedRules)
+
+            // Overrides
+            if (selectedStrategy.category_overrides) {
+                setEnableOverrides(true)
+                const parsed = Object.entries(selectedStrategy.category_overrides).map(([k, v]) => ({
+                    id: crypto.randomUUID(),
+                    name: k,
+                    weight: Number(v) || 0
+                }))
+                setLocalOverrides(parsed)
+            } else {
+                setEnableOverrides(false)
+                setLocalOverrides([])
+            }
         } else {
             setLocalRules([])
+            setEnableOverrides(false)
+            setLocalOverrides([])
         }
     }, [selectedStrategy])
 
     const updateStrategy = useMutation({
-        mutationFn: async (payload: { id: string, rules: GradingRule[] }) => {
-            const res = await fetch(`/api/strategies/${payload.id}`, {
+        mutationFn: async () => {
+            // clean rules payload
+            const rulesPayload = localRules.map(({ id, ...rest }) => rest)
+
+            // clean overrides payload
+            let overridesPayload = null
+            if (enableOverrides) {
+                overridesPayload = localOverrides.reduce((acc, curr) => {
+                    const key = curr.name.trim() || 'Unnamed'
+                    acc[key] = curr.weight
+                    return acc
+                }, {} as Record<string, number>)
+            }
+
+            const res = await fetch(`/api/strategies/${strategyId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ grading_rules: payload.rules })
+                body: JSON.stringify({
+                    grading_rules: rulesPayload,
+                    category_overrides: overridesPayload
+                })
             })
-            if (!res.ok) throw new Error('Failed to update strategy')
+            if (!res.ok) throw new Error('Failed to save strategy rules')
             return res.json()
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['strategies'] })
-            queryClient.invalidateQueries({ queryKey: ['strategy', selectedStrategyId] })
         }
     })
 
-    const handleSaveRules = () => {
-        if (!selectedStrategyId) return
-        updateStrategy.mutate({ id: selectedStrategyId, rules: localRules })
+    const createConfluence = useMutation({
+        mutationFn: async () => {
+            const res = await fetch('/api/confluences', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    strategy_id: strategyId,
+                    name: newConfName,
+                    weight: Number(newConfWeight),
+                    category: newConfCat
+                })
+            })
+            if (!res.ok) throw new Error('Failed to create confluence')
+            return res.json()
+        },
+        onSuccess: () => {
+            setNewConfName('')
+            setNewConfWeight('1.0')
+            queryClient.invalidateQueries({ queryKey: ['confluences', strategyId] })
+        }
+    })
+
+    const moveRule = (index: number, direction: 'up' | 'down') => {
+        if (direction === 'up' && index === 0) return
+        if (direction === 'down' && index === localRules.length - 1) return
+        const newRules = [...localRules]
+        const target = direction === 'up' ? index - 1 : index + 1
+        const temp = newRules[index]
+        newRules[index] = newRules[target]
+        newRules[target] = temp
+        setLocalRules(newRules)
     }
 
-    const addRule = () => {
-        setLocalRules([...localRules, { type: 'threshold', grade: 'A', min_count: 1 }])
+    const deleteRule = (id: string) => {
+        setLocalRules(localRules.filter(r => r.id !== id))
     }
 
-    const removeRule = (index: number) => {
-        setLocalRules(localRules.filter((_, i) => i !== index))
-    }
+    const { addCategoryOverride, removeCategoryOverride, updateCategoryOverride, overridesTotal, overridesValid } = useMemo(() => {
+        return {
+            addCategoryOverride: () => setLocalOverrides([...localOverrides, { id: crypto.randomUUID(), name: 'New Category', weight: 0 }]),
+            removeCategoryOverride: (id: string) => setLocalOverrides(localOverrides.filter(w => w.id !== id)),
+            updateCategoryOverride: (id: string, field: 'name' | 'weight', value: string | number) => setLocalOverrides(localOverrides.map(w => w.id === id ? { ...w, [field]: value } : w)),
+            overridesTotal: localOverrides.reduce((s, w) => s + w.weight, 0),
+            overridesValid: localOverrides.reduce((s, w) => s + w.weight, 0) === 100
+        }
+    }, [localOverrides])
 
-    const updateRule = (index: number, updates: Partial<GradingRule>) => {
-        const next = [...localRules]
-        next[index] = { ...next[index], ...updates }
-        setLocalRules(next)
-    }
-
-    const GRADES = ['A+', 'A', 'B+', 'B', 'B-', 'C']
+    const canSave = !enableOverrides || overridesValid
 
     return (
-        <Card>
-            <CardHeader className="flex flex-row items-start sm:items-center justify-between">
-                <div>
-                    <CardTitle>Strategy Auto-Grading Rules</CardTitle>
-                    <CardDescription>Define how trades should be automatically graded based on confluences.</CardDescription>
+        <Card className="flex flex-col h-full bg-[var(--background)]">
+            <CardHeader className="pb-4 border-b">
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                    <div>
+                        <CardTitle className="text-xl">Strategy Grading Rules</CardTitle>
+                        <CardDescription>Setup confluences and auto-grading mapping.</CardDescription>
+                    </div>
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <Select value={strategyId} onValueChange={setStrategyId}>
+                            <SelectTrigger className="w-full sm:w-[250px]">
+                                <SelectValue placeholder="Select Strategy..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {strategies.map((s: any) => (
+                                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Button
+                            disabled={!strategyId || updateStrategy.isPending || !canSave}
+                            onClick={() => updateStrategy.mutate()}
+                        >
+                            <Save className="w-4 h-4 mr-2" />
+                            {updateStrategy.isPending ? 'Saving...' : 'Save Strategy'}
+                        </Button>
+                    </div>
                 </div>
-                {selectedStrategyId && (
-                    <Button
-                        disabled={updateStrategy.isPending}
-                        onClick={handleSaveRules}
-                        size="sm"
-                    >
-                        <Save className="w-4 h-4 mr-2" />
-                        {updateStrategy.isPending ? 'Saving...' : 'Save Rules'}
-                    </Button>
-                )}
             </CardHeader>
-            <CardContent className="space-y-6">
-                <div>
-                    <Label className="mb-2 block">Select Strategy</Label>
-                    <Select value={selectedStrategyId} onValueChange={setSelectedStrategyId}>
-                        <SelectTrigger className="w-full max-w-sm">
-                            <SelectValue placeholder="Choose a strategy..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {strategies.map((s: any) => (
-                                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+
+            {!strategyId ? (
+                <div className="p-16 text-center text-[var(--muted-foreground)] flex flex-col items-center">
+                    <Settings2 className="w-12 h-12 mb-4 opacity-20" />
+                    <p className="text-lg font-medium text-[var(--foreground)]">No Strategy Selected</p>
+                    <p>Select a strategy above to configure its rules.</p>
                 </div>
+            ) : (
+                <CardContent className="p-0 flex-1">
+                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x border-b">
 
-                {selectedStrategyId && (
-                    <div className="space-y-4 pt-4 border-t">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-semibold">Rules Structure</h3>
-                            <Button variant="outline" size="sm" onClick={addRule}>
-                                <Plus className="w-4 h-4 mr-2" /> Add Rule
-                            </Button>
-                        </div>
+                        {/* LEFT COLUMN: Confluences */}
+                        <div className="p-6 space-y-6 bg-[var(--background)]">
+                            <div>
+                                <h3 className="font-semibold text-base mb-1">Checklist Confluences</h3>
+                                <p className="text-sm text-[var(--muted-foreground)]">Items required to take trades for this strategy.</p>
+                            </div>
 
-                        {localRules.length === 0 ? (
-                            <p className="text-sm text-[var(--muted-foreground)]">No grading rules defined for this strategy. Add a rule to enable auto-grading.</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {localRules.map((rule, idx) => (
-                                    <div key={idx} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center p-3 sm:p-4 rounded-lg border bg-[var(--sidebar)]/50">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs font-mono font-semibold text-[var(--muted-foreground)] w-5">{idx + 1}.</span>
-                                            <Select value={rule.grade} onValueChange={(val: any) => updateRule(idx, { grade: val })}>
-                                                <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
+                            <div className="space-y-2">
+                                {confluences.length === 0 ? (
+                                    <div className="p-4 border border-dashed rounded-lg text-center text-sm text-[var(--muted-foreground)]">
+                                        No confluences configured yet.
+                                    </div>
+                                ) : (
+                                    confluences.map(c => (
+                                        <div key={c.id} className="flex items-center justify-between p-3 border rounded-lg bg-[var(--card)] shadow-sm">
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-medium truncate">{c.name}</p>
+                                                <p className="text-xs text-[var(--muted-foreground)]">{c.category} • Wt: {c.weight}</p>
+                                            </div>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--muted-foreground)] opacity-50"><Trash2 className="w-4 h-4" /></Button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            <div className="p-4 border rounded-lg bg-[var(--secondary)]/30 space-y-4">
+                                <h4 className="text-sm font-semibold">Add Confluence</h4>
+                                <div className="space-y-3">
+                                    <div className="space-y-1">
+                                        <Label className="text-xs">Name</Label>
+                                        <Input value={newConfName} onChange={e => setNewConfName(e.target.value)} placeholder="e.g. 5m FVG Sweep" className="h-8 text-sm" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-1">
+                                            <Label className="text-xs">Category</Label>
+                                            <Select value={newConfCat} onValueChange={setNewConfCat}>
+                                                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                                                 <SelectContent>
-                                                    {GRADES.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                                                    {['Risk Management', 'Execution', 'Discipline', 'Strategy', 'Efficiency', 'Custom'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                                                 </SelectContent>
                                             </Select>
                                         </div>
-
-                                        <span className="text-sm text-[var(--muted-foreground)] px-2">IF</span>
-
-                                        <Select value={rule.type} onValueChange={(val: any) => updateRule(idx, { type: val })}>
-                                            <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="threshold">Threshold</SelectItem>
-                                                <SelectItem value="specific">Specific Items</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-
-                                        <div className="flex-1 flex flex-wrap gap-2 w-full">
-                                            {rule.type === 'threshold' ? (
-                                                <div className="flex items-center gap-2 w-full">
-                                                    <Input
-                                                        type="number"
-                                                        min="1"
-                                                        className="w-20 font-mono"
-                                                        value={rule.min_count || 1}
-                                                        onChange={(e) => updateRule(idx, { min_count: parseInt(e.target.value) || 1 })}
-                                                    />
-                                                    <span className="text-sm">confluences are checked</span>
-                                                </div>
-                                            ) : (
-                                                <div className="w-full flex flex-col gap-2">
-                                                    <span className="text-sm">These specific items are checked:</span>
-                                                    <div className="flex flex-col gap-1 w-full bg-[var(--background)] p-3 rounded border max-h-40 overflow-y-auto">
-                                                        {confluences.map(c => {
-                                                            const isChecked = rule.required_confluence_ids?.includes(c.id) || false;
-                                                            return (
-                                                                <div key={c.id} className="flex items-center space-x-2">
-                                                                    <Checkbox
-                                                                        id={`${idx}-${c.id}`}
-                                                                        checked={isChecked}
-                                                                        onCheckedChange={(checked) => {
-                                                                            const current = rule.required_confluence_ids || [];
-                                                                            const next = checked
-                                                                                ? [...current, c.id]
-                                                                                : current.filter(id => id !== c.id);
-                                                                            updateRule(idx, { required_confluence_ids: next });
-                                                                        }}
-                                                                    />
-                                                                    <label htmlFor={`${idx}-${c.id}`} className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                                                        {c.name}
-                                                                    </label>
-                                                                </div>
-                                                            )
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            )}
+                                        <div className="space-y-1">
+                                            <Label className="text-xs">Weight</Label>
+                                            <Input type="number" step="0.5" value={newConfWeight} onChange={e => setNewConfWeight(e.target.value)} className="h-8 text-sm font-mono" />
                                         </div>
-
-                                        <Button variant="ghost" size="icon" className="text-[var(--destructive)] shrink-0 self-end sm:self-center" onClick={() => removeRule(idx)}>
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
                                     </div>
-                                ))}
+                                    <Button
+                                        size="sm"
+                                        className="w-full"
+                                        disabled={!newConfName || createConfluence.isPending}
+                                        onClick={() => createConfluence.mutate()}
+                                    >
+                                        <Plus className="w-4 h-4 mr-2" /> Add Confluence
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* RIGHT COLUMN: Grade Rules */}
+                        <div className="p-6 space-y-6 bg-[var(--secondary)]/10">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="font-semibold text-base mb-1">Auto-Grading Rules</h3>
+                                    <p className="text-sm text-[var(--muted-foreground)]">Evaluated top to bottom.</p>
+                                </div>
+                                <Button size="sm" variant="secondary" onClick={() => setIsAddRuleOpen(true)}>
+                                    <Plus className="w-4 h-4 mr-2" /> New Rule
+                                </Button>
+                            </div>
+
+                            <div className="space-y-3">
+                                {localRules.length === 0 ? (
+                                    <div className="p-6 border border-dashed border-[var(--border)] rounded-lg text-center text-sm text-[var(--muted-foreground)]">
+                                        No grading rules defined.
+                                    </div>
+                                ) : (
+                                    localRules.map((rule, idx) => (
+                                        <div key={rule.id} className="group relative flex items-center justify-between p-4 border rounded-lg bg-[var(--card)] shadow-sm">
+                                            <div className="flex flex-col gap-1 pr-12">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded text-xs font-bold font-mono border" style={{ color: DEFAULT_RUBRIC.find(r => r.grade === rule.grade)?.color || 'inherit', borderColor: 'currentcolor' }}>
+                                                        Grade: {rule.grade}
+                                                    </span>
+                                                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-[var(--secondary)] text-[var(--muted-foreground)]">
+                                                        {rule.type.toUpperCase()}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm text-[var(--muted-foreground)] mt-1">
+                                                    {rule.type === 'threshold'
+                                                        ? `Requires at least ${rule.min_count} of ${confluences.length} confluences.`
+                                                        : `Requires ${rule.required_confluence_ids?.length || 0} specific confluences.`
+                                                    }
+                                                </p>
+                                            </div>
+
+                                            {/* Actions visible on hover */}
+                                            <div className="absolute top-1/2 -translate-y-1/2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Button variant="ghost" size="icon" className="h-6 w-6" disabled={idx === 0} onClick={() => moveRule(idx, 'up')}><ArrowUp className="w-3 h-3" /></Button>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-[var(--color-red)] hover:text-[var(--color-red)] hover:bg-[var(--color-red)]/10" onClick={() => deleteRule(rule.id)}><Trash2 className="w-3 h-3" /></Button>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6" disabled={idx === localRules.length - 1} onClick={() => moveRule(idx, 'down')}><ArrowDown className="w-3 h-3" /></Button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {/* OVERRIDES SECTION */}
+                    <div className="p-6 bg-[var(--background)]">
+                        <div className="flex items-center justify-between border border-[var(--border)] rounded-lg p-4 bg-[var(--secondary)]/20">
+                            <div>
+                                <h4 className="font-semibold text-sm">Strategy Category Overrides</h4>
+                                <p className="text-xs text-[var(--muted-foreground)]">Use custom category weights for trades in this strategy instead of global ones.</p>
+                            </div>
+                            <Switch checked={enableOverrides} onCheckedChange={(v) => {
+                                setEnableOverrides(v)
+                                if (v && localOverrides.length === 0) {
+                                    // init with default fields
+                                    setLocalOverrides([
+                                        { id: crypto.randomUUID(), name: 'Strategy', weight: 80 },
+                                        { id: crypto.randomUUID(), name: 'Execution', weight: 20 },
+                                    ])
+                                }
+                            }} />
+                        </div>
+
+                        {enableOverrides && (
+                            <div className="mt-4 p-4 border rounded-lg bg-[var(--card)]">
+                                <div className="space-y-3 max-w-sm">
+                                    {localOverrides.map((w) => (
+                                        <div key={w.id} className="flex items-center gap-2">
+                                            <Input value={w.name} onChange={(e) => updateCategoryOverride(w.id, 'name', e.target.value)} className="h-8 text-sm flex-1" placeholder="Category" />
+                                            <div className="relative w-20 flex-shrink-0">
+                                                <Input type="number" value={w.weight === 0 ? '' : w.weight} onChange={(e) => updateCategoryOverride(w.id, 'weight', e.target.value === '' ? 0 : Number(e.target.value))} className="h-8 text-sm text-right pr-6 font-mono" />
+                                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[var(--muted-foreground)]">%</span>
+                                            </div>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--muted-foreground)] hover:text-[var(--color-red)]" onClick={() => removeCategoryOverride(w.id)}>
+                                                <Trash2 className="w-3 h-3" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    <Button variant="outline" size="sm" onClick={addCategoryOverride} className="w-full h-8 text-xs border-dashed mt-2"><Plus className="w-3 h-3 mr-2" /> Add Override</Button>
+                                </div>
+                                <div className="max-w-sm flex justify-between items-center mt-4 pt-4 border-t">
+                                    <span className="text-sm font-semibold">Override Total</span>
+                                    <span className={cn("text-sm font-mono font-bold", overridesValid ? "text-[var(--color-green)]" : "text-[var(--color-red)]")}>{overridesTotal}%</span>
+                                </div>
                             </div>
                         )}
                     </div>
-                )}
-            </CardContent>
+                </CardContent>
+            )}
+
+            {/* Dialog: Add Rule (Moved outside to prevent nesting issues) */}
+            {isAddRuleOpen && (
+                <AddRuleDialog
+                    open={isAddRuleOpen}
+                    onOpenChange={setIsAddRuleOpen}
+                    confluences={confluences}
+                    onAdd={(r) => {
+                        setLocalRules([...localRules, { id: crypto.randomUUID(), ...r }])
+                        setIsAddRuleOpen(false)
+                    }}
+                />
+            )}
         </Card>
+    )
+}
+
+function AddRuleDialog({ open, onOpenChange, confluences, onAdd }: {
+    open: boolean,
+    onOpenChange: (v: boolean) => void,
+    confluences: Confluence[],
+    onAdd: (rule: Omit<GradingRule, 'id'>) => void
+}) {
+    const [grade, setGrade] = useState('A')
+    const [ruleType, setRuleType] = useState<'specific' | 'threshold'>('threshold')
+    const [minCount, setMinCount] = useState(1)
+    const [reqIds, setReqIds] = useState<string[]>([])
+
+    const toggleReq = (id: string) => {
+        if (reqIds.includes(id)) {
+            setReqIds(reqIds.filter(i => i !== id))
+        } else {
+            setReqIds([...reqIds, id])
+        }
+    }
+
+    const handleSave = () => {
+        onAdd({
+            grade,
+            type: ruleType,
+            min_count: ruleType === 'threshold' ? minCount : undefined,
+            required_confluence_ids: ruleType === 'specific' ? reqIds : undefined
+        })
+    }
+
+    const isRuleValid = ruleType === 'threshold'
+        ? (minCount > 0 && minCount <= confluences.length)
+        : (reqIds.length > 0)
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[450px]">
+                <DialogHeader>
+                    <DialogTitle>Add Grading Rule</DialogTitle>
+                    <DialogDescription>Create an auto-grade mapping for this strategy.</DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-6 py-4">
+                    <div className="space-y-2">
+                        <Label>Resulting Grade</Label>
+                        <Select value={grade} onValueChange={setGrade}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {DEFAULT_RUBRIC.map(g => (
+                                    <SelectItem key={g.grade} value={g.grade}>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-mono w-6" style={{ color: g.color }}>{g.grade}</span>
+                                            <span className="text-[var(--muted-foreground)]">({g.label})</span>
+                                        </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-3">
+                        <Label>Rule Type</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <input type="radio" value="threshold" checked={ruleType === 'threshold'} onChange={() => setRuleType('threshold')} id="opt-threshold" className="peer sr-only" />
+                                <label htmlFor="opt-threshold" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-[var(--secondary)] peer-checked:border-[var(--primary)] cursor-pointer">
+                                    <span className="text-sm font-semibold">Min Count</span>
+                                    <span className="text-xs text-[var(--muted-foreground)] mt-1">At least X confs</span>
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" value="specific" checked={ruleType === 'specific'} onChange={() => setRuleType('specific')} id="opt-specific" className="peer sr-only" />
+                                <label htmlFor="opt-specific" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-[var(--secondary)] peer-checked:border-[var(--primary)] cursor-pointer">
+                                    <span className="text-sm font-semibold">Specific</span>
+                                    <span className="text-xs text-[var(--muted-foreground)] mt-1">Exact combinations</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-4 rounded-lg bg-[var(--secondary)]/30 border border-[var(--border)]">
+                        {ruleType === 'threshold' ? (
+                            <div className="space-y-3">
+                                <Label>Select Minimum Count</Label>
+                                <Select value={String(minCount)} onValueChange={(v) => setMinCount(Number(v))}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Array.from({ length: Math.max(1, confluences.length) }).map((_, i) => (
+                                            <SelectItem key={i + 1} value={String(i + 1)}>
+                                                At least {i + 1} of {confluences.length} confluences
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                <Label>Required Confluences</Label>
+                                <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
+                                    {confluences.length === 0 ? <p className="text-sm text-[var(--muted-foreground)]">No confluences available.</p> : null}
+                                    {confluences.map(c => (
+                                        <div key={c.id} className="flex items-center space-x-2">
+                                            <Checkbox id={`req-${c.id}`} checked={reqIds.includes(c.id)} onCheckedChange={() => toggleReq(c.id)} />
+                                            <label htmlFor={`req-${c.id}`} className="text-sm cursor-pointer">{c.name}</label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button disabled={!isRuleValid} onClick={handleSave}>Add Rule</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog >
     )
 }

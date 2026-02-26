@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { TrendingUp, Check } from 'lucide-react'
+import { TrendingUp, Check, Settings2 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import type { TradeGrade, Confluence } from '@/types/grading'
@@ -61,11 +61,22 @@ export function GradeSection({ tradeId, strategyId }: GradeSectionProps) {
     staleTime: 5 * 60 * 1000,
   })
 
+  // 2.5 Fetch Finance Settings to get global weights & rubric
+  const { data: settingsData } = useQuery({
+    queryKey: ['finance-settings'],
+    queryFn: async () => {
+      const res = await fetch('/api/finance/settings')
+      if (!res.ok) throw new Error('Failed to fetch settings')
+      return res.json()
+    },
+    staleTime: 5 * 60 * 1000,
+  })
+
   const confluences = confluencesData?.data || []
   const existingGrade = gradeData?.data
 
-  // 3. Fetch Strategy Rules
-  const { data: strategyData } = useQuery<{ data: { grading_rules: GradingRule[] } }>({
+  // 3. Fetch Strategy Rules & Overrides
+  const { data: strategyData } = useQuery<{ data: { grading_rules: GradingRule[], category_overrides?: Record<string, number> | null } }>({
     queryKey: ['strategy', strategyId],
     queryFn: async () => {
       if (!strategyId) return { data: { grading_rules: [] } }
@@ -76,6 +87,24 @@ export function GradeSection({ tradeId, strategyId }: GradeSectionProps) {
     enabled: !!strategyId,
     staleTime: 5 * 60 * 1000,
   })
+
+  const activeCategoriesObj = strategyData?.data?.category_overrides || settingsData?.data?.grading_weights || {}
+  const activeCategoryEntries = Object.entries(activeCategoriesObj).slice(0, 5) // max 5 mapped to db columns
+  const hasOverrides = !!strategyData?.data?.category_overrides
+
+  const dynamicRubric = settingsData?.data?.grading_rubric || {}
+
+  const [showHowItWorks, setShowHowItWorks] = useState(false)
+  useEffect(() => {
+    const seen = localStorage.getItem('seen-grading-how-it-works')
+    if (!seen) {
+      setShowHowItWorks(true)
+    }
+  }, [])
+  const toggleHowItWorks = () => {
+    setShowHowItWorks(prev => !prev)
+    localStorage.setItem('seen-grading-how-it-works', 'true')
+  }
 
   // Form State
   const [grade, setGrade] = useState<GradeValue | null>(null)
@@ -207,6 +236,29 @@ export function GradeSection({ tradeId, strategyId }: GradeSectionProps) {
   return (
     <div className="space-y-6">
 
+      {/* ── How It Works Collapsible ── */}
+      <div className="bg-[var(--secondary)]/20 border border-[var(--border)] rounded-md overflow-hidden">
+        <button
+          onClick={toggleHowItWorks}
+          className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)]/40 transition-colors"
+        >
+          <span>How Grading Works</span>
+          <span className="text-lg leading-none">{showHowItWorks ? '−' : '+'}</span>
+        </button>
+        {showHowItWorks && (
+          <div className="px-3 pb-3 pt-1 border-t border-[var(--border)] text-sm text-[var(--muted-foreground)] space-y-2 border-l-2 border-l-[var(--color-blue)]">
+            <p>1. <strong>Confluences:</strong> Check off the rules met for this trade.</p>
+            <p>2. <strong>Auto-Grade:</strong> The system assigns a letter grade based on matched confluences (configured in Strategy settings).</p>
+            <p>3. <strong>Categories:</strong> Score individual execution categories out of 100.</p>
+            <div className="pt-2">
+              <a href={`/grading/configure${strategyId ? `?strategy=${strategyId}` : ''}`} className="text-[var(--color-blue)] hover:underline text-xs flex items-center gap-1">
+                <Settings2 className="w-3 h-3" /> Configure Grading Rules
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* ── Confluences ── */}
       <div className="space-y-3">
         <h4 className="text-xs font-semibold uppercase text-[var(--muted-foreground)] tracking-wide">
@@ -259,35 +311,44 @@ export function GradeSection({ tradeId, strategyId }: GradeSectionProps) {
 
       {/* ── Category Scores ── */}
       <div className="space-y-3">
-        <h4 className="text-xs font-semibold uppercase text-[var(--muted-foreground)] tracking-wide">
-          Category Scores
-        </h4>
+        <div className="flex items-center justify-between">
+          <h4 className="text-xs font-semibold uppercase text-[var(--muted-foreground)] tracking-wide flex items-center gap-2">
+            Category Scores
+            {hasOverrides && <span className="bg-[var(--color-blue)]/20 text-[var(--color-blue)] text-[10px] px-1.5 py-0.5 rounded normal-case">Strategy Overrides</span>}
+          </h4>
+        </div>
         <div className="grid grid-cols-1 gap-1.5">
-          {Object.entries({
-            risk_management_score: 'Risk Management',
-            execution_score: 'Execution',
-            discipline_score: 'Discipline',
-            strategy_score: 'Strategy',
-            efficiency_score: 'Efficiency'
-          }).map(([key, label]) => (
-            <div key={key} className="flex items-center justify-between px-3 py-1.5 bg-[var(--secondary)]/50 rounded-md border border-[var(--border)]">
-              <span className="text-sm font-medium text-[var(--foreground)]">{label}</span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={scores[key as keyof typeof scores]}
-                  onChange={(e) => handleScoreChange(key as keyof typeof scores, e.target.value)}
-                  placeholder="—"
-                  className={cn(
-                    "w-12 h-7 bg-[var(--background)] border border-[var(--border)] rounded text-right px-2 font-mono text-xs text-[var(--foreground)]",
-                    "focus:border-[var(--ring)] focus:ring-1 focus:ring-[var(--ring)] focus:outline-none placeholder:text-[var(--muted-foreground)]/50"
-                  )}
-                />
-              </div>
+          {activeCategoryEntries.length === 0 ? (
+            <div className="text-sm px-3 py-2.5 bg-[var(--secondary)] text-[var(--muted-foreground)] rounded border border-[var(--border)]">
+              No categories configured.
             </div>
-          ))}
+          ) : activeCategoryEntries.map(([label, weight], index) => {
+            const dbScoreKeys = ['risk_management_score', 'execution_score', 'discipline_score', 'strategy_score', 'efficiency_score'] as const
+            const key = dbScoreKeys[index]
+            if (!key) return null
+            return (
+              <div key={label} className="flex items-center justify-between px-3 py-1.5 bg-[var(--secondary)]/50 rounded-md border border-[var(--border)]">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-[var(--foreground)]">{label}</span>
+                  <span className="text-[10px] text-[var(--muted-foreground)]">{String(weight)}%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={scores[key]}
+                    onChange={(e) => handleScoreChange(key, e.target.value)}
+                    placeholder="—"
+                    className={cn(
+                      "w-12 h-7 bg-[var(--background)] border border-[var(--border)] rounded text-right px-2 font-mono text-xs text-[var(--foreground)]",
+                      "focus:border-[var(--ring)] focus:ring-1 focus:ring-[var(--ring)] focus:outline-none placeholder:text-[var(--muted-foreground)]/50"
+                    )}
+                  />
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 
@@ -299,6 +360,7 @@ export function GradeSection({ tradeId, strategyId }: GradeSectionProps) {
         <div className="flex gap-1">
           {GRADES.map((g) => {
             const isSelected = grade === g
+            const customLabel = dynamicRubric[g] // use custom label from rubric if exists
             return (
               <button
                 key={g}
@@ -306,13 +368,15 @@ export function GradeSection({ tradeId, strategyId }: GradeSectionProps) {
                   setGrade(g)
                   setAutoGraded(false)
                 }}
+                title={customLabel}
                 className={cn(
-                  "flex-1 py-2 rounded-md font-bold text-sm border transition-all duration-200",
+                  "flex-1 py-1 flex flex-col items-center justify-center rounded-md font-bold text-sm border transition-all duration-200",
                   getGradeColor(g, isSelected),
                   !isSelected && "hover:bg-[var(--secondary)]/80 hover:text-[var(--foreground)] border-[var(--border)]"
                 )}
               >
-                {g}
+                <span>{g}</span>
+                {customLabel && isSelected && <span className="text-[9px] font-normal leading-tight opacity-90 truncate max-w-full px-1">{String(customLabel)}</span>}
               </button>
             )
           })}

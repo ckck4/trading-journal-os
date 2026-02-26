@@ -82,6 +82,17 @@ const getOverallScore = (trade: TradeGrade) => {
 export function GradingClient() {
     const [weights, setWeights] = useState<CategoryWeights>(DEFAULT_WEIGHTS)
     const [activeTab, setActiveTab] = useState<'today' | 'week' | 'month' | 'lifetime'>('today')
+    const [showHowItWorks, setShowHowItWorks] = useState(false)
+
+    useEffect(() => {
+        const seen = localStorage.getItem('seen-grading-dashboard-how')
+        if (!seen) setShowHowItWorks(true)
+    }, [])
+
+    const toggleHowItWorks = () => {
+        setShowHowItWorks(prev => !prev)
+        localStorage.setItem('seen-grading-dashboard-how', 'true')
+    }
 
     // Load weights from local storage
     useEffect(() => {
@@ -298,6 +309,28 @@ export function GradingClient() {
                 </div>
             </div>
 
+            {/* How It Works Collapsible */}
+            <div className="bg-[var(--secondary)]/20 border border-[var(--border)] rounded-md overflow-hidden">
+                <button
+                    onClick={toggleHowItWorks}
+                    className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold uppercase tracking-wide text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)]/40 transition-colors"
+                >
+                    <span>Understanding Your Grading Dashboard</span>
+                    <span className="text-xl leading-none">{showHowItWorks ? '−' : '+'}</span>
+                </button>
+                {showHowItWorks && (
+                    <div className="px-4 pb-4 pt-2 border-t border-[var(--border)] text-sm text-[var(--muted-foreground)] space-y-3 border-l-2 border-l-[var(--color-blue)]">
+                        <p>1. <strong>Data Source:</strong> Grades are pulled from individual trades logged in your Journal.</p>
+                        <p>2. <strong>Weighted Scores:</strong> The overall grade relies on how you weighted each category (e.g. Risk Management, Execution) in your global or strategy-specific settings.</p>
+                        <p>3. <strong>Confluences:</strong> Strategies automatically calculate grades if you set up Auto-Grading Rules based on checklist confluences.</p>
+                        <div className="pt-2">
+                            <Link href="/grading/configure" className="text-[var(--color-blue)] hover:underline inline-flex items-center gap-1 font-medium">
+                                <Settings className="w-4 h-4" /> Go to Grading Configuration
+                            </Link>
+                        </div>
+                    </div>
+                )}
+            </div>
             {/* Scorecards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <Scorecard title="Today" stats={computeStats(periodData.today)} />

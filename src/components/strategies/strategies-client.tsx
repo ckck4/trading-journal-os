@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
-import { Plus, Check, PenLine, Trash2, BookMarked, TrendingUp, Presentation, AlertCircle, Percent } from 'lucide-react'
+import { Plus, Check, PenLine, Trash2, BookMarked, TrendingUp, Presentation, AlertCircle, Percent, SlidersHorizontal } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
 import { Button } from '@/components/ui/button'
@@ -372,9 +373,17 @@ export function StrategiesClient() {
                                 <div className="px-6 pb-4 pt-0">
                                     <div className="h-px bg-[var(--border)] w-full mb-4" />
                                     <div className="flex items-center justify-between">
-                                        <Button variant="ghost" size="sm" onClick={() => setViewingId(strategy.id)} className="h-8 px-3 text-xs">
-                                            View Rules
-                                        </Button>
+                                        <div className="flex items-center space-x-2">
+                                            <Button variant="ghost" size="sm" onClick={() => setViewingId(strategy.id)} className="h-8 px-3 text-xs">
+                                                View Rules
+                                            </Button>
+                                            <Button variant="outline" size="sm" asChild className="h-8 px-3 text-xs bg-[var(--secondary)]">
+                                                <Link href={`/grading/configure?strategy=${strategy.id}`}>
+                                                    <SlidersHorizontal className="w-3 h-3 mr-2" />
+                                                    Configure Grading
+                                                </Link>
+                                            </Button>
+                                        </div>
                                         <div className="flex items-center space-x-1">
                                             <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--muted-foreground)] hover:text-[var(--foreground)]" onClick={() => handleEdit(strategy)}>
                                                 <PenLine size={14} />
