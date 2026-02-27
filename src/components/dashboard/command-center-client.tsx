@@ -2,9 +2,9 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { useFiltersStore } from '@/stores/filters'
-import { BalanceDrawdownWidget } from '@/components/dashboard/balance-drawdown-widget'
+import { CombinedEquityBalanceWidget } from '@/components/dashboard/combined-equity-balance-widget'
 import { DailyDisciplineWidget } from '@/components/dashboard/daily-discipline-widget'
-import { EquityCurveWidget } from '@/components/dashboard/equity-curve-widget'
+import { DisciplineHistoryWidget } from '@/components/dashboard/discipline-history-widget'
 import { DailyPnlWidget } from '@/components/dashboard/daily-pnl-widget'
 import { WinRateWidget } from '@/components/dashboard/win-rate-widget'
 import { PropRulesWidget } from '@/components/dashboard/prop-rules-widget'
@@ -13,7 +13,7 @@ import { GoalsWidget } from '@/components/dashboard/goals-widget'
 import type { WidgetData } from '@/types/dashboard'
 import type { DatePreset } from '@/stores/filters'
 
-const WIDGET_IDS = ['balance', 'discipline', 'equity', 'daily', 'winrate', 'prop', 'trades', 'goals'] as const
+const WIDGET_IDS = ['combined', 'discipline', 'history', 'daily', 'winrate', 'prop', 'trades', 'goals'] as const
 type WidgetId = typeof WIDGET_IDS[number]
 
 // ─── Date range helper ─────────────────────────────────────────────────────────
@@ -58,14 +58,14 @@ function WidgetCard({
 }) {
   return (
     <div className="h-full w-full rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 overflow-hidden relative">
-      {id === 'balance' && (
-        <BalanceDrawdownWidget data={widgets?.balance ?? null} isLoading={isLoading} />
+      {id === 'combined' && (
+        <CombinedEquityBalanceWidget balanceData={widgets?.balance ?? null} equityData={widgets?.equityCurve ?? []} isLoading={isLoading} />
       )}
       {id === 'discipline' && (
         <DailyDisciplineWidget />
       )}
-      {id === 'equity' && (
-        <EquityCurveWidget data={widgets?.equityCurve ?? []} isLoading={isLoading} />
+      {id === 'history' && (
+        <DisciplineHistoryWidget />
       )}
       {id === 'daily' && (
         <DailyPnlWidget data={widgets?.dailyPnl ?? null} isLoading={isLoading} />
@@ -145,38 +145,38 @@ export function CommandCenterClient() {
 
       {/* ── Overview Mode (fixed grid) ────────────────────────────────────────── */}
       <div className="flex flex-col gap-4">
-        {/* Row 1: Balance + Discipline + Equity Curve */}
+        {/* ROW 1: Combined + Win Rate + Today's PnL */}
         <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 lg:col-span-3" style={{ minHeight: '340px' }}>
-            <WidgetCard id="balance" widgets={widgets} isLoading={isLoading} />
+          <div className="col-span-12 lg:col-span-5" style={{ minHeight: '340px' }}>
+            <WidgetCard id="combined" widgets={widgets} isLoading={isLoading} />
           </div>
           <div className="col-span-12 lg:col-span-3" style={{ minHeight: '340px' }}>
-            <WidgetCard id="discipline" widgets={widgets} isLoading={isLoading} />
-          </div>
-          <div className="col-span-12 lg:col-span-6" style={{ minHeight: '340px' }}>
-            <WidgetCard id="equity" widgets={widgets} isLoading={isLoading} />
-          </div>
-        </div>
-
-        {/* Row 2: Daily P&L + Win Rate + Prop Rules */}
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 sm:col-span-6 lg:col-span-3" style={{ minHeight: '180px' }}>
-            <WidgetCard id="daily" widgets={widgets} isLoading={isLoading} />
-          </div>
-          <div className="col-span-12 sm:col-span-6 lg:col-span-3" style={{ minHeight: '180px' }}>
             <WidgetCard id="winrate" widgets={widgets} isLoading={isLoading} />
           </div>
-          <div className="col-span-12 lg:col-span-6" style={{ minHeight: '180px' }}>
-            <WidgetCard id="prop" widgets={widgets} isLoading={isLoading} />
+          <div className="col-span-12 lg:col-span-4" style={{ minHeight: '340px' }}>
+            <WidgetCard id="daily" widgets={widgets} isLoading={isLoading} />
           </div>
         </div>
 
-        {/* Row 3: Recent Trades + Goals */}
+        {/* ROW 2: Discipline History + Daily Discipline + Recent Trades */}
         <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 lg:col-span-6" style={{ minHeight: '240px' }}>
+          <div className="col-span-12 lg:col-span-4" style={{ minHeight: '240px' }}>
+            <WidgetCard id="history" widgets={widgets} isLoading={isLoading} />
+          </div>
+          <div className="col-span-12 lg:col-span-3" style={{ minHeight: '240px' }}>
+            <WidgetCard id="discipline" widgets={widgets} isLoading={isLoading} />
+          </div>
+          <div className="col-span-12 lg:col-span-5" style={{ minHeight: '240px' }}>
             <WidgetCard id="trades" widgets={widgets} isLoading={isLoading} />
           </div>
-          <div className="col-span-12 lg:col-span-6" style={{ minHeight: '240px' }}>
+        </div>
+
+        {/* ROW 3: Prop Rules + Goals */}
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-12 lg:col-span-5" style={{ minHeight: '240px' }}>
+            <WidgetCard id="prop" widgets={widgets} isLoading={isLoading} />
+          </div>
+          <div className="col-span-12 lg:col-span-7" style={{ minHeight: '240px' }}>
             <WidgetCard id="goals" widgets={widgets} isLoading={isLoading} />
           </div>
         </div>

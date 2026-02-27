@@ -379,7 +379,7 @@ export function CalendarHeatmap({ days }: { days: DayResult[] }) {
                                       Discipline Score: {discData.score} · {discData.label}
                                     </span>
                                     <span className="text-[#8B92A8]">
-                                      Grades: {discData.components.grades_score ?? '—'} ({discData.weights.grade_weight}%) · Routine: {discData.components.routine_score != null ? (discData.components.routine_score > 0 ? '✓' : '✗') : '—'} ({discData.weights.routine_weight}%)
+                                      Grades: {discData.components?.grades_score ?? '—'} ({discData.weights?.grade_weight ?? 70}%) · Routine: {discData.components?.routine_score != null ? (discData.components.routine_score > 0 ? '✓' : '✗') : '—'} ({discData.weights?.routine_weight ?? 30}%)
                                     </span>
                                   </>
                                 ) : (

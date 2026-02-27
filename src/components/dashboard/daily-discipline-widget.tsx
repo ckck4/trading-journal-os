@@ -203,7 +203,7 @@ export function DailyDisciplineWidget() {
                             <ResponsiveContainer width="100%" height="100%">
                                 <RadialBarChart
                                     cx="50%" cy="50%" innerRadius="70%" outerRadius="100%"
-                                    barSize={10} data={[{ name: 'score', value: 100 }]} startAngle={90} endAngle={-270}
+                                    barSize={10} data={[{ name: 'score', value: 0 }]} startAngle={90} endAngle={-270}
                                 >
                                     <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
                                     <RadialBar background={{ fill: '#2A2F3E' }} dataKey="value" cornerRadius={10} fill="#2A2F3E" />
