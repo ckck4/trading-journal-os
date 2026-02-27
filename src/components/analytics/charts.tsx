@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   ResponsiveContainer,
   LineChart,
@@ -207,7 +209,49 @@ function getCalendarCellColor(netPnl: number, maxMagnitude: number): string {
   return 'rgba(26,30,40,0.6)'
 }
 
+function getDisciplineCellColor(score: number | null | undefined): string {
+  if (score === null || score === undefined) return '#1A1D27'
+
+  // We use opacity variation within each range to show intensity
+  if (score >= 90) {
+    const opacity = 0.5 + ((score - 90) / 10) * 0.5
+    return `rgba(34, 197, 94, ${opacity.toFixed(2)})` // #22C55E
+  }
+  if (score >= 75) {
+    const opacity = 0.5 + ((score - 75) / 15) * 0.5
+    return `rgba(59, 130, 246, ${opacity.toFixed(2)})` // #3B82F6
+  }
+  if (score >= 60) {
+    const opacity = 0.5 + ((score - 60) / 15) * 0.5
+    return `rgba(245, 158, 11, ${opacity.toFixed(2)})` // #F59E0B
+  }
+  if (score >= 40) {
+    const opacity = 0.5 + ((score - 40) / 20) * 0.5
+    return `rgba(249, 115, 22, ${opacity.toFixed(2)})` // #F97316
+  }
+  const opacity = 0.5 + (score / 40) * 0.5
+  return `rgba(239, 68, 68, ${opacity.toFixed(2)})` // #EF4444
+}
+
 export function CalendarHeatmap({ days }: { days: DayResult[] }) {
+  const [mode, setMode] = useState<'pnl' | 'discipline'>('pnl')
+
+  const { data: disciplineData } = useQuery({
+    queryKey: ['discipline-history', '90d'],
+    queryFn: async () => {
+      const res = await fetch('/api/discipline/history?days=90')
+      if (!res.ok) throw new Error('Failed to fetch discipline history')
+      return res.json()
+    },
+    enabled: mode === 'discipline'
+  })
+
+  const history = disciplineData?.data ?? []
+  const disciplineMap = new Map<string, any>()
+  for (const item of history) {
+    disciplineMap.set(item.date, item)
+  }
+
   if (!days.length) {
     return <ChartCard title="Calendar"><EmptyState /></ChartCard>
   }
@@ -242,73 +286,119 @@ export function CalendarHeatmap({ days }: { days: DayResult[] }) {
   const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
   return (
-    <ChartCard title="Calendar Heatmap">
-      <TooltipProvider delayDuration={100}>
-        <div className="overflow-x-auto">
-          <div className="flex gap-1 min-w-0">
-            {/* Day labels column */}
-            <div className="flex flex-col gap-1 shrink-0 pt-5">
-              {DAY_LABELS.map((label, i) => (
-                <div
-                  key={i}
-                  className="w-5 h-6 flex items-center justify-center text-[10px] text-[var(--muted-foreground)]"
-                >
-                  {label}
-                </div>
-              ))}
-            </div>
-            {/* Weeks */}
-            {weeks.map((week, wi) => {
-              const firstCell = week.find((d) => d !== null)
-              const showMonth =
-                firstCell &&
-                (wi === 0 || new Date(firstCell + 'T12:00:00').getDate() <= 7)
-
-              return (
-                <div key={wi} className="flex flex-col gap-1 shrink-0">
-                  <div className="h-5 flex items-center">
-                    {showMonth && (
-                      <span className="text-[10px] text-[var(--muted-foreground)] whitespace-nowrap">
-                        {new Date(firstCell + 'T12:00:00').toLocaleString('en-US', { month: 'short' })}
-                      </span>
-                    )}
-                  </div>
-                  {week.map((dateStr, di) => {
-                    if (!dateStr) {
-                      return <div key={di} className="w-6 h-6 rounded" style={{ background: 'transparent' }} />
-                    }
-                    const dayData = dayMap.get(dateStr)
-                    const color = dayData
-                      ? getCalendarCellColor(dayData.netPnl, maxMagnitude)
-                      : 'rgba(26,30,40,0.4)'
-                    return (
-                      <Tooltip key={di}>
-                        <TooltipTrigger asChild>
-                          <div
-                            className="w-6 h-6 rounded cursor-default"
-                            style={{ background: color }}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent
-                          className="border-[#2A2F3E] bg-[#14171E] px-3 py-2 text-xs shadow-md"
-                          sideOffset={4}
-                        >
-                          <span style={{ color: dayData ? (dayData.netPnl > 0 ? '#22C55E' : dayData.netPnl < 0 ? '#EF4444' : '#E8EAF0') : '#E8EAF0' }}>
-                            {dayData
-                              ? `${dateStr}: ${dayData.netPnl >= 0 ? '+' : ''}$${dayData.netPnl.toFixed(2)}`
-                              : dateStr}
-                          </span>
-                        </TooltipContent>
-                      </Tooltip>
-                    )
-                  })}
-                </div>
-              )
-            })}
-          </div>
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] overflow-hidden h-full flex flex-col">
+      <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+          Calendar Heatmap
+        </span>
+        <div className="flex bg-[#14171E] rounded-full p-0.5 border border-[#2A2F3E]">
+          <button
+            onClick={() => setMode('pnl')}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-all duration-150 ${mode === 'pnl' ? 'bg-[#3B82F6] text-white shadow-sm' : 'text-[#8B92A8] hover:text-[#E8EAF0]'
+              }`}
+          >
+            📈 P&L
+          </button>
+          <button
+            onClick={() => setMode('discipline')}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-all duration-150 ${mode === 'discipline' ? 'bg-[#3B82F6] text-white shadow-sm' : 'text-[#8B92A8] hover:text-[#E8EAF0]'
+              }`}
+          >
+            🎯 Discipline
+          </button>
         </div>
-      </TooltipProvider>
-    </ChartCard>
+      </div>
+      <div className="p-4 flex-1">
+        <TooltipProvider delayDuration={100}>
+          <div className="overflow-x-auto">
+            <div className="flex gap-1 min-w-0">
+              {/* Day labels column */}
+              <div className="flex flex-col gap-1 shrink-0 pt-5">
+                {DAY_LABELS.map((label, i) => (
+                  <div
+                    key={i}
+                    className="w-5 h-6 flex items-center justify-center text-[10px] text-[var(--muted-foreground)]"
+                  >
+                    {label}
+                  </div>
+                ))}
+              </div>
+              {/* Weeks */}
+              {weeks.map((week, wi) => {
+                const firstCell = week.find((d) => d !== null)
+                const showMonth =
+                  firstCell &&
+                  (wi === 0 || new Date(firstCell + 'T12:00:00').getDate() <= 7)
+
+                return (
+                  <div key={wi} className="flex flex-col gap-1 shrink-0">
+                    <div className="h-5 flex items-center">
+                      {showMonth && (
+                        <span className="text-[10px] text-[var(--muted-foreground)] whitespace-nowrap">
+                          {new Date(firstCell + 'T12:00:00').toLocaleString('en-US', { month: 'short' })}
+                        </span>
+                      )}
+                    </div>
+                    {week.map((dateStr, di) => {
+                      if (!dateStr) {
+                        return <div key={di} className="w-6 h-6 rounded" style={{ background: 'transparent' }} />
+                      }
+                      const dayData = dayMap.get(dateStr)
+                      const discData = disciplineMap.get(dateStr)
+
+                      let color = 'rgba(26,30,40,0.4)'
+                      if (mode === 'pnl') {
+                        color = dayData ? getCalendarCellColor(dayData.netPnl, maxMagnitude) : 'rgba(26,30,40,0.4)'
+                      } else if (mode === 'discipline') {
+                        color = discData ? getDisciplineCellColor(discData.score) : '#1A1D27'
+                      }
+                      return (
+                        <Tooltip key={di}>
+                          <TooltipTrigger asChild>
+                            <div
+                              className="w-6 h-6 rounded cursor-default"
+                              style={{ background: color }}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent
+                            className="border-[#2A2F3E] bg-[#14171E] px-3 py-2 text-xs shadow-md"
+                            sideOffset={4}
+                          >
+                            {mode === 'pnl' ? (
+                              <span style={{ color: dayData ? (dayData.netPnl > 0 ? '#22C55E' : dayData.netPnl < 0 ? '#EF4444' : '#E8EAF0') : '#E8EAF0' }}>
+                                {dayData
+                                  ? `${dateStr}: ${dayData.netPnl >= 0 ? '+' : ''}$${dayData.netPnl.toFixed(2)}`
+                                  : dateStr}
+                              </span>
+                            ) : (
+                              <div className="flex flex-col gap-1 text-[#E8EAF0]">
+                                <span className="font-semibold">{fmtLabel(dateStr)}</span>
+                                {discData ? (
+                                  <>
+                                    <span style={{ color: getDisciplineCellColor(discData.score) }} className="font-medium">
+                                      Discipline Score: {discData.score} · {discData.label}
+                                    </span>
+                                    <span className="text-[#8B92A8]">
+                                      Grades: {discData.components.grades_score ?? '—'} ({discData.weights.grade_weight}%) · Routine: {discData.components.routine_score != null ? (discData.components.routine_score > 0 ? '✓' : '✗') : '—'} ({discData.weights.routine_weight}%)
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="text-[#8B92A8]">No discipline data</span>
+                                )}
+                              </div>
+                            )}
+                          </TooltipContent>
+                        </Tooltip>
+                      )
+                    })}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </TooltipProvider>
+      </div>
+    </div>
   )
 }
 

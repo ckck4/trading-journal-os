@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useFiltersStore } from '@/stores/filters'
 import { BalanceDrawdownWidget } from '@/components/dashboard/balance-drawdown-widget'
+import { DailyDisciplineWidget } from '@/components/dashboard/daily-discipline-widget'
 import { EquityCurveWidget } from '@/components/dashboard/equity-curve-widget'
 import { DailyPnlWidget } from '@/components/dashboard/daily-pnl-widget'
 import { WinRateWidget } from '@/components/dashboard/win-rate-widget'
@@ -12,7 +13,7 @@ import { GoalsWidget } from '@/components/dashboard/goals-widget'
 import type { WidgetData } from '@/types/dashboard'
 import type { DatePreset } from '@/stores/filters'
 
-const WIDGET_IDS = ['balance', 'equity', 'daily', 'winrate', 'prop', 'trades', 'goals'] as const
+const WIDGET_IDS = ['balance', 'discipline', 'equity', 'daily', 'winrate', 'prop', 'trades', 'goals'] as const
 type WidgetId = typeof WIDGET_IDS[number]
 
 // ─── Date range helper ─────────────────────────────────────────────────────────
@@ -59,6 +60,9 @@ function WidgetCard({
     <div className="h-full w-full rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 overflow-hidden relative">
       {id === 'balance' && (
         <BalanceDrawdownWidget data={widgets?.balance ?? null} isLoading={isLoading} />
+      )}
+      {id === 'discipline' && (
+        <DailyDisciplineWidget />
       )}
       {id === 'equity' && (
         <EquityCurveWidget data={widgets?.equityCurve ?? []} isLoading={isLoading} />
@@ -141,12 +145,15 @@ export function CommandCenterClient() {
 
       {/* ── Overview Mode (fixed grid) ────────────────────────────────────────── */}
       <div className="flex flex-col gap-4">
-        {/* Row 1: Balance + Equity Curve */}
+        {/* Row 1: Balance + Discipline + Equity Curve */}
         <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 lg:col-span-4" style={{ minHeight: '200px' }}>
+          <div className="col-span-12 lg:col-span-3" style={{ minHeight: '340px' }}>
             <WidgetCard id="balance" widgets={widgets} isLoading={isLoading} />
           </div>
-          <div className="col-span-12 lg:col-span-8" style={{ minHeight: '200px' }}>
+          <div className="col-span-12 lg:col-span-3" style={{ minHeight: '340px' }}>
+            <WidgetCard id="discipline" widgets={widgets} isLoading={isLoading} />
+          </div>
+          <div className="col-span-12 lg:col-span-6" style={{ minHeight: '340px' }}>
             <WidgetCard id="equity" widgets={widgets} isLoading={isLoading} />
           </div>
         </div>
