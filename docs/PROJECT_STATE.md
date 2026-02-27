@@ -8,9 +8,10 @@ We have completed and verified Phases **0-4**. A full QA debug pass was executed
 **Known Issues**: None.
 
 **Next Immediate Focus**:
-- [ ] **Phase 5: Finance + Ledger + Leak Detector** — 🚫 NOT STARTED
+- **Current Focus**: Polish, redesign, bug fixes
+- [ ] **Phase 5: Finance + Ledger** — 🚫 NOT STARTED
 - [ ] **Phase 6: Strategies + Routines + Goals** — 🚫 NOT STARTED
-- [ ] **Phase 7: AI Coach + Polish** — 🚫 NOT STARTED
+- [ ] **Phase 7: Leak Detector & AI Coach** — ⏳ COMING SOON (placeholder pages exist)
 - [ ] **Phase 8: Testing + Launch** — 🚫 NOT STARTED
 
 ## 1. Detailed Progress Breakdown
@@ -30,7 +31,8 @@ We have completed and verified Phases **0-4**. A full QA debug pass was executed
 - **Trades UI**: The backend API for trades is present, but the frontend DataTables and views inside `src/app/trades/` need to be built and wired up.
 
 ### Not Started 🚫
-- All features in Phases 5 through 8. No finance ledger, leak detector, strategy workflows, or AI coach.
+- Features in Phases 5 through 6 (Finance, Ledger, Strategies, Goals).
+- **Coming Soon**: Leak Detector and AI Coach (placeholder pages exist).
 
 ## 3. Current Known Bugs & Blockers
 - **Empty States**: Command Center and Analytics show empty states until the user selects an account in the global toolbar. This is expected behavior, not a bug, but should be noted for UI polish.
@@ -51,4 +53,4 @@ We have completed and verified Phases **0-4**. A full QA debug pass was executed
 - **State**: The `main` branch successfully compiles (`npm run build`). All dependencies from isolated branches have been resolved cleanly in `package.json`.
 
 ## 7. Next Task
-- **Task**: Phase 5 (Finance + Ledger + Leak Detector) OR UI Polish pass before continuing with new features.
+- **Task**: Polish, redesign, bug fixes before continuing with Finance and Ledger.
