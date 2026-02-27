@@ -383,6 +383,9 @@ function DayGroup({ date, trades, checkin, selectedId, onSelectTrade, onInfoTrad
         <span className="text-xs font-semibold text-[var(--muted-foreground)] shrink-0">
           {formatDayHeader(date)}
         </span>
+        <div className="shrink-0 flex items-center">
+          <RoutinePill date={date} checkin={checkin} />
+        </div>
         <div className="flex-1 h-px bg-[var(--border)]" />
         <span className="text-xs text-[var(--muted-foreground)] shrink-0">
           {trades.length} trade{trades.length !== 1 ? 's' : ''}
@@ -395,9 +398,6 @@ function DayGroup({ date, trades, checkin, selectedId, onSelectTrade, onInfoTrad
         >
           {formatPnl(dayPnl.toString())}
         </span>
-        <div className="shrink-0 flex items-center pl-1">
-          <RoutinePill date={date} checkin={checkin} />
-        </div>
       </div>
 
       {/* Trade rows */}
