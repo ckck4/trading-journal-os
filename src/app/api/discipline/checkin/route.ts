@@ -4,6 +4,39 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
+        const datesParam = searchParams.get('dates');
+        if (datesParam) {
+            const dateList = datesParam.split(',');
+            const supabase = await createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user?.id) {
+                return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            }
+
+            const { data, error } = await supabase
+                .from("routine_checkins")
+                .select("*")
+                .eq("user_id", user.id)
+                .in("checkin_date", dateList);
+
+            if (error) {
+                throw error;
+            }
+
+            const map: Record<string, any> = {};
+            dateList.forEach((d: string) => {
+                map[d] = null;
+            });
+
+            if (data) {
+                data.forEach((row: any) => {
+                    map[row.checkin_date] = row;
+                });
+            }
+
+            return NextResponse.json({ data: map });
+        }
+
         let date = searchParams.get('date');
         if (!date) {
             date = new Date().toISOString().split('T')[0];

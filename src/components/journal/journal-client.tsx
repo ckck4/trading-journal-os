@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowUp, ArrowDown, BookOpen, RefreshCw, Info, Check, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -361,12 +361,13 @@ function TradeRow({ trade, isSelected, onClick, onInfoClick }: TradeRowProps) {
 interface DayGroupProps {
   date: string
   trades: Trade[]
+  checkin: any | null
   selectedId: string | null
   onSelectTrade: (trade: Trade) => void
   onInfoTrade: (trade: Trade) => void
 }
 
-function DayGroup({ date, trades, selectedId, onSelectTrade, onInfoTrade }: DayGroupProps) {
+function DayGroup({ date, trades, checkin, selectedId, onSelectTrade, onInfoTrade }: DayGroupProps) {
   const dayPnl = trades.reduce((sum, t) => sum + parseFloat(t.netPnl || '0'), 0)
   const pnlColor =
     dayPnl > 0
@@ -394,6 +395,9 @@ function DayGroup({ date, trades, selectedId, onSelectTrade, onInfoTrade }: DayG
         >
           {formatPnl(dayPnl.toString())}
         </span>
+        <div className="shrink-0 flex items-center pl-1">
+          <RoutinePill date={date} checkin={checkin} />
+        </div>
       </div>
 
       {/* Trade rows */}
@@ -415,116 +419,86 @@ function DayGroup({ date, trades, selectedId, onSelectTrade, onInfoTrade }: DayG
   )
 }
 
-// ─── Routine Banner ────────────────────────────────────────────────────────────
+// ─── Routine Pill ────────────────────────────────────────────────────────────
 
-function RoutineBanner() {
+function RoutinePill({ date, checkin }: { date: string, checkin: any | null }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
   const queryClient = useQueryClient()
-  const today = useMemo(() => fmt(new Date()), [])
 
-  const { data: checkinData, isLoading: checkinLoading } = useQuery({
-    queryKey: ['discipline-checkin', today],
-    queryFn: async () => {
-      const res = await fetch(`/api/discipline/checkin?date=${today}`)
-      if (!res.ok) return null
-      return res.json()
-    }
-  })
-
-  const { data: scoreData } = useQuery({
-    queryKey: ['discipline-score', today],
-    queryFn: async () => {
-      const res = await fetch(`/api/discipline/score?date=${today}`)
-      if (!res.ok) return null
-      return res.json()
-    }
-  })
-
-  const checkinMutation = useMutation({
+  const mutation = useMutation({
     mutationFn: async (followed: boolean) => {
       const res = await fetch('/api/discipline/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: today, followed_routine: followed })
+        body: JSON.stringify({ date, followed_routine: followed })
       })
-      if (!res.ok) throw new Error('Failed to update checkin')
+      if (!res.ok) throw new Error('Failed to update')
       return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['discipline-checkin', today] })
-      queryClient.invalidateQueries({ queryKey: ['discipline-score', today] })
+      queryClient.invalidateQueries({ queryKey: ['discipline-checkins'] })
+      queryClient.invalidateQueries({ queryKey: ['discipline-score', date] })
+      setIsOpen(false)
     }
   })
 
-  const [showPrompt, setShowPrompt] = useState(false)
+  useEffect(() => {
+    if (!isOpen) return
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [isOpen])
 
-  if (checkinLoading) return null
+  let pillClass = "text-[var(--muted-foreground)] border-[var(--border)]"
+  let text = "Routine: ?"
 
-  const checkin = checkinData?.data
-  const score = scoreData?.data?.score
-  const label = scoreData?.data?.label
-
-  const isCheckedIn = !!checkin && !showPrompt
-
-  let scoreColor = 'text-[var(--muted-foreground)]'
-  if (score >= 90) scoreColor = 'text-[var(--color-green)]'
-  else if (score >= 75) scoreColor = 'text-[#A3E635]' // lighter green/yellow
-  else if (score >= 60) scoreColor = 'text-[var(--color-yellow)]'
-  else if (score >= 40) scoreColor = 'text-[var(--color-orange)]'
-  else if (score !== undefined && score !== null) scoreColor = 'text-[var(--color-red)]'
-
-  if (!isCheckedIn) {
-    return (
-      <div className="mb-6 w-full rounded-lg border border-[var(--border)] border-l-[3px] border-l-[var(--color-blue)] bg-[#14171E] p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">🎯</span>
-          <span className="text-sm font-medium text-[var(--foreground)]">Did you follow your pre-trade routine today?</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => { checkinMutation.mutate(true); setShowPrompt(false); }}
-            disabled={checkinMutation.isPending}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold text-[var(--color-green)] border border-[var(--color-green)]/30 hover:bg-[var(--color-green)]/10 transition-colors"
-          >
-            <Check size={14} /> Yes, I followed my routine
-          </button>
-          <button
-            onClick={() => { checkinMutation.mutate(false); setShowPrompt(false); }}
-            disabled={checkinMutation.isPending}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold text-[var(--color-red)] border border-[var(--color-red)]/30 hover:bg-[var(--color-red)]/10 transition-colors"
-          >
-            <X size={14} /> No I didn't
-          </button>
-        </div>
-      </div>
-    )
+  if (checkin) {
+    if (checkin.followed_routine) {
+      pillClass = "text-[var(--color-green)] border-[var(--color-green)]/30"
+      text = "Routine: ✓"
+    } else {
+      pillClass = "text-[var(--color-red)] border-[var(--color-red)]/30"
+      text = "Routine: ✗"
+    }
   }
 
   return (
-    <div className="mb-6 w-full rounded-lg border border-[var(--border)] bg-[#14171E] px-4 py-2.5 flex items-center justify-between shadow-sm">
-      <div className="flex items-center gap-3">
-        {checkin.followed_routine ? (
-          <div className="flex items-center gap-2 text-[var(--color-green)] text-sm font-medium">
-            <Check size={16} /> Routine followed today
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 text-[var(--color-red)] text-sm font-medium">
-            <X size={16} /> Routine not followed today
-          </div>
+    <div className="relative isolate" ref={menuRef}>
+      <button
+        onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen) }}
+        className={cn(
+          "inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-medium border transition-colors",
+          pillClass,
+          isOpen ? "bg-[var(--accent)]" : "hover:bg-[var(--accent)]"
         )}
-        <button
-          onClick={() => setShowPrompt(true)}
-          className="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] underline decoration-dotted underline-offset-2 transition-colors"
-        >
-          Change
-        </button>
-      </div>
+      >
+        {text}
+      </button>
 
-      {score !== undefined && score !== null && (
-        <div className="flex items-center gap-1.5 text-sm">
-          <span className="text-[var(--muted-foreground)]">Discipline:</span>
-          <span className={cn("font-semibold font-mono", scoreColor)}>{score}</span>
-          <span className="text-[var(--muted-foreground)]">·</span>
-          <span className={scoreColor}>{label}</span>
+      {isOpen && (
+        <div
+          onClick={e => e.stopPropagation()}
+          className="absolute right-0 top-full mt-1.5 w-32 rounded-md border border-[var(--border)] bg-[var(--popover)] p-1 shadow-md flex gap-1 z-50 text-xs font-semibold animate-in fade-in zoom-in-95"
+        >
+          <button
+            onClick={() => mutation.mutate(true)}
+            disabled={mutation.isPending}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-sm text-[var(--color-green)] hover:bg-[var(--color-green)]/10"
+          >
+            <Check size={12} /> Yes
+          </button>
+          <button
+            onClick={() => mutation.mutate(false)}
+            disabled={mutation.isPending}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-sm text-[var(--color-red)] hover:bg-[var(--color-red)]/10"
+          >
+            <X size={12} /> No
+          </button>
         </div>
       )}
     </div>
@@ -586,6 +560,23 @@ export function JournalClient() {
     return Object.entries(groups)
   }, [trades])
 
+  const visibleDates = useMemo(() => groupedTrades.map(([d]) => d), [groupedTrades])
+
+  // Fetch checkins for visible dates
+  const { data: checkinsData } = useQuery({
+    queryKey: ['discipline-checkins', visibleDates],
+    queryFn: async () => {
+      if (visibleDates.length === 0) return { data: {} }
+      const res = await fetch(`/api/discipline/checkin?dates=${visibleDates.join(',')}`)
+      if (!res.ok) throw new Error('Failed to fetch checkins')
+      return res.json() as Promise<{ data: Record<string, any> }>
+    },
+    enabled: visibleDates.length > 0,
+    staleTime: 60 * 1000
+  })
+
+  const checkinsMap = checkinsData?.data || {}
+
   const handleSelectTrade = (trade: Trade) => {
     setSelectedTrade((prev) => (prev?.id === trade.id ? null : trade))
   }
@@ -620,17 +611,16 @@ export function JournalClient() {
           <LoadingSkeleton />
         ) : trades.length === 0 ? (
           <div className="px-6 py-5 space-y-6 max-w-5xl">
-            <RoutineBanner />
             <EmptyState />
           </div>
         ) : (
           <div className="px-6 py-5 space-y-6 max-w-5xl">
-            <RoutineBanner />
             {groupedTrades.map(([date, dayTrades]) => (
               <DayGroup
                 key={date}
                 date={date}
                 trades={dayTrades}
+                checkin={checkinsMap[date] ?? null}
                 selectedId={selectedTrade?.id ?? null}
                 onSelectTrade={handleSelectTrade}
                 onInfoTrade={handleInfoTrade}
