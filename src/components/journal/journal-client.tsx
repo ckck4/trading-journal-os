@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { ArrowUp, ArrowDown, BookOpen, RefreshCw, Info } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { ArrowUp, ArrowDown, BookOpen, RefreshCw, Info, Check, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useFiltersStore, type DatePreset } from '@/stores/filters'
 import type { Trade } from '@/types/trades'
@@ -415,6 +415,122 @@ function DayGroup({ date, trades, selectedId, onSelectTrade, onInfoTrade }: DayG
   )
 }
 
+// ─── Routine Banner ────────────────────────────────────────────────────────────
+
+function RoutineBanner() {
+  const queryClient = useQueryClient()
+  const today = useMemo(() => fmt(new Date()), [])
+
+  const { data: checkinData, isLoading: checkinLoading } = useQuery({
+    queryKey: ['discipline-checkin', today],
+    queryFn: async () => {
+      const res = await fetch(`/api/discipline/checkin?date=${today}`)
+      if (!res.ok) return null
+      return res.json()
+    }
+  })
+
+  const { data: scoreData } = useQuery({
+    queryKey: ['discipline-score', today],
+    queryFn: async () => {
+      const res = await fetch(`/api/discipline/score?date=${today}`)
+      if (!res.ok) return null
+      return res.json()
+    }
+  })
+
+  const checkinMutation = useMutation({
+    mutationFn: async (followed: boolean) => {
+      const res = await fetch('/api/discipline/checkin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: today, followed_routine: followed })
+      })
+      if (!res.ok) throw new Error('Failed to update checkin')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['discipline-checkin', today] })
+      queryClient.invalidateQueries({ queryKey: ['discipline-score', today] })
+    }
+  })
+
+  const [showPrompt, setShowPrompt] = useState(false)
+
+  if (checkinLoading) return null
+
+  const checkin = checkinData?.data
+  const score = scoreData?.data?.score
+  const label = scoreData?.data?.label
+
+  const isCheckedIn = !!checkin && !showPrompt
+
+  let scoreColor = 'text-[var(--muted-foreground)]'
+  if (score >= 90) scoreColor = 'text-[var(--color-green)]'
+  else if (score >= 75) scoreColor = 'text-[#A3E635]' // lighter green/yellow
+  else if (score >= 60) scoreColor = 'text-[var(--color-yellow)]'
+  else if (score >= 40) scoreColor = 'text-[var(--color-orange)]'
+  else if (score !== undefined && score !== null) scoreColor = 'text-[var(--color-red)]'
+
+  if (!isCheckedIn) {
+    return (
+      <div className="mb-6 w-full rounded-lg border border-[var(--border)] border-l-[3px] border-l-[var(--color-blue)] bg-[#14171E] p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">🎯</span>
+          <span className="text-sm font-medium text-[var(--foreground)]">Did you follow your pre-trade routine today?</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { checkinMutation.mutate(true); setShowPrompt(false); }}
+            disabled={checkinMutation.isPending}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold text-[var(--color-green)] border border-[var(--color-green)]/30 hover:bg-[var(--color-green)]/10 transition-colors"
+          >
+            <Check size={14} /> Yes, I followed my routine
+          </button>
+          <button
+            onClick={() => { checkinMutation.mutate(false); setShowPrompt(false); }}
+            disabled={checkinMutation.isPending}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold text-[var(--color-red)] border border-[var(--color-red)]/30 hover:bg-[var(--color-red)]/10 transition-colors"
+          >
+            <X size={14} /> No I didn't
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-6 w-full rounded-lg border border-[var(--border)] bg-[#14171E] px-4 py-2.5 flex items-center justify-between shadow-sm">
+      <div className="flex items-center gap-3">
+        {checkin.followed_routine ? (
+          <div className="flex items-center gap-2 text-[var(--color-green)] text-sm font-medium">
+            <Check size={16} /> Routine followed today
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-[var(--color-red)] text-sm font-medium">
+            <X size={16} /> Routine not followed today
+          </div>
+        )}
+        <button
+          onClick={() => setShowPrompt(true)}
+          className="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] underline decoration-dotted underline-offset-2 transition-colors"
+        >
+          Change
+        </button>
+      </div>
+
+      {score !== undefined && score !== null && (
+        <div className="flex items-center gap-1.5 text-sm">
+          <span className="text-[var(--muted-foreground)]">Discipline:</span>
+          <span className={cn("font-semibold font-mono", scoreColor)}>{score}</span>
+          <span className="text-[var(--muted-foreground)]">·</span>
+          <span className={scoreColor}>{label}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export function JournalClient() {
@@ -503,9 +619,13 @@ export function JournalClient() {
         {isLoading ? (
           <LoadingSkeleton />
         ) : trades.length === 0 ? (
-          <EmptyState />
+          <div className="px-6 py-5 space-y-6 max-w-5xl">
+            <RoutineBanner />
+            <EmptyState />
+          </div>
         ) : (
           <div className="px-6 py-5 space-y-6 max-w-5xl">
+            <RoutineBanner />
             {groupedTrades.map(([date, dayTrades]) => (
               <DayGroup
                 key={date}

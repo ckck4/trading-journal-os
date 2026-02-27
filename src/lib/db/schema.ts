@@ -913,6 +913,7 @@ export const financeSettings = pgTable("finance_settings", {
     customTags: text("custom_tags").array(),
     gradingWeights: jsonb("grading_weights").notNull().default('{"Risk Management":25,"Execution":20,"Discipline":25,"Strategy":15,"Efficiency":15}'),
     gradingRubric: jsonb("grading_rubric"),
+    disciplineWeights: jsonb("discipline_weights").notNull().default('{"grade_weight": 70, "routine_weight": 30}'),
     ...timestamps,
 });
 
@@ -921,6 +922,26 @@ export type Subscription = typeof subscriptions.$inferSelect;
 export type LedgerEntry = typeof ledgerEntries.$inferSelect;
 export type FinanceSettings = typeof financeSettings.$inferSelect;
 export type Strategy = typeof strategies.$inferSelect;
+
+// ============================================================
+// 27. Discipline & Routines
+// ============================================================
+export const routineCheckins = pgTable(
+    "routine_checkins",
+    {
+        id: uuid("id").primaryKey().defaultRandom(),
+        userId: uuid("user_id")
+            .notNull()
+            .references(() => users.id, { onDelete: "cascade" }),
+        checkinDate: date("checkin_date").notNull(),
+        followedRoutine: boolean("followed_routine").notNull().default(false),
+        notes: text("notes"),
+        ...timestamps,
+    },
+    (t) => [unique("routine_checkin_user_date").on(t.userId, t.checkinDate)]
+);
+
+export type RoutineCheckin = typeof routineCheckins.$inferSelect;
 
 // ============================================================
 // 28. Goals & Habits (Phase 6)

@@ -1,6 +1,7 @@
 # API Status
 
 ## Recent Updates
+- **Phase 10 Discipline Foundation**: Added `routine_checkins` database schema, expanded `finance_settings` with `discipline_weights`, and created backend implementation for `/api/discipline/checkin`, `/api/discipline/score`, `/api/discipline/history`, and `/api/discipline/settings` to support daily routines and score tracking.
 - **Phase 7 Grading Foundation**: Created database tables `confluences`, `trade_confluences`, and `trade_grades`. Added backend implementation for `/api/confluences`, `/api/confluences/[id]`, `/api/trades/[id]/grade`, and `/api/grading/summary` to support grading logic.
 - **Phase 6 Goals & Habits**: Created database tables `goals`, `habits`, and `habit_completions`. Added backend implementation for `/api/goals` and `/api/habits` offering end-to-end CRUD operations synced directly via the Supabase Admin client to respect user_id constraints. Implemented complex habit streaking metrics and goal progress logic dynamically calculated inside the API.
 - **Phase 6 Strategies Foundation**: Implemented `strategies` schema migration with new `entry_rules` and `invalidation_conditions` columns. Created `GET`, `POST`, `PATCH`, and `DELETE` endpoints for `/api/strategies`, including profit calculations (`tradeCount`, `totalPnl`, `winRate`, `profitFactor`). Updated `PATCH /api/trades/[id]` to process `strategy_id` assignments. Added Strategy selection dropdown to the trade detail panel.
