@@ -129,31 +129,51 @@ Financial overview, business accounting, loss pattern detection.
 | Fee breakdown charts | 1d | P0 |
 | Business Ledger: CRUD entries | 2d | P0 |
 | Ledger: auto-revenue from trading P&L | 1d | P0 |
-| ROI calculation + monthly P&L statement | 1d | P0 |
-| Leak Detector: signal generation algorithm | 3d | P0 |
-| Leak signal cards UI | 1d | P0 |
-
-**Deliverable**: CFO view, business ledger, automated leak detection.
-
----
-
-## Phase 6: Strategies + Routines + Goals (Week 14–15)
+## Phase 4: Command Center + Goals + Finance (Week 10–11)
 
 ### Goal
-Playbook management, routines, habit tracking.
+Cockpit view, Business Ledger, Prop HQ, and habit/goal tracking.
 
 | Task | Effort | Priority |
 |------|--------|----------|
-| Strategy CRUD UI | 1d | P0 |
-| Confluence template editor | 1d | P0 |
-| Per-strategy analytics panel | 1d | P0 |
-| Strategy versioning | 1d | P1 |
-| Routine CRUD + items | 1d | P0 |
-| Routine one-click completion UI | 1d | P0 |
-| Goals CRUD + progress tracking | 2d | P1 |
-| Streak computation | 1d | P1 |
+| Command Center UI shell | 1d | P0 |
+| Dynamic widget grid engine | 2d | P0 |
+| Widget definitions (P&L, Heatmap, R-Stats, Discipline) | 2d | P0 |
+| Business Ledger DB table + UI | 1.5d | P0 |
+| Finance Manager Dashboard | 1.5d | P0 |
+| Goals feature (metrics target tracking) | 2d | P0 |
+| Prop Firm tracking (LucidFlex templates + calculations) | 2d | P0 |
 
-**Deliverable**: Strategies with playbooks, routines with one-click completion, goals tracking.
+**Deliverable**: Full daily trading OS experience complete with Finance and Prop Firm integration.
+
+---
+
+## Phase 5: Deep Tactical Refinement (Current)
+
+### Goal
+Visual overhaul converting generic UI components to the "Deep Tactical" design system.
+
+| Task | Effort | Priority |
+|------|--------|----------|
+| Global layout wrap (Matte Zinc + Obsidian Glass) | 2d | P0 |
+| Typography overhaul (Inter + Roboto Mono) | 0.5d | P0 |
+| Component styling (Tables, Panels, Inputs) | 2.5d | P0 |
+| Animations pass | 1d | P0 |
+
+---
+
+## Phase 6: Autonomous Intelligence (Future)
+
+### Goal
+Data mining and contextual coaching.
+
+| Task | Effort | Priority |
+|------|--------|----------|
+| Leak Detector heuristics engine | 3d | P1 |
+| AI Coach integration (LLM API hook) | 3d | P2 |
+| Action plan generation | 1.5d | P2 |
+
+**Deliverable**: Proactive system that points out flaws before the user notices them.
 
 ---
 

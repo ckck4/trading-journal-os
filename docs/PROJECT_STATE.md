@@ -3,54 +3,51 @@
 > **Purpose**: A concise, living snapshot of the project for agent context bounding. Update manually as phases complete.
 
 ## Current Phase / Objective
-We have completed and verified Phases **0-4**. A full QA debug pass was executed and all identified issues across the application (imports, layouts, widgets, API calculations, interactions) have been comprehensively resolved.
+We have completed the core features (Phases 0-4, plus Finance, Ledger, Strategies, Goals, Prop). We are currently focused entirely on the **Visual Redesign (Deep Tactical)** phase.
 
 **Known Issues**: None.
 
 **Next Immediate Focus**:
-- **Current Focus**: Polish, redesign, bug fixes
-- [ ] **Phase 5: Finance + Ledger** — 🚫 NOT STARTED
-- [ ] **Phase 6: Strategies + Routines + Goals** — 🚫 NOT STARTED
-- [ ] **Phase 7: Leak Detector & AI Coach** — ⏳ COMING SOON (placeholder pages exist)
-- [ ] **Phase 8: Testing + Launch** — 🚫 NOT STARTED
+- [ ] **Visual Redesign (Deep Tactical)** — 🚀 IN PROGRESS
+- [ ] **Leak Detector & AI Coach** — ⏳ COMING SOON (placeholder pages exist)
+- [ ] **Future Analytical Tools (Ghost Portfolio, Tilt Curve, Scratch Threshold)** — 🚫 PLANNED
 
 ## 1. Detailed Progress Breakdown
 
 ### Complete ✅
 - **Next.js 16 Foundation**: Scaffolding with App Router, TypeScript, Tailwind CSS v4.
-- **Database Schema**: All 26 tables cleanly defined in Drizzle (`src/lib/db/schema.ts`).
-- **Database Security**: RLS migration generated with `auto_set_user_id()` trigger.
-- **Supabase Clients**: Browser, Server, Admin, and Middleware successfully configured.
-- **Agent Guidelines**: `AGENTS.md`, `CLAUDE.md`, `.claude/agents/`, `.agent/rules/`, and `.agent/workflows/` created. All major spec documentation is written.
-- **Auth UI**: `<RegisterForm>`, `<LoginForm>`, and `(auth)` layouts completed.
-- **UI Shell**: GlobalToolbar, Sidebar, layout contexts, and shadcn/ui integration finished.
-- **Import Pipeline**: CSV parsing, deduplication, account/instrument resolution, trade reconstruction, and API routes successfully merged into main.
-- **Trades API**: Base API scaffolding for retrieving trades and P&L merged into main.
+- **Database Schema**: All core tables neatly defined in Drizzle.
+- **Supabase & Auth**: Configuration, middleware, RLS, and auth layouts completed.
+- **Import Pipeline**: Robust CSV parsing, ID deduplication, and Flat-to-Flat algorithmic reconstruction.
+- **Command Center**: Fully interactive 3-row grid with KPIs, Charts, Widgets, and Discipline monitoring.
+- **Trade Journal**: List views, slide-over detail panels, with inline tagging and strategy application.
+- **Analytics Lab**: Comprehensive charting, heatmapping, and metrics breakdowns.
+- **Grading**: Dual-mode engine (Threshold vs Specific) with auto-grading hooks and rubric configuration.
+- **Strategies**: Versioned playbooks with confluence mapping.
+- **Goals & Habits**: Progress bars and consistency tracking.
+- **Finance & Ledger**: Active P&L, expense tracking, and prop payout management resulting in True ROI analysis.
+- **Prop Firm HQ**: LucidFlex rule mapping and track status.
 
 ### In Progress ⚠️ 
-- **Trades UI**: The backend API for trades is present, but the frontend DataTables and views inside `src/app/trades/` need to be built and wired up.
+- **Deep Tactical Phase**: Converting existing generic UI into the Deep Tactical aesthetic.
 
-### Not Started 🚫
-- Features in Phases 5 through 6 (Finance, Ledger, Strategies, Goals).
-- **Coming Soon**: Leak Detector and AI Coach (placeholder pages exist).
+### Coming Soon 🚫
+- Leak Detector and AI Coach placeholder pages exist, awaiting algorithm injection.
 
 ## 3. Current Known Bugs & Blockers
-- **Empty States**: Command Center and Analytics show empty states until the user selects an account in the global toolbar. This is expected behavior, not a bug, but should be noted for UI polish.
+- **Empty States**: Modules initially display no-data fallbacks if Global Context filters are too narrow. Expected behavior.
 
 ## 4. Key Architectural Decisions
-- **Single Worktree**: All work happens in one main branch (`main`) with strict directory boundaries per agent mapping. Feature branches (`feat/auth`, `feat/ui-shell`, `feat/import-pipeline`, `feat/trades-api`) have been permanently consolidated.
-- **AI Agent OS Setup**: 4 heavily specialized agent profiles defined (`api`, `auth`, `import`, `ui`). The assistant uses these context files to onboard cold. All agents refer to `AGENTS.md` and `CLAUDE.md`.
+- **Single Worktree**: Main branch only.
 - **Tech Stack**: Next.js 16 (Turbopack), Drizzle ORM, Supabase Auth + Postgres 15+ (RLS mandatory), Tailwind CSS v4, `shadcn/ui`.
 - **Trading Engine**: Tradeovate FILLS CSV act as the absolute source of truth. Features flat-to-flat deduplication and precise trade reconstruction.
-- **Security**: Service role client (`admin.ts`) bypasses RLS entirely, requiring manual injection of `user_id` into queries. RLS is strictly enabled.
 
 ## 5. Database State
-- **Schema**: 26 tables are fully mapped in `schema.ts`.
+- **Schema**: Tables are fully mapped in `schema.ts`.
 - **Primary Keys**: Valid `uuid` default random for all core tables. Timestamps utilize `timestamptz`.
-- **Missing Elements**: The Drizzle schema has not yet been populated with data, nor pushed to production/local Supabase. `public.users` is not synced.
 
 ## 6. Last Verified Working State
-- **State**: The `main` branch successfully compiles (`npm run build`). All dependencies from isolated branches have been resolved cleanly in `package.json`.
+- **State**: The `main` branch successfully compiles (`npm run build`). All unit layout integration tests pass correctly locally.
 
 ## 7. Next Task
-- **Task**: Polish, redesign, bug fixes before continuing with Finance and Ledger.
+- **Task**: Deep Tactical visual redesign of existing completed modular layouts.

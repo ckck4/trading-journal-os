@@ -6,6 +6,7 @@
 **What we're building**: A professional-grade, configurability-first trading journal OS for futures day traders.
 **Stack**: Next.js 16 (App Router), TypeScript, Supabase (Postgres + RLS), Drizzle ORM, Inngest, Zustand, TanStack Query, Tailwind CSS v4, shadcn/ui.
 **Architecture**: Single worktree (all work in one branch).
+**Current Phase**: Visual Redesign — Deep Tactical
 **Core Philosophy**: Cohesive OS integration (no silos), everything configurable. Futures only (Tradeovate FILLS CSV). No "cost of mistakes" features. Default Prop Firm: LucidFlex 50K.
 
 ## 2. File Reading Order (Onboarding)
@@ -25,13 +26,14 @@ For any new agent session, you MUST read these files in order before doing anyth
 - **Schema is Ground Truth**: `src/lib/db/schema.ts` defines all tables. Never invent column names. Always verify against this file.
 
 ## 4. UI Rules (Non-Negotiable)
-Follow `ux/ui_design_bible.md` strictly. No exceptions without explicit permission.
-- **Aesthetic**: Linear/Vercel dark aesthetic. No light mode.
-- **Layout**: Bento grid dashboard, modular cards.
-- **Colors**: Background `#0A0A0A`, Surface `#14171E` (or `#1A1A1A`), Accent `#3B82F6` (blue). Success `#22C55E`, Error `#EF4444`.
-- **Typography**: Inter for headings/UI, JetBrains Mono for numbers/data.
+Follow `ux/brand-identity-guidelines.md` strictly as the Deep Tactical Design System source of truth. No exceptions without explicit permission.
+- **Aesthetic**: Deep Tactical — authoritative, cinematic, focused, elite.
+- **Layout**: Bento grid dashboard, modular cards. Matte Zinc workstation vs Deep Space environment.
+- **Colors**: Deep Space `#000000`, Tool Base `#09090B`, Macro Pulse `#4ADE80`, Micro Win `#10B981`, Micro Loss `#EF4444`. 
+- **Typography**: Inter for headings/UI, Roboto Mono strictly for numbers/data.
+- **Surfaces**: Obsidian Glass for macro/environments, Matte Zinc for tools/charts.
 - **Components**: `shadcn/ui` (new-york dark theme), Lucide React icons.
-- **Animations**: Subtle, 150-300ms transitions. Skeletons for loaders.
+- **Animations**: Subtle biological animations (breathing lights) for macro, flat/matte for micro.
 
 ## 5. Code Quality Standards
 - **TypeScript**: Strict mode enabled. No `any` types without explicit justification.

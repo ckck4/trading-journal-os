@@ -202,23 +202,7 @@
 ---
 
 ## 11. AI Coach (P1)
-
-### Features
-| ID | Feature | Priority |
-|----|---------|----------|
-| AI-01 | Default: daily insight summary (auto-generated from today's trades + grades + leaks) | P1 |
-| AI-02 | Toggle: Action Plan generation (specific improvement suggestions) | P1 |
-| AI-03 | Toggle: Pre-market Plan Draft (based on recent patterns + goals) | P1 |
-| AI-04 | "Yesterday Review" flow: optional, disableable recap of previous day | P1 |
-| AI-05 | Insights history log | P1 |
-
-### User Stories
-- **US-AI-01**: As a trader, I see 2–3 key insights at the top of my Command Center each morning without clicking anything.
-- **US-AI-02**: As a trader, I can click "Generate Action Plan" to get specific, data-backed improvement steps.
-
----
-
-## 12. Goals (P1)
+## 11. Goals (P1)
 
 ### Features
 | ID | Feature | Priority |
@@ -235,7 +219,7 @@
 
 ---
 
-## 13. Pre/Post-Market Routines (P0)
+## 12. Pre/Post-Market Routines (P0)
 
 ### Features
 | ID | Feature | Priority |
@@ -250,7 +234,7 @@
 
 ---
 
-## 14. Settings & Configuration (P0)
+## 13. Settings & Configuration (P0)
 
 ### Features
 | ID | Feature | Priority |
