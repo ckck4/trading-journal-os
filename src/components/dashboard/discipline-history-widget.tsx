@@ -34,19 +34,19 @@ function fmtLabel(dateStr: string) {
 
 export function DisciplineHistoryWidget() {
     const { data, isLoading } = useQuery({
-        queryKey: ['discipline-history-widget', '60d'],
+        queryKey: ['discipline-history-widget', '30d'],
         queryFn: async () => {
-            const res = await fetch('/api/discipline/history?days=60')
+            const res = await fetch('/api/discipline/history?days=30')
             if (!res.ok) throw new Error('Failed to fetch discipline history')
             return res.json()
         }
     })
 
-    // Calculate a date range for the last 60 days
+    // Calculate a date range for the last 30 days
     const today = new Date()
     const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12, 0, 0)
     const startDate = new Date(endDate)
-    startDate.setDate(endDate.getDate() - 59)
+    startDate.setDate(endDate.getDate() - 29)
 
     const history = data?.data ?? []
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -81,16 +81,16 @@ export function DisciplineHistoryWidget() {
             <div className="mb-2">
                 <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Discipline History</h3>
                 <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
-                    Last 60 days
+                    Last 30 days
                 </p>
             </div>
 
-            <div className="flex-1 w-full min-h-0 mt-2">
+            <div className="flex-1 w-full min-h-0 mt-2 flex flex-col justify-end">
                 <TooltipProvider delayDuration={100}>
-                    <div className="grid grid-cols-7 gap-1 w-full h-full auto-rows-fr">
+                    <div className="grid grid-cols-7 gap-1 w-full">
                         {allDays.map((dateStr, i) => {
                             if (!dateStr) {
-                                return <div key={i} className="w-full h-full min-w-0 min-h-0 rounded-[4px] bg-transparent" />
+                                return <div key={i} className="aspect-square w-full rounded-[4px] bg-transparent" />
                             }
                             const discData = disciplineMap.get(dateStr)
                             const color = discData ? getDisciplineCellColor(discData.score) : '#1A1D27'
@@ -99,7 +99,7 @@ export function DisciplineHistoryWidget() {
                                 <Tooltip key={i}>
                                     <TooltipTrigger asChild>
                                         <div
-                                            className="w-full h-full min-w-0 min-h-0 rounded-[4px] cursor-default transition-colors duration-200 hover:opacity-80 border border-white/5"
+                                            className="aspect-square w-full rounded-[4px] cursor-default transition-colors duration-200 hover:opacity-80 border border-white/5"
                                             style={{ backgroundColor: color }}
                                         />
                                     </TooltipTrigger>

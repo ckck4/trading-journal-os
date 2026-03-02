@@ -205,13 +205,13 @@ export function CommandCenterClient() {
 
         {/* ROW 2: Discipline History + Daily Discipline + Recent Trades */}
         <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 lg:col-span-4 h-[240px]">
+          <div className="col-span-12 lg:col-span-4 h-[320px]">
             <WidgetCard id="history" widgets={widgets} isLoading={isLoading} />
           </div>
-          <div className="col-span-12 lg:col-span-3 h-[240px]">
+          <div className="col-span-12 lg:col-span-3 h-[320px]">
             <WidgetCard id="discipline" widgets={widgets} isLoading={isLoading} />
           </div>
-          <div className="col-span-12 lg:col-span-5 h-[240px]">
+          <div className="col-span-12 lg:col-span-5 h-[320px]">
             <WidgetCard id="trades" widgets={widgets} isLoading={isLoading} />
           </div>
         </div>
