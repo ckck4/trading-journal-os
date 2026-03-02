@@ -61,25 +61,28 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     <aside
       className={cn(
         'flex flex-col border-r transition-all duration-300',
-        'bg-[var(--sidebar)] border-[var(--sidebar-border)]',
+        'bg-[#09090B] border-[#18181B]',
         collapsed ? 'w-[60px]' : 'w-[220px]'
       )}
     >
       {/* Logo + collapse toggle */}
       <div
         className={cn(
-          'flex items-center border-b border-[var(--sidebar-border)] h-[52px] px-3 shrink-0',
+          'flex items-center border-b border-[#18181B] h-[52px] px-3 shrink-0',
           collapsed ? 'justify-center' : 'justify-between'
         )}
       >
         {!collapsed && (
-          <span className="text-sm font-semibold text-[var(--foreground)] truncate">
-            Trading Journal OS
-          </span>
+          <div className="flex items-center gap-2 overflow-hidden">
+            <div className="h-[28px] w-[28px] shrink-0 rounded-[6px] bg-[#4ADE80]" />
+            <span className="text-[16px] font-semibold text-[#FFFFFF] truncate font-inter">
+              Antigravity
+            </span>
+          </div>
         )}
         <button
           onClick={onToggle}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)] transition-colors duration-150"
+          className="flex h-7 w-7 items-center justify-center rounded-md text-[#A1A1AA] hover:bg-[rgba(74,222,128,0.06)] hover:text-[#E4E4E7] transition-colors duration-150"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
@@ -99,7 +102,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       </nav>
 
       {/* Bottom actions */}
-      <div className="shrink-0 border-t border-[var(--sidebar-border)] py-2 px-2 space-y-0.5">
+      <div className="shrink-0 border-t border-[#18181B] py-2 px-0 space-y-0.5">
 
         <SidebarItem
           item={{ label: 'Settings', icon: Settings, href: '/settings/preferences' }}
@@ -129,20 +132,18 @@ function SidebarItem({ item, active, collapsed, variant = 'default' }: SidebarIt
   const content = (
     <span
       className={cn(
-        'group flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-all duration-150 cursor-pointer select-none',
-        collapsed && 'justify-center px-2',
+        'group flex items-center gap-2.5 py-1.5 text-[13px] font-medium transition-all duration-150 cursor-pointer select-none',
+        collapsed ? 'justify-center px-2 rounded-md mx-2' : 'px-2.5 rounded-r-[6px] border-l-[3px] border-transparent',
         active
-          ? 'bg-[var(--color-accent-muted)] text-[var(--sidebar-primary)] shadow-[inset_0_0_0_1px_var(--color-accent-muted)]'
-          : variant === 'action'
-            ? 'text-[var(--sidebar-primary)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-primary)]'
-            : 'text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)]'
+          ? collapsed ? 'bg-[rgba(74,222,128,0.12)] text-[#4ADE80] border-[rgba(74,222,128,0.5)]' : 'bg-[rgba(74,222,128,0.12)] border-[#4ADE80] text-[#4ADE80]'
+          : 'text-[#A1A1AA] hover:bg-[rgba(74,222,128,0.06)] hover:text-[#E4E4E7]'
       )}
     >
       <Icon
         size={16}
         className={cn(
           'shrink-0 transition-colors duration-150',
-          active ? 'text-[var(--sidebar-primary)]' : ''
+          active ? 'text-[#4ADE80]' : 'text-[#71717A] group-hover:text-[#A1A1AA]'
         )}
       />
       {!collapsed && <span className="truncate">{item.label}</span>}

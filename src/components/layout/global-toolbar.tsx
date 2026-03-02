@@ -14,19 +14,19 @@ import type { SessionOption } from '@/app/api/sessions/route'
 // ─── Date preset definitions ─────────────────────────────────────────────────
 
 const DATE_PRESETS: { value: DatePreset; label: string }[] = [
-  { value: 'today',      label: 'Today' },
-  { value: 'this_week',  label: 'This Week' },
+  { value: 'today', label: 'Today' },
+  { value: 'this_week', label: 'This Week' },
   { value: 'this_month', label: 'This Month' },
-  { value: 'last_30d',   label: 'Last 30d' },
-  { value: 'custom',     label: 'Custom Range' },
+  { value: 'last_30d', label: 'Last 30d' },
+  { value: 'custom', label: 'Custom Range' },
 ]
 
 const PRESET_LABELS: Record<DatePreset, string> = {
-  today:      'Today',
-  this_week:  'This Week',
+  today: 'Today',
+  this_week: 'This Week',
   this_month: 'This Month',
-  last_30d:   'Last 30d',
-  custom:     'Custom Range',
+  last_30d: 'Last 30d',
+  custom: 'Custom Range',
 }
 
 // ─── Generic filter dropdown ──────────────────────────────────────────────────
@@ -115,13 +115,13 @@ function FilterDropdown({
         aria-expanded={open}
         aria-haspopup="listbox"
         className={cn(
-          'flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-[13px]',
+          'group flex items-center gap-1.5 rounded-[6px] border px-3 py-1.5 text-sm',
           'transition-colors duration-150 whitespace-nowrap select-none',
           open
-            ? 'border-[var(--color-accent-primary)] bg-[var(--accent)] text-[var(--foreground)]'
+            ? 'border-[rgba(74,222,128,0.4)] bg-[#0d1410] text-[#E4E4E7]'
             : isActive
-            ? 'border-[var(--color-accent-primary)]/50 bg-[var(--card)] text-[var(--color-accent-primary)]'
-            : 'border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] hover:border-[var(--color-accent-primary)] hover:bg-[var(--accent)]'
+              ? 'border-[rgba(74,222,128,0.4)] bg-[#0d1410] text-[#4ADE80]'
+              : 'border-[#1a2e1f] bg-[#0d1410] text-[#A1A1AA] hover:border-[rgba(74,222,128,0.4)] hover:text-[#E4E4E7]'
         )}
       >
         {Icon && (
@@ -129,8 +129,8 @@ function FilterDropdown({
             size={14}
             className={
               isActive
-                ? 'text-[var(--color-accent-primary)]'
-                : 'text-[var(--muted-foreground)]'
+                ? 'text-[#4ADE80]'
+                : 'text-[#71717A] group-hover:text-[#A1A1AA]'
             }
           />
         )}
@@ -139,7 +139,7 @@ function FilterDropdown({
           size={12}
           className={cn(
             'transition-transform duration-150',
-            open ? 'rotate-180 text-[var(--foreground)]' : 'text-[var(--muted-foreground)]'
+            open ? 'rotate-180 text-[#E4E4E7]' : 'text-[#A1A1AA] group-hover:text-[#E4E4E7]'
           )}
         />
       </button>
@@ -359,7 +359,7 @@ export function GlobalToolbar() {
   return (
     <header
       className={cn(
-        'flex items-center gap-2 border-b border-[var(--border)] bg-[var(--card)]',
+        'flex items-center gap-2 border-b border-[#18181B] bg-[#050a07]',
         'h-[52px] px-4 shrink-0'
       )}
     >
@@ -414,20 +414,19 @@ export function GlobalToolbar() {
           onSelect={handleStrategySelect}
         />
 
-        {/* Divider */}
-        <div className="h-5 w-px bg-[var(--border)]" />
+        <div className="h-5 w-px bg-[#18181B]" />
 
         {/* Import button */}
         <button
           onClick={openModal}
           className={cn(
-            'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium',
-            'bg-[var(--primary)] text-[var(--primary-foreground)]',
-            'hover:bg-[var(--color-accent-hover)]',
+            'flex items-center gap-1.5 rounded-[6px] px-4 py-1.5 text-sm font-semibold',
+            'bg-[#4ADE80] text-[#000000]',
+            'hover:bg-[#22c55e]',
             'transition-colors duration-150'
           )}
         >
-          <Upload size={14} />
+          <Upload size={14} className="text-[#000000]" />
           <span>Import</span>
         </button>
       </div>
