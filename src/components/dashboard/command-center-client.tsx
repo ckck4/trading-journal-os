@@ -143,15 +143,15 @@ export function CommandCenterClient() {
 
   if (!accountId) {
     return (
-      <div className="px-6 py-8">
+      <div className="px-6 py-8 bg-[#09090B] min-h-full">
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-[var(--foreground)]">Command Center</h1>
           <p className="text-sm text-[var(--muted-foreground)] mt-1">
             Your daily trading cockpit.
           </p>
         </div>
-        <div className="flex items-center justify-center h-64 rounded-lg border border-dashed border-[var(--border)] bg-[var(--card)]">
-          <p className="text-sm text-[var(--muted-foreground)]">
+        <div className="flex items-center justify-center h-64 rounded-lg bg-[#09090B]">
+          <p className="text-sm text-[#52525B]">
             Select an account in the toolbar to load your dashboard.
           </p>
         </div>
