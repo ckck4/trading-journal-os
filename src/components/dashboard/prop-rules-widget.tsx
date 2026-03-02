@@ -19,10 +19,10 @@ const RULE_LABELS: Record<string, string> = {
 
 function statusDot(status: RuleStatus) {
   const colors: Record<RuleStatus, string> = {
-    pass: 'bg-[var(--color-green)]',
-    warning: 'bg-[var(--color-yellow)]',
-    violation: 'bg-[var(--color-red)]',
-    pending: 'bg-[var(--muted-foreground)]',
+    pass: 'bg-[#4ADE80]',
+    warning: 'bg-[#F59E0B]',
+    violation: 'bg-[#EF4444]',
+    pending: 'bg-[#52525B]',
   }
   return (
     <span
@@ -32,10 +32,10 @@ function statusDot(status: RuleStatus) {
 }
 
 const overallColors = {
-  on_track: 'text-[var(--color-green)]',
-  warning: 'text-[var(--color-yellow)]',
-  violation: 'text-[var(--color-red)]',
-  passed: 'text-[var(--color-green)]',
+  on_track: 'text-[#4ADE80]',
+  warning: 'text-[#F59E0B]',
+  violation: 'text-[#EF4444]',
+  passed: 'text-[#4ADE80]',
 }
 
 export function PropRulesWidget({ data, isLoading }: PropRulesWidgetProps) {
@@ -56,14 +56,14 @@ export function PropRulesWidget({ data, isLoading }: PropRulesWidgetProps) {
   if (!data) {
     return (
       <div className="h-full flex flex-col gap-2 p-1">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
           Prop Rules
         </span>
         <div className="flex-1 flex flex-col items-center justify-center gap-2">
-          <p className="text-xs text-[var(--muted-foreground)]">No active evaluation</p>
+          <p className="text-xs text-[#71717A]">No active evaluation</p>
           <Link
             href="/prop"
-            className="text-xs text-[var(--color-accent-primary)] hover:underline flex items-center gap-1"
+            className="text-xs text-[#4ADE80] hover:underline flex items-center gap-1"
           >
             Start one <ExternalLink className="w-3 h-3" />
           </Link>
@@ -77,12 +77,12 @@ export function PropRulesWidget({ data, isLoading }: PropRulesWidgetProps) {
   return (
     <div className="h-full flex flex-col gap-2 p-1">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
           Prop Rules
         </span>
         <Link
           href="/prop"
-          className="text-[10px] text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center gap-0.5"
+          className="text-[10px] text-[#71717A] hover:text-[#E4E4E7] flex items-center gap-0.5"
         >
           View all <ExternalLink className="w-2.5 h-2.5" />
         </Link>
@@ -101,10 +101,10 @@ export function PropRulesWidget({ data, isLoading }: PropRulesWidgetProps) {
         {entries.map(([key, rule]) => (
           <div key={key} className="flex items-center gap-2">
             {statusDot(rule.status)}
-            <span className="text-[11px] text-[var(--muted-foreground)] flex-1 min-w-0 truncate">
+            <span className="text-[11px] text-[#71717A] flex-1 min-w-0 truncate">
               {RULE_LABELS[key] ?? key}
             </span>
-            <span className="text-[11px] font-mono text-[var(--foreground)] flex-shrink-0">
+            <span className="text-[11px] font-mono-data text-[#FFFFFF] flex-shrink-0">
               {rule.threshold !== null
                 ? `${rule.direction === 'toward_target' ? `${rule.progress}%` : rule.status === 'pass' ? '✓' : `${rule.progress}%`}`
                 : 'N/A'}
@@ -113,7 +113,7 @@ export function PropRulesWidget({ data, isLoading }: PropRulesWidgetProps) {
         ))}
       </div>
 
-      <p className="mt-auto text-[10px] text-[var(--muted-foreground)] leading-tight line-clamp-2">
+      <p className="mt-auto text-[10px] text-[#71717A] leading-tight line-clamp-2">
         {data.summary}
       </p>
     </div>

@@ -217,6 +217,31 @@
   font-family: var(--font-mono-fam);
 }
 
+.card-base {
+  background: #18181B;
+  border: 1px solid #27272A;
+  border-radius: 12px;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.card-base:hover {
+  border-color: rgba(74, 222, 128, 0.25);
+  box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.1);
+}
+
+.card-kpi {
+  background: #18181B;
+  border: 1px solid #27272A;
+  border-radius: 12px;
+  box-shadow: 0 0 24px rgba(74, 222, 128, 0.06);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.card-kpi:hover {
+  border-color: rgba(74, 222, 128, 0.3);
+  box-shadow: 0 0 32px rgba(74, 222, 128, 0.12);
+}
+
 /* ─── Recharts Tooltip Dark Theme Override ───────────────────────────────── */
 .recharts-default-tooltip {
   background-color: #14171E !important;

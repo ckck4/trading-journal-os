@@ -54,20 +54,20 @@ export function CombinedEquityBalanceWidget({ balanceData, equityData, isLoading
     const hasEquityData = equityData.length > 0
     const finalEquityValue = hasEquityData ? equityData[equityData.length - 1].value : 0
     const isEquityPositive = finalEquityValue >= 0
-    const strokeColor = isEquityPositive ? '#3B82F6' : '#EF4444'
+    const strokeColor = isEquityPositive ? '#4ADE80' : '#EF4444'
 
     return (
         <div className="h-full flex flex-col gap-4 p-1">
             {/* ── Top Section: Account Balance & Stats ── */}
             <div className="flex flex-col">
                 <div className="flex items-baseline justify-between mb-1">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
                         Account Balance
                     </span>
                     <span
                         className={cn(
-                            'text-[12px] font-mono',
-                            balanceData.netPnl >= 0 ? 'text-[var(--color-green)]' : 'text-[var(--color-red)]'
+                            'text-[12px] font-mono-data',
+                            balanceData.netPnl >= 0 ? 'text-[#4ADE80]' : 'text-[#EF4444]'
                         )}
                     >
                         {fmt$(balanceData.netPnl)}
@@ -75,18 +75,18 @@ export function CombinedEquityBalanceWidget({ balanceData, equityData, isLoading
                 </div>
 
                 {/* Current balance */}
-                <span className="text-3xl font-mono font-bold tracking-tight text-[var(--foreground)]">
+                <span className="text-3xl font-mono-data font-bold tracking-tight text-[#FFFFFF]">
                     ${balanceData.currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
 
                 {/* Start Balance & Drawdown text */}
                 <div className="flex items-center justify-between mt-2">
-                    <div className="text-xs text-[var(--muted-foreground)]">
+                    <div className="text-xs text-[#71717A]">
                         Started at ${balanceData.startingBalance.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </div>
                     {balanceData.maxDailyLossThreshold !== null && (
-                        <div className="text-xs text-[var(--muted-foreground)]">
-                            Daily PnL: <span className={balanceData.maxDailyLoss >= 0 ? "text-[var(--color-green)]" : "text-[var(--color-red)]"}>{fmt$(balanceData.maxDailyLoss)}</span>
+                        <div className="text-xs text-[#71717A]">
+                            Daily PnL: <span className={balanceData.maxDailyLoss >= 0 ? "text-[#4ADE80]" : "text-[#EF4444]"}>{fmt$(balanceData.maxDailyLoss)}</span>
                             {' '}<span className="opacity-50">/ {fmt$(balanceData.maxDailyLossThreshold)}</span>
                         </div>
                     )}
@@ -94,13 +94,13 @@ export function CombinedEquityBalanceWidget({ balanceData, equityData, isLoading
             </div>
 
             {/* ── Bottom Section: Equity Curve Chart ── */}
-            <div className="flex flex-col flex-1 min-h-[140px] border-t border-[var(--border)] pt-4 mt-2">
+            <div className="flex flex-col flex-1 min-h-[140px] border-t border-[#2A2F3E] pt-4 mt-2">
                 <div className="flex items-baseline justify-between mb-2">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#52525B]">
                         Equity Curve (30d)
                     </span>
                     <span
-                        className="text-xs font-mono font-medium"
+                        className="text-xs font-mono-data font-medium"
                         style={{ color: strokeColor }}
                     >
                         {finalEquityValue >= 0 ? '+' : ''}$

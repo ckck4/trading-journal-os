@@ -12,11 +12,9 @@ import { Label } from '@/components/ui/label'
 
 function getScoreColor(score: number | null | undefined): string {
     if (score === null || score === undefined) return '#2A2F3E'
-    if (score >= 90) return '#22C55E' // green
-    if (score >= 75) return '#3B82F6' // blue
-    if (score >= 60) return '#F59E0B' // amber
-    if (score >= 40) return '#F97316' // orange
-    return '#EF4444' // red
+    if (score >= 70) return '#4ADE80'
+    if (score >= 50) return '#F59E0B'
+    return '#EF4444'
 }
 
 function WeightsDialog() {
@@ -132,28 +130,27 @@ function WeightsDialog() {
 }
 
 function ComponentRow({ label, score, weight }: { label: string, score: number | null, weight: number }) {
-    const color = getScoreColor(score)
     const isNull = score === null || score === undefined
 
     return (
         <div className="flex items-center justify-between text-sm py-1.5">
-            <span className="text-[var(--muted-foreground)] w-20">{label}</span>
+            <span className="text-[10px] uppercase tracking-[0.1em] text-[#52525B] w-20">{label}</span>
             <div className="flex-1 px-4">
-                <div className="h-1.5 w-full rounded-full bg-[var(--border)] overflow-hidden">
+                <div className="h-1.5 w-full rounded-full bg-[#27272A] overflow-hidden">
                     <div
                         className="h-full transition-all duration-500 rounded-full"
                         style={{
                             width: `${isNull ? 0 : score}%`,
-                            backgroundColor: color
+                            backgroundColor: '#4ADE80'
                         }}
                     />
                 </div>
             </div>
             <div className="flex items-center gap-3 w-16 justify-end">
-                <span className="font-mono font-medium text-[var(--foreground)]">
+                <span className="font-mono-data font-medium text-[#FFFFFF]">
                     {isNull ? '—' : score}
                 </span>
-                <span className="text-xs text-[var(--muted-foreground)]">{weight}%</span>
+                <span className="text-xs text-[#71717A]">{weight}%</span>
             </div>
         </div>
     )
@@ -186,8 +183,8 @@ export function DailyDisciplineWidget() {
     return (
         <div className="flex flex-col h-full w-full">
             <div className="mb-4">
-                <h3 className="text-sm font-medium text-[var(--foreground)]">Daily Discipline</h3>
-                <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
+                <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">Daily Discipline</h3>
+                <p className="text-xs text-[#71717A] mt-0.5">
                     {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </p>
             </div>
@@ -206,14 +203,14 @@ export function DailyDisciplineWidget() {
                                     barSize={10} data={[{ name: 'score', value: 0 }]} startAngle={90} endAngle={-270}
                                 >
                                     <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-                                    <RadialBar background={{ fill: '#2A2F3E' }} dataKey="value" cornerRadius={10} fill="#2A2F3E" />
+                                    <RadialBar background={{ fill: '#27272A' }} dataKey="value" cornerRadius={10} fill="#2A2F3E" />
                                 </RadialBarChart>
                             </ResponsiveContainer>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-2xl font-bold font-mono text-[var(--muted-foreground)]">0</span>
+                                <span className="text-2xl font-bold font-mono-data text-[#71717A]">0</span>
                             </div>
                         </div>
-                        <p className="text-sm text-[var(--muted-foreground)] font-medium mt-4">No data yet</p>
+                        <p className="text-sm text-[#71717A] font-medium mt-4">No data yet</p>
                         <p className="text-[10px] text-[var(--muted-foreground)]/70 text-center max-w-[150px] mt-1">
                             Grade your trades and check your routine
                         </p>
@@ -230,7 +227,7 @@ export function DailyDisciplineWidget() {
                                     >
                                         <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
                                         <RadialBar
-                                            background={{ fill: '#2A2F3E' }}
+                                            background={{ fill: '#27272A' }}
                                             dataKey="value"
                                             cornerRadius={10}
                                             fill={color}
@@ -238,8 +235,8 @@ export function DailyDisciplineWidget() {
                                     </RadialBarChart>
                                 </ResponsiveContainer>
                                 <div className="absolute inset-0 flex flex-col items-center justify-center mt-1">
-                                    <span className="text-3xl font-bold font-mono" style={{ color }}>{score}</span>
-                                    <span className="text-xs font-medium uppercase tracking-wider mt-1" style={{ color }}>{label}</span>
+                                    <span className="text-3xl font-bold font-mono-data" style={{ color }}>{score}</span>
+                                    <span className="text-[10px] font-medium uppercase tracking-[0.1em] mt-1" style={{ color }}>{label}</span>
                                 </div>
                             </div>
                         </div>

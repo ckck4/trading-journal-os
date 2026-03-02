@@ -28,11 +28,11 @@ export function DailyPnlWidget({ data, isLoading }: DailyPnlWidgetProps) {
   if (!data) {
     return (
       <div className="h-full flex flex-col gap-2 p-1">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
           Today · {today}
         </span>
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-xs text-[var(--muted-foreground)]">No trades today</p>
+          <p className="text-xs text-[#71717A]">No trades today</p>
         </div>
       </div>
     )
@@ -43,19 +43,19 @@ export function DailyPnlWidget({ data, isLoading }: DailyPnlWidgetProps) {
 
   return (
     <div className="h-full flex flex-col gap-2 p-1">
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#71717A]">
         Today · {today}
       </span>
 
       {/* Net P&L */}
       <span
         className={cn(
-          'text-3xl font-mono font-bold tracking-tight',
+          'text-3xl font-mono-data font-bold tracking-tight',
           isPositive
-            ? 'text-[var(--color-green)]'
+            ? 'text-[#4ADE80]'
             : isNegative
-            ? 'text-[var(--color-red)]'
-            : 'text-[var(--foreground)]'
+              ? 'text-[#EF4444]'
+              : 'text-[#FFFFFF]'
         )}
       >
         {data.netPnl >= 0 ? '+' : ''}$
@@ -68,20 +68,20 @@ export function DailyPnlWidget({ data, isLoading }: DailyPnlWidgetProps) {
       {/* Stats row */}
       <div className="mt-auto flex gap-4">
         <div className="flex flex-col">
-          <span className="text-[10px] text-[var(--muted-foreground)] uppercase tracking-wide">
+          <span className="text-[10px] text-[#52525B] uppercase tracking-[0.1em]">
             Trades
           </span>
-          <span className="text-sm font-mono font-semibold">{data.tradeCount}</span>
+          <span className="text-sm font-mono-data font-semibold text-[#FFFFFF]">{data.tradeCount}</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-[10px] text-[var(--color-green)] uppercase tracking-wide">W</span>
-          <span className="text-sm font-mono font-semibold text-[var(--color-green)]">
+          <span className="text-[10px] text-[#4ADE80] uppercase tracking-[0.1em]">W</span>
+          <span className="text-sm font-mono-data font-semibold text-[#4ADE80]">
             {data.winCount}
           </span>
         </div>
         <div className="flex flex-col">
-          <span className="text-[10px] text-[var(--color-red)] uppercase tracking-wide">L</span>
-          <span className="text-sm font-mono font-semibold text-[var(--color-red)]">
+          <span className="text-[10px] text-[#EF4444] uppercase tracking-[0.1em]">L</span>
+          <span className="text-sm font-mono-data font-semibold text-[#EF4444]">
             {data.lossCount}
           </span>
         </div>

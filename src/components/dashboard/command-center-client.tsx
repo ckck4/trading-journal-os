@@ -85,8 +85,9 @@ function WidgetCard({
   widgets: WidgetData | undefined
   isLoading: boolean
 }) {
+  const isKpi = id === 'combined' || id === 'winrate' || id === 'daily'
   return (
-    <div className="h-full w-full rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 overflow-hidden relative">
+    <div className={`h-full w-full p-4 overflow-hidden relative ${isKpi ? 'card-kpi' : 'card-base'}`}>
       {id === 'combined' && (
         <CombinedEquityBalanceWidget balanceData={widgets?.balance ?? null} equityData={widgets?.equityCurve ?? []} isLoading={isLoading} />
       )}
@@ -161,7 +162,7 @@ export function CommandCenterClient() {
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="px-6 py-6">
+    <div className="px-6 py-6 bg-[#09090B] min-h-full">
       {/* Page header */}
       <div className="flex items-center justify-between mb-6">
         <div>
