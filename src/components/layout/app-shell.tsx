@@ -12,7 +12,7 @@ export function AppShell({ children, toolbar }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(false)
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[var(--background)]">
+    <div className="flex h-screen overflow-hidden bg-[#09090B]">
       {/* Sidebar */}
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
 
