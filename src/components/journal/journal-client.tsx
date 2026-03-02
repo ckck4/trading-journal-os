@@ -15,8 +15,9 @@ function pad(n: number): string {
   return n.toString().padStart(2, '0')
 }
 
-function fmt(d: Date): string {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+function fmt(d: Date, endOfDay = false): string {
+  const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  return endOfDay ? `${dateStr}T23:59:59` : `${dateStr}T00:00:00`
 }
 
 function getEffectiveDateRange(
@@ -28,31 +29,34 @@ function getEffectiveDateRange(
 
   switch (preset) {
     case 'today':
-      return { from: fmt(today), to: fmt(today) }
+      return { from: fmt(today), to: fmt(today, true) }
 
     case 'this_week': {
       const d = new Date(today)
       const day = d.getDay() // 0=Sun, 1=Mon
       d.setDate(d.getDate() - (day === 0 ? 6 : day - 1))
-      return { from: fmt(d), to: fmt(today) }
+      return { from: fmt(d), to: fmt(today, true) }
     }
 
     case 'this_month': {
       const d = new Date(today.getFullYear(), today.getMonth(), 1)
-      return { from: fmt(d), to: fmt(today) }
+      return { from: fmt(d), to: fmt(today, true) }
     }
 
     case 'last_30d': {
       const d = new Date(today)
-      d.setDate(d.getDate() - 30)
-      return { from: fmt(d), to: fmt(today) }
+      d.setDate(d.getDate() - 29)
+      return { from: fmt(d), to: fmt(today, true) }
     }
 
     case 'custom':
-      return { from: dateFrom ?? fmt(today), to: dateTo ?? fmt(today) }
+      return {
+        from: dateFrom ? `${dateFrom}T00:00:00` : fmt(today),
+        to: dateTo ? `${dateTo}T23:59:59` : fmt(today, true)
+      }
 
     default:
-      return { from: fmt(today), to: fmt(today) }
+      return { from: fmt(today), to: fmt(today, true) }
   }
 }
 

@@ -12,6 +12,7 @@ import { RecentTradesWidget } from '@/components/dashboard/recent-trades-widget'
 import { GoalsWidget } from '@/components/dashboard/goals-widget'
 import type { WidgetData } from '@/types/dashboard'
 import type { DatePreset } from '@/stores/filters'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const WIDGET_IDS = ['combined', 'discipline', 'history', 'daily', 'winrate', 'prop', 'trades', 'goals'] as const
 type WidgetId = typeof WIDGET_IDS[number]
@@ -24,25 +25,32 @@ function getDateRange(
   dateTo: string | null
 ): { from: string; to: string } {
   const today = new Date()
-  const fmt = (d: Date) => d.toISOString().split('T')[0]
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  const fmt = (d: Date, endOfDay = false) => {
+    const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    return endOfDay ? `${dateStr}T23:59:59` : `${dateStr}T00:00:00`
+  }
 
-  if (preset === 'today') return { from: fmt(today), to: fmt(today) }
+  if (preset === 'today') return { from: fmt(today), to: fmt(today, true) }
   if (preset === 'this_week') {
     const mon = new Date(today)
     const dow = today.getDay()
     mon.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1))
-    return { from: fmt(mon), to: fmt(today) }
+    return { from: fmt(mon), to: fmt(today, true) }
   }
   if (preset === 'this_month') {
     const first = new Date(today.getFullYear(), today.getMonth(), 1)
-    return { from: fmt(first), to: fmt(today) }
+    return { from: fmt(first), to: fmt(today, true) }
   }
   if (preset === 'last_30d') {
     const d = new Date(today)
     d.setDate(today.getDate() - 29)
-    return { from: fmt(d), to: fmt(today) }
+    return { from: fmt(d), to: fmt(today, true) }
   }
-  return { from: dateFrom ?? fmt(today), to: dateTo ?? fmt(today) }
+  return {
+    from: dateFrom ? `${dateFrom}T00:00:00` : fmt(today),
+    to: dateTo ? `${dateTo}T23:59:59` : fmt(today, true)
+  }
 }
 
 // ─── Widget Card Wrapper ───────────────────────────────────────────────────────
@@ -89,7 +97,7 @@ function WidgetCard({
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function CommandCenterClient() {
-  const { accountIds, datePreset, dateFrom, dateTo } = useFiltersStore()
+  const { accountIds, datePreset, dateFrom, dateTo, setDatePreset } = useFiltersStore()
   const accountId = accountIds[0] ?? ''
   const { from, to } = getDateRange(datePreset, dateFrom, dateTo)
 
@@ -137,9 +145,25 @@ export function CommandCenterClient() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold text-[var(--foreground)]">Command Center</h1>
-          <p className="text-sm text-[var(--muted-foreground)] mt-0.5">
-            {from === to ? from : `${from} → ${to}`}
-          </p>
+          <div className="flex items-center gap-3 mt-1.5">
+            <Select
+              value={datePreset}
+              onValueChange={(val) => setDatePreset(val as DatePreset)}
+            >
+              <SelectTrigger className="w-[140px] h-8 text-xs bg-[#14171E] border border-[#2A2F3E] text-[#E8EAF0] focus:ring-0">
+                <SelectValue placeholder="Date Range" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#14171E] border-[#2A2F3E] text-[#E8EAF0]">
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="this_week">This Week</SelectItem>
+                <SelectItem value="this_month">This Month</SelectItem>
+                <SelectItem value="last_30d">Last 30 Days</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[var(--muted-foreground)]">
+              {from === to ? from : `${from} → ${to}`}
+            </span>
+          </div>
         </div>
       </div>
 

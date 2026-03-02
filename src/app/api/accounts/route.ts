@@ -8,6 +8,7 @@ type RawAccountRow = {
   broker: string
   external_id: string | null
   starting_balance: string
+  trades?: { count: number }[]
 }
 
 export type AccountOption = {
@@ -16,6 +17,7 @@ export type AccountOption = {
   broker: string
   externalId: string | null
   startingBalance: string
+  tradeCount: number
 }
 
 export async function GET() {
@@ -34,7 +36,7 @@ export async function GET() {
 
     const { data, error } = await adminClient
       .from('accounts')
-      .select('id, name, broker, external_id, starting_balance')
+      .select('id, name, broker, external_id, starting_balance, trades(count)')
       .eq('user_id', user.id)
       .eq('is_archived', false)
       .order('name', { ascending: true })
@@ -46,13 +48,20 @@ export async function GET() {
 
     const rawRows = (data ?? []) as unknown as RawAccountRow[]
 
-    const accounts: AccountOption[] = rawRows.map((a) => ({
-      id: a.id,
-      name: a.name,
-      broker: a.broker,
-      externalId: a.external_id,
-      startingBalance: a.starting_balance,
-    }))
+    const accounts: AccountOption[] = rawRows.map((a) => {
+      const tradesCountObj = Array.isArray(a.trades) ? a.trades[0] : a.trades
+      const tradeCount = tradesCountObj && typeof tradesCountObj === 'object' && 'count' in tradesCountObj
+        ? Number(tradesCountObj.count)
+        : 0
+      return {
+        id: a.id,
+        name: a.name,
+        broker: a.broker,
+        externalId: a.external_id,
+        startingBalance: a.starting_balance,
+        tradeCount,
+      }
+    })
 
     return NextResponse.json({ accounts })
   } catch (error) {

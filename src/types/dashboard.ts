@@ -36,6 +36,7 @@ export interface RecentTrade {
   side: string
   netPnl: number
   entryTime: string
+  grade: string | null
 }
 
 export interface GoalData {

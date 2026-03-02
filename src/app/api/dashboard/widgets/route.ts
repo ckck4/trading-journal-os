@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
       // 7. Recent 5 trades
       admin
         .from('trades')
-        .select('id, root_symbol, side, net_pnl, entry_time')
+        .select('id, root_symbol, side, net_pnl, entry_time, grade')
         .eq('account_id', accountId)
         .eq('user_id', user.id)
         .eq('is_open', false)
@@ -221,8 +221,8 @@ export async function GET(request: NextRequest) {
         totalLossPnl < 0
           ? Math.abs(totalWinPnl) / Math.abs(totalLossPnl)
           : totalWinPnl > 0
-          ? 9999
-          : 0
+            ? 9999
+            : 0
 
       winRate = { winRate: wr, totalTrades, profitFactor: pf }
     }
@@ -246,6 +246,7 @@ export async function GET(request: NextRequest) {
       side: t.side as string,
       netPnl: parseFloat(t.net_pnl as string ?? '0'),
       entryTime: t.entry_time as string,
+      grade: (t.grade as string) ?? null,
     }))
 
     // ─── Goals ───────────────────────────────────────────────────────────────

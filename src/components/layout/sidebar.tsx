@@ -100,12 +100,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
       {/* Bottom actions */}
       <div className="shrink-0 border-t border-[var(--sidebar-border)] py-2 px-2 space-y-0.5">
-        <SidebarItem
-          item={{ label: 'Import', icon: Upload, href: '#import' }}
-          active={false}
-          collapsed={collapsed}
-          variant="action"
-        />
+
         <SidebarItem
           item={{ label: 'Settings', icon: Settings, href: '/settings/preferences' }}
           active={isActive('/settings')}
@@ -158,10 +153,6 @@ function SidebarItem({ item, active, collapsed, variant = 'default' }: SidebarIt
       )}
     </span>
   )
-
-  if (item.href === '#import') {
-    return <div>{content}</div>
-  }
 
   return (
     <Link href={item.href} className="block">

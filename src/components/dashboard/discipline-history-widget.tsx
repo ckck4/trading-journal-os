@@ -60,18 +60,12 @@ export function DisciplineHistoryWidget() {
     const dayOfWeek = cur.getDay() === 0 ? 6 : cur.getDay() - 1
     cur.setDate(cur.getDate() - dayOfWeek)
 
-    const weeks: (string | null)[][] = []
+    const allDays: (string | null)[] = []
     while (cur <= endDate) {
-        const week: (string | null)[] = []
-        for (let d = 0; d < 7; d++) {
-            const dateStr = cur.toISOString().split('T')[0]
-            week.push(cur <= endDate && cur >= startDate ? dateStr : null)
-            cur.setDate(cur.getDate() + 1)
-        }
-        weeks.push(week)
+        const dateStr = cur.toISOString().split('T')[0]
+        allDays.push(cur <= endDate && cur >= startDate ? dateStr : null)
+        cur.setDate(cur.getDate() + 1)
     }
-
-    const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
     if (isLoading) {
         return (
@@ -83,7 +77,7 @@ export function DisciplineHistoryWidget() {
     }
 
     return (
-        <div className="flex flex-col h-full w-full p-1 overflow-hidden">
+        <div className="flex flex-col h-full w-full p-0 overflow-hidden">
             <div className="mb-2">
                 <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Discipline History</h3>
                 <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
@@ -91,81 +85,51 @@ export function DisciplineHistoryWidget() {
                 </p>
             </div>
 
-            <div className="flex-1 min-h-0 flex flex-col justify-end pb-2">
+            <div className="flex-1 w-full min-h-0 flex flex-col justify-end">
                 <TooltipProvider delayDuration={100}>
-                    <div className="flex overflow-hidden">
-                        <div className="flex gap-[2px] min-w-0 mx-auto">
-                            {/* Day labels column */}
-                            <div className="flex flex-col gap-[2px] shrink-0 pt-4">
-                                {DAY_LABELS.map((label, i) => (
-                                    <div
-                                        key={i}
-                                        className="w-4 h-4 flex items-center justify-center text-[9px] text-[var(--muted-foreground)]"
-                                    >
-                                        {label}
-                                    </div>
-                                ))}
-                            </div>
-                            {/* Weeks */}
-                            {weeks.map((week, wi) => {
-                                const firstCell = week.find((d) => d !== null)
-                                const showMonth =
-                                    firstCell &&
-                                    (wi === 0 || new Date(firstCell + 'T12:00:00').getDate() <= 7)
+                    <div className="w-full">
+                        <div className="grid grid-cols-7 gap-1 w-full">
+                            {allDays.map((dateStr, i) => {
+                                if (!dateStr) {
+                                    return <div key={i} className="aspect-square min-w-0 rounded-md bg-transparent" />
+                                }
+                                const discData = disciplineMap.get(dateStr)
+                                const color = discData ? getDisciplineCellColor(discData.score) : '#1A1D27'
 
                                 return (
-                                    <div key={wi} className="flex flex-col gap-[2px] shrink-0">
-                                        <div className="h-4 flex items-center relative">
-                                            {showMonth && (
-                                                <span className="absolute text-[9px] text-[var(--muted-foreground)] whitespace-nowrap -left-1">
-                                                    {new Date(firstCell + 'T12:00:00').toLocaleString('en-US', { month: 'short' })}
-                                                </span>
-                                            )}
-                                        </div>
-                                        {week.map((dateStr, di) => {
-                                            if (!dateStr) {
-                                                return <div key={di} className="w-4 h-4 rounded-sm" style={{ background: 'transparent' }} />
-                                            }
-                                            const discData = disciplineMap.get(dateStr)
-                                            const color = discData ? getDisciplineCellColor(discData.score) : '#1A1D27'
-
-                                            return (
-                                                <Tooltip key={di}>
-                                                    <TooltipTrigger asChild>
-                                                        <div
-                                                            className="w-4 h-4 rounded-sm cursor-default"
-                                                            style={{ background: color }}
-                                                        />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent
-                                                        className="border-[#2A2F3E] bg-[#14171E] px-3 py-2 text-xs shadow-md z-[100]"
-                                                        sideOffset={4}
-                                                    >
-                                                        <div className="flex flex-col gap-1 text-[#E8EAF0]">
-                                                            <span className="font-semibold">{fmtLabel(dateStr)}</span>
-                                                            {discData ? (
-                                                                <>
-                                                                    <span style={{ color: getDisciplineCellColor(discData.score) }} className="font-medium flex items-center gap-1">
-                                                                        Overall: {discData.score} &middot; {discData.label}
-                                                                    </span>
-                                                                    <span className="text-[#8B92A8]">
-                                                                        Grades: {discData.components?.grades_score ?? '—'} ({discData.weights?.grade_weight ?? 70}%)
-                                                                        <br />
-                                                                        Routine: {discData.components?.routine_score != null ? (discData.components.routine_score > 0 ? '✓' : '✗') : '—'} ({discData.weights?.routine_weight ?? 30}%)
-                                                                    </span>
-                                                                </>
-                                                            ) : (
-                                                                <span className="text-[#8B92A8]">
-                                                                    No discipline data yet.<br />
-                                                                    Grade your trades and check your routine.
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            )
-                                        })}
-                                    </div>
+                                    <Tooltip key={i}>
+                                        <TooltipTrigger asChild>
+                                            <div
+                                                className="aspect-square min-w-0 rounded-md cursor-default"
+                                                style={{ background: color }}
+                                            />
+                                        </TooltipTrigger>
+                                        <TooltipContent
+                                            className="border-[#2A2F3E] bg-[#14171E] px-3 py-2 text-xs shadow-md z-[100]"
+                                            sideOffset={4}
+                                        >
+                                            <div className="flex flex-col gap-1 text-[#E8EAF0]">
+                                                <span className="font-semibold">{fmtLabel(dateStr)}</span>
+                                                {discData ? (
+                                                    <>
+                                                        <span style={{ color: getDisciplineCellColor(discData.score) }} className="font-medium flex items-center gap-1">
+                                                            Overall: {discData.score} &middot; {discData.label}
+                                                        </span>
+                                                        <span className="text-[#8B92A8]">
+                                                            Grades: {discData.components?.grades_score ?? '—'} ({discData.weights?.grade_weight ?? 70}%)
+                                                            <br />
+                                                            Routine: {discData.components?.routine_score != null ? (discData.components.routine_score > 0 ? '✓' : '✗') : '—'} ({discData.weights?.routine_weight ?? 30}%)
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    <span className="text-[#8B92A8]">
+                                                        No discipline data yet.<br />
+                                                        Grade your trades and check your routine.
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </TooltipContent>
+                                    </Tooltip>
                                 )
                             })}
                         </div>

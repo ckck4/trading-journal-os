@@ -22,30 +22,37 @@ function getDateRange(
   dateTo: string | null
 ): { from: string; to: string } {
   const today = new Date()
-  const fmt = (d: Date) => d.toISOString().split('T')[0]
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  const fmt = (d: Date, endOfDay = false) => {
+    const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    return endOfDay ? `${dateStr}T23:59:59` : `${dateStr}T00:00:00`
+  }
 
-  if (preset === 'today') return { from: fmt(today), to: fmt(today) }
+  if (preset === 'today') return { from: fmt(today), to: fmt(today, true) }
 
   if (preset === 'this_week') {
     const mon = new Date(today)
     const dow = today.getDay()
     mon.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1))
-    return { from: fmt(mon), to: fmt(today) }
+    return { from: fmt(mon), to: fmt(today, true) }
   }
 
   if (preset === 'this_month') {
     const first = new Date(today.getFullYear(), today.getMonth(), 1)
-    return { from: fmt(first), to: fmt(today) }
+    return { from: fmt(first), to: fmt(today, true) }
   }
 
   if (preset === 'last_30d') {
     const d = new Date(today)
     d.setDate(today.getDate() - 29)
-    return { from: fmt(d), to: fmt(today) }
+    return { from: fmt(d), to: fmt(today, true) }
   }
 
   // custom
-  return { from: dateFrom ?? fmt(today), to: dateTo ?? fmt(today) }
+  return {
+    from: dateFrom ? `${dateFrom}T00:00:00` : fmt(today),
+    to: dateTo ? `${dateTo}T23:59:59` : fmt(today, true)
+  }
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────

@@ -128,3 +128,57 @@ export async function PATCH(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+// ─── DELETE /api/accounts/[id] ────────────────────────────────────────────────
+// Deletes account and all its associated data (cascade).
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id } = await params
+    const admin = createAdminClient()
+
+    // 1. Verify ownership
+    const { data: acc, error: accError } = await admin
+      .from('accounts')
+      .select('id')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single()
+
+    if (accError || !acc) {
+      return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+    }
+
+    // 2. Cascade delete manually via admin client
+    await admin.from('daily_summaries').delete().eq('account_id', id)
+    await admin.from('trades').delete().eq('account_id', id)
+    await admin.from('fills').delete().eq('account_id', id)
+    await admin.from('import_batches').delete().eq('account_id', id)
+
+    // Check if account has an active evaluation, and delete if necessary or just let cascading happen if configured
+    // Wait, the instructions specify exact order for these 5 tables.
+    const { error: delError } = await admin.from('accounts').delete().eq('id', id)
+
+    if (delError) {
+      throw delError
+    }
+
+    return NextResponse.json({ success: true }, { status: 200 })
+  } catch (error) {
+    console.error('[accounts/[id] DELETE] error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
