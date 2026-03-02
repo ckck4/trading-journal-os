@@ -150,8 +150,8 @@ export function CommandCenterClient() {
             Your daily trading cockpit.
           </p>
         </div>
-        <div className="flex items-center justify-center h-64 rounded-lg bg-[#09090B]">
-          <p className="text-sm text-[#52525B]">
+        <div className="flex items-center justify-center h-64 rounded-xl border border-[#27272A] bg-[#18181B]">
+          <p className="text-sm font-sans text-[#52525B]">
             Select an account in the toolbar to load your dashboard.
           </p>
         </div>
