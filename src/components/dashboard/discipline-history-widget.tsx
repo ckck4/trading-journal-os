@@ -42,29 +42,17 @@ export function DisciplineHistoryWidget() {
         }
     })
 
-    // Calculate a date range for the last 30 days
-    const today = new Date()
-    const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12, 0, 0)
-    const startDate = new Date(endDate)
-    startDate.setDate(endDate.getDate() - 29)
+    const days = Array.from({ length: 30 }, (_, i) => {
+        const date = new Date()
+        date.setDate(date.getDate() - (29 - i))
+        return date
+    })
 
     const history = data?.data ?? []
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const disciplineMap = new Map<string, any>()
     for (const item of history) {
         disciplineMap.set(item.date, item)
-    }
-
-    // Align to Monday
-    const cur = new Date(startDate)
-    const dayOfWeek = cur.getDay() === 0 ? 6 : cur.getDay() - 1
-    cur.setDate(cur.getDate() - dayOfWeek)
-
-    const allDays: (string | null)[] = []
-    while (cur <= endDate) {
-        const dateStr = cur.toISOString().split('T')[0]
-        allDays.push(cur <= endDate && cur >= startDate ? dateStr : null)
-        cur.setDate(cur.getDate() + 1)
     }
 
     if (isLoading) {
@@ -85,13 +73,23 @@ export function DisciplineHistoryWidget() {
                 </p>
             </div>
 
-            <div className="flex-1 w-full min-h-0 mt-2 flex flex-col justify-end">
+            <div style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                padding: '8px'
+            }}>
                 <TooltipProvider delayDuration={100}>
-                    <div className="grid grid-cols-7 gap-1 w-full">
-                        {allDays.map((dateStr, i) => {
-                            if (!dateStr) {
-                                return <div key={i} className="aspect-square w-full rounded-[4px] bg-transparent" />
-                            }
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(7, 1fr)',
+                        gap: '4px',
+                        width: '100%',
+                    }}>
+                        {days.map((date, i) => {
+                            const dateStr = date.toISOString().split('T')[0]
                             const discData = disciplineMap.get(dateStr)
                             const color = discData ? getDisciplineCellColor(discData.score) : '#1A1D27'
 
@@ -99,8 +97,13 @@ export function DisciplineHistoryWidget() {
                                 <Tooltip key={i}>
                                     <TooltipTrigger asChild>
                                         <div
-                                            className="aspect-square w-full rounded-[4px] cursor-default transition-colors duration-200 hover:opacity-80 border border-white/5"
-                                            style={{ backgroundColor: color }}
+                                            className="cursor-default transition-colors duration-200 hover:opacity-80 border border-white/5"
+                                            style={{
+                                                aspectRatio: '1',
+                                                borderRadius: '4px',
+                                                backgroundColor: color,
+                                                minWidth: 0,
+                                            }}
                                         />
                                     </TooltipTrigger>
                                     <TooltipContent
