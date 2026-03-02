@@ -84,9 +84,11 @@ export function DisciplineHistoryWidget() {
                 <TooltipProvider delayDuration={100}>
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(7, 1fr)',
-                        gap: '4px',
+                        gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+                        gridTemplateRows: 'repeat(5, minmax(0, 1fr))',
+                        gap: '3px',
                         width: '100%',
+                        height: '100%',
                     }}>
                         {days.map((date, i) => {
                             const dateStr = date.toISOString().split('T')[0]
@@ -99,10 +101,8 @@ export function DisciplineHistoryWidget() {
                                         <div
                                             className="cursor-default transition-colors duration-200 hover:opacity-80 border border-white/5"
                                             style={{
-                                                aspectRatio: '1',
-                                                borderRadius: '4px',
+                                                borderRadius: '3px',
                                                 backgroundColor: color,
-                                                minWidth: 0,
                                             }}
                                         />
                                     </TooltipTrigger>
