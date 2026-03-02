@@ -53,6 +53,27 @@ function getDateRange(
   }
 }
 
+function formatDisplayDate(from: string, to: string) {
+  const d1Str = from.split('T')[0]
+  const d2Str = to.split('T')[0]
+  const d1 = new Date(d1Str + 'T12:00:00')
+  const d2 = new Date(d2Str + 'T12:00:00')
+
+  if (d1Str === d2Str) {
+    return d1.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })
+  } else {
+    if (d1.getFullYear() === d2.getFullYear()) {
+      const start = d1.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      const end = d2.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      return `${start} – ${end}`
+    } else {
+      const start = d1.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      const end = d2.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      return `${start} – ${end}`
+    }
+  }
+}
+
 // ─── Widget Card Wrapper ───────────────────────────────────────────────────────
 
 function WidgetCard({
@@ -160,8 +181,8 @@ export function CommandCenterClient() {
                 <SelectItem value="last_30d">Last 30 Days</SelectItem>
               </SelectContent>
             </Select>
-            <span className="text-xs text-[var(--muted-foreground)]">
-              {from === to ? from : `${from} → ${to}`}
+            <span className="font-sans text-sm text-[#A1A1AA]">
+              {formatDisplayDate(from, to)}
             </span>
           </div>
         </div>
@@ -171,36 +192,36 @@ export function CommandCenterClient() {
       <div className="flex flex-col gap-4">
         {/* ROW 1: Combined + Win Rate + Today's PnL */}
         <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 lg:col-span-5" style={{ minHeight: '340px' }}>
+          <div className="col-span-12 lg:col-span-5 h-[340px]">
             <WidgetCard id="combined" widgets={widgets} isLoading={isLoading} />
           </div>
-          <div className="col-span-12 lg:col-span-3" style={{ minHeight: '340px' }}>
+          <div className="col-span-12 lg:col-span-3 h-[340px]">
             <WidgetCard id="winrate" widgets={widgets} isLoading={isLoading} />
           </div>
-          <div className="col-span-12 lg:col-span-4" style={{ minHeight: '340px' }}>
+          <div className="col-span-12 lg:col-span-4 h-[340px]">
             <WidgetCard id="daily" widgets={widgets} isLoading={isLoading} />
           </div>
         </div>
 
         {/* ROW 2: Discipline History + Daily Discipline + Recent Trades */}
         <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 lg:col-span-4" style={{ minHeight: '240px' }}>
+          <div className="col-span-12 lg:col-span-4 h-[240px]">
             <WidgetCard id="history" widgets={widgets} isLoading={isLoading} />
           </div>
-          <div className="col-span-12 lg:col-span-3" style={{ minHeight: '240px' }}>
+          <div className="col-span-12 lg:col-span-3 h-[240px]">
             <WidgetCard id="discipline" widgets={widgets} isLoading={isLoading} />
           </div>
-          <div className="col-span-12 lg:col-span-5" style={{ minHeight: '240px' }}>
+          <div className="col-span-12 lg:col-span-5 h-[240px]">
             <WidgetCard id="trades" widgets={widgets} isLoading={isLoading} />
           </div>
         </div>
 
         {/* ROW 3: Prop Rules + Goals */}
         <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 lg:col-span-5" style={{ minHeight: '240px' }}>
+          <div className="col-span-12 lg:col-span-5 h-[240px]">
             <WidgetCard id="prop" widgets={widgets} isLoading={isLoading} />
           </div>
-          <div className="col-span-12 lg:col-span-7" style={{ minHeight: '240px' }}>
+          <div className="col-span-12 lg:col-span-7 h-[240px]">
             <WidgetCard id="goals" widgets={widgets} isLoading={isLoading} />
           </div>
         </div>

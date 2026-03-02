@@ -85,54 +85,52 @@ export function DisciplineHistoryWidget() {
                 </p>
             </div>
 
-            <div className="flex-1 w-full min-h-0 flex flex-col justify-end">
+            <div className="flex-1 w-full min-h-0 mt-2">
                 <TooltipProvider delayDuration={100}>
-                    <div className="w-full">
-                        <div className="grid grid-cols-7 gap-1 w-full">
-                            {allDays.map((dateStr, i) => {
-                                if (!dateStr) {
-                                    return <div key={i} className="aspect-square min-w-0 rounded-md bg-transparent" />
-                                }
-                                const discData = disciplineMap.get(dateStr)
-                                const color = discData ? getDisciplineCellColor(discData.score) : '#1A1D27'
+                    <div className="grid grid-cols-7 gap-1 w-full h-full auto-rows-fr">
+                        {allDays.map((dateStr, i) => {
+                            if (!dateStr) {
+                                return <div key={i} className="w-full h-full min-w-0 min-h-0 rounded-[4px] bg-transparent" />
+                            }
+                            const discData = disciplineMap.get(dateStr)
+                            const color = discData ? getDisciplineCellColor(discData.score) : '#1A1D27'
 
-                                return (
-                                    <Tooltip key={i}>
-                                        <TooltipTrigger asChild>
-                                            <div
-                                                className="aspect-square min-w-0 rounded-md cursor-default"
-                                                style={{ background: color }}
-                                            />
-                                        </TooltipTrigger>
-                                        <TooltipContent
-                                            className="border-[#2A2F3E] bg-[#14171E] px-3 py-2 text-xs shadow-md z-[100]"
-                                            sideOffset={4}
-                                        >
-                                            <div className="flex flex-col gap-1 text-[#E8EAF0]">
-                                                <span className="font-semibold">{fmtLabel(dateStr)}</span>
-                                                {discData ? (
-                                                    <>
-                                                        <span style={{ color: getDisciplineCellColor(discData.score) }} className="font-medium flex items-center gap-1">
-                                                            Overall: {discData.score} &middot; {discData.label}
-                                                        </span>
-                                                        <span className="text-[#8B92A8]">
-                                                            Grades: {discData.components?.grades_score ?? '—'} ({discData.weights?.grade_weight ?? 70}%)
-                                                            <br />
-                                                            Routine: {discData.components?.routine_score != null ? (discData.components.routine_score > 0 ? '✓' : '✗') : '—'} ({discData.weights?.routine_weight ?? 30}%)
-                                                        </span>
-                                                    </>
-                                                ) : (
-                                                    <span className="text-[#8B92A8]">
-                                                        No discipline data yet.<br />
-                                                        Grade your trades and check your routine.
+                            return (
+                                <Tooltip key={i}>
+                                    <TooltipTrigger asChild>
+                                        <div
+                                            className="w-full h-full min-w-0 min-h-0 rounded-[4px] cursor-default transition-colors duration-200 hover:opacity-80 border border-white/5"
+                                            style={{ backgroundColor: color }}
+                                        />
+                                    </TooltipTrigger>
+                                    <TooltipContent
+                                        className="border-[#2A2F3E] bg-[#14171E] px-3 py-2 text-xs shadow-md z-[100]"
+                                        sideOffset={4}
+                                    >
+                                        <div className="flex flex-col gap-1 text-[#E8EAF0]">
+                                            <span className="font-semibold">{fmtLabel(dateStr)}</span>
+                                            {discData ? (
+                                                <>
+                                                    <span style={{ color: getDisciplineCellColor(discData.score) }} className="font-medium flex items-center gap-1">
+                                                        Overall: {discData.score} &middot; {discData.label}
                                                     </span>
-                                                )}
-                                            </div>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                )
-                            })}
-                        </div>
+                                                    <span className="text-[#8B92A8]">
+                                                        Grades: {discData.components?.grades_score ?? '—'} ({discData.weights?.grade_weight ?? 70}%)
+                                                        <br />
+                                                        Routine: {discData.components?.routine_score != null ? (discData.components.routine_score > 0 ? '✓' : '✗') : '—'} ({discData.weights?.routine_weight ?? 30}%)
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <span className="text-[#8B92A8]">
+                                                    No discipline data yet.<br />
+                                                    Grade your trades and check your routine.
+                                                </span>
+                                            )}
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            )
+                        })}
                     </div>
                 </TooltipProvider>
             </div>

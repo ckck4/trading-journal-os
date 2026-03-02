@@ -55,7 +55,7 @@ export function RecentTradesWidget({ data, isLoading }: RecentTradesWidgetProps)
           <p className="text-xs text-[var(--muted-foreground)]">No trades yet</p>
         </div>
       ) : (
-        <div className="flex flex-col flex-1 min-h-0 w-full divide-y divide-[var(--border)] overflow-y-auto overflow-x-hidden">
+        <div className="flex flex-col flex-1 min-h-0 w-full divide-y divide-[var(--border)] overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#27272A] [&::-webkit-scrollbar-thumb]:rounded-full">
           {data.map((trade) => {
             const isLong = trade.side === 'LONG'
             const isWin = trade.netPnl > 0
@@ -63,7 +63,7 @@ export function RecentTradesWidget({ data, isLoading }: RecentTradesWidgetProps)
               <Link
                 key={trade.id}
                 href="/journal"
-                className="flex items-center w-full py-1.5 hover:bg-white/5 transition-colors"
+                className="flex items-center w-full min-h-[44px] py-3 hover:bg-white/5 transition-colors"
               >
                 <div className="w-[15%] flex justify-center shrink-0">
                   {isLong ? (
@@ -72,21 +72,21 @@ export function RecentTradesWidget({ data, isLoading }: RecentTradesWidgetProps)
                     <ArrowDownRight className="w-3.5 h-3.5 text-[var(--color-red)]" />
                   )}
                 </div>
-                <div className="w-[20%] text-xs font-mono font-semibold shrink-0 truncate">
+                <div className="w-[20%] text-sm font-mono font-semibold shrink-0 truncate">
                   {trade.instrument}
                 </div>
                 <div
                   className={cn(
-                    'w-[25%] text-xs font-mono font-semibold shrink-0 text-right truncate',
+                    'w-[25%] text-sm font-mono-data font-semibold shrink-0 text-right truncate',
                     isWin ? 'text-[var(--color-green)]' : trade.netPnl < 0 ? 'text-[var(--color-red)]' : 'text-[var(--foreground)]'
                   )}
                 >
                   {fmt$(trade.netPnl)}
                 </div>
-                <div className="w-[20%] text-[10px] text-[var(--muted-foreground)] text-right shrink-0 truncate">
+                <div className="w-[20%] text-xs text-[var(--muted-foreground)] text-right shrink-0 truncate">
                   {fmtTime(trade.entryTime)}
                 </div>
-                <div className="w-[20%] text-[10px] font-semibold text-right shrink-0 pr-2 truncate">
+                <div className="w-[20%] text-xs font-semibold text-right shrink-0 pr-2 truncate">
                   {trade.grade ?? '-'}
                 </div>
               </Link>
