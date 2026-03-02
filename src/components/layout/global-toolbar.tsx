@@ -359,7 +359,7 @@ export function GlobalToolbar() {
   return (
     <header
       className={cn(
-        'flex items-center gap-2 border-b border-[#18181B] bg-[#050a07]',
+        'flex items-center gap-2 border-b border-[#18181B] bg-[#09090B]',
         'h-[52px] px-4 shrink-0'
       )}
     >
