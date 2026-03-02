@@ -126,7 +126,8 @@
 
   --border: #2A2F3E;
   --input: #2A2F3E;
-  --ring: #6C63FF;
+  --ring: 74 222 128;
+  /* emerald */
 
   /* Chart colors */
   --chart-1: #6C63FF;
@@ -143,7 +144,7 @@
   --sidebar-accent: #1F2433;
   --sidebar-accent-foreground: #E8EAF0;
   --sidebar-border: #1E2230;
-  --sidebar-ring: #6C63FF;
+  --sidebar-ring: #4ADE80;
 }
 
 @layer base {
