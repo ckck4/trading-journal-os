@@ -216,10 +216,13 @@
   font-family: var(--font-mono-fam);
 }
 
-.card-base {
+.surface-matte {
   background: #18181B;
   border: 1px solid #27272A;
   border-radius: 12px;
+}
+
+.card-base {
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
@@ -229,9 +232,6 @@
 }
 
 .card-kpi {
-  background: #18181B;
-  border: 1px solid #27272A;
-  border-radius: 12px;
   box-shadow: 0 0 24px rgba(74, 222, 128, 0.06);
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }

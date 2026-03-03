@@ -87,7 +87,7 @@ function WidgetCard({
 }) {
   const isKpi = id === 'combined' || id === 'winrate' || id === 'daily'
   return (
-    <div className={`h-full w-full p-4 overflow-hidden relative ${isKpi ? 'card-kpi' : 'card-base'}`}>
+    <div className={`h-full w-full p-4 overflow-hidden relative surface-matte ${isKpi ? 'card-kpi' : 'card-base'}`}>
       {id === 'combined' && (
         <CombinedEquityBalanceWidget balanceData={widgets?.balance ?? null} equityData={widgets?.equityCurve ?? []} isLoading={isLoading} />
       )}
@@ -150,7 +150,7 @@ export function CommandCenterClient() {
             Your daily trading cockpit.
           </p>
         </div>
-        <div className="flex items-center justify-center h-64 rounded-xl border border-[#27272A] bg-[#18181B]">
+        <div className="flex items-center justify-center h-64 surface-matte">
           <p className="text-sm font-sans text-[#52525B]">
             Select an account in the toolbar to load your dashboard.
           </p>
