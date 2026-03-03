@@ -243,11 +243,9 @@ function TradeRow({ trade, isSelected, onClick, onInfoClick }: TradeRowProps) {
       onClick={onClick}
       className={cn(
         'w-full flex items-center gap-4 px-4 py-3 rounded-[12px] text-left',
-        'bg-[#18181B] border transition-all duration-200',
+        'bg-[#18181B] border border-[#27272A] transition-all duration-200',
         'hover:border-[rgba(74,222,128,0.25)] hover:shadow-[0_0_0_1px_rgba(74,222,128,0.1)]',
-        isSelected
-          ? 'border-[rgba(74,222,128,0.5)] bg-[rgba(74,222,128,0.05)]'
-          : 'border-[#27272A]'
+        isSelected && 'border-[rgba(74,222,128,0.5)] bg-[rgba(74,222,128,0.05)]'
       )}
     >
       {/* Time */}
@@ -378,9 +376,9 @@ function DayGroup({ date, trades, checkin, selectedId, onSelectTrade, onInfoTrad
         : 'text-[var(--muted-foreground)]'
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5 bg-transparent">
       {/* Day header */}
-      <div className="flex items-center gap-3 py-1 sticky top-0 bg-[#09090B] z-10">
+      <div className="flex items-center gap-3 py-1 sticky top-0 bg-transparent z-10">
         <span className="text-sm font-semibold text-[#A1A1AA] shrink-0">
           {formatDayHeader(date)}
         </span>

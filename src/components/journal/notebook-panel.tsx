@@ -63,22 +63,34 @@ export function NotebookPanel({ trade }: NotebookPanelProps) {
     return (
         <div className="w-[40%] flex flex-col h-full bg-[#18181B] border-l border-[#27272A]">
             {/* Header */}
-            <div className="h-14 shrink-0 flex items-center justify-between px-6 border-b border-[#27272A]">
-                <h2 className="text-sm font-semibold text-[#FFFFFF]">
+            <div className="px-6 pt-6 pb-4 border-b border-[#27272A]">
+                <h2 className="text-[16px] font-semibold text-[#FFFFFF]">
                     {trade ? 'Trade Notes' : 'Daily Journal'}
                 </h2>
-                <span className="text-sm text-[#71717A] whitespace-nowrap overflow-hidden text-ellipsis">
+                <span className="text-[12px] text-[#52525B] mt-1 block">
                     {headerText}
                 </span>
             </div>
 
             {/* Editor Body */}
             <div className="flex-1 p-6 flex flex-col min-h-0 bg-transparent">
+                {/* Context Label */}
+                <div className="flex items-center justify-between mb-2">
+                    <label className="text-[11px] text-[#71717A] uppercase tracking-[0.08em] font-medium">
+                        Notes
+                    </label>
+                    {trade && (
+                        <span className="text-[#A1A1AA] text-[12px] font-mono-data">
+                            {trade.rootSymbol} · {new Date(trade.entryTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                        </span>
+                    )}
+                </div>
+
                 <textarea
                     className={cn(
-                        'flex-1 w-full resize-none rounded-lg p-4 font-mono text-sm leading-relaxed',
-                        'bg-[#09090B] border border-[#27272A] text-[#E4E4E7]',
-                        'focus:outline-none focus:ring-1 focus:ring-[#4ADE80] focus:border-transparent',
+                        'flex-1 w-full resize-none p-3 font-mono text-[14px] leading-relaxed min-h-[160px]',
+                        'bg-[#09090B] border border-[#27272A] rounded-[8px] text-[#E4E4E7]',
+                        'focus:outline-none focus:border-[rgba(74,222,128,0.4)] focus:shadow-[0_0_0_1px_rgba(74,222,128,0.1)] focus:ring-0',
                         'transition-colors duration-200 placeholder:text-[#52525B]',
                         !trade && 'opacity-60 cursor-not-allowed'
                     )}
@@ -88,13 +100,13 @@ export function NotebookPanel({ trade }: NotebookPanelProps) {
                     disabled={!trade || isSaving}
                 />
 
-                {/* Footer/Save Action */}
-                <div className="shrink-0 pt-4 flex items-center justify-end">
+                {/* Save Action */}
+                <div className="shrink-0 pt-3">
                     <button
                         onClick={handleSave}
                         disabled={!trade || isSaving}
                         className={cn(
-                            'relative flex items-center justify-center h-9 px-4 rounded-md text-sm font-semibold transition-all duration-200',
+                            'w-full flex items-center justify-center px-4 py-2 rounded-[6px] text-sm font-semibold transition-colors duration-150 relative h-9',
                             'bg-[#4ADE80] text-[#000000] hover:bg-[#22c55e]',
                             'disabled:opacity-50 disabled:cursor-not-allowed',
                             showSaved && 'bg-[#22c55e] text-white'
