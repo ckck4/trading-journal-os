@@ -243,7 +243,7 @@ function TradeRow({ trade, isSelected, onClick, onInfoClick }: TradeRowProps) {
       onClick={onClick}
       className={cn(
         'w-full flex items-center gap-4 px-4 py-3 rounded-[12px] text-left',
-        'bg-[#18181B] border border-[#27272A] transition-all duration-200',
+        'surface-matte transition-all duration-200',
         'hover:border-[rgba(74,222,128,0.25)] hover:shadow-[0_0_0_1px_rgba(74,222,128,0.1)]',
         isSelected && 'border-[rgba(74,222,128,0.5)] bg-[rgba(74,222,128,0.05)]'
       )}
