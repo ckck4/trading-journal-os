@@ -242,35 +242,35 @@ function TradeRow({ trade, isSelected, onClick, onInfoClick }: TradeRowProps) {
     <button
       onClick={onClick}
       className={cn(
-        'w-full flex items-center gap-4 px-4 py-3 rounded-lg text-left',
-        'border transition-all duration-150',
-        'hover:bg-[var(--accent)] hover:border-[var(--color-accent-primary)]/30',
+        'w-full flex items-center gap-4 px-4 py-3 rounded-[12px] text-left',
+        'bg-[#18181B] border transition-all duration-200',
+        'hover:border-[rgba(74,222,128,0.25)] hover:shadow-[0_0_0_1px_rgba(74,222,128,0.1)]',
         isSelected
-          ? 'border-[var(--color-accent-primary)]/60 bg-[var(--color-accent-muted)]'
-          : 'border-[var(--border)] bg-[var(--card)]'
+          ? 'border-[rgba(74,222,128,0.5)] bg-[rgba(74,222,128,0.05)]'
+          : 'border-[#27272A]'
       )}
     >
       {/* Time */}
-      <span className="font-mono text-xs text-[var(--muted-foreground)] w-14 shrink-0 tabular-nums">
+      <span className="font-mono-data text-xs text-[#71717A] w-14 shrink-0 tabular-nums">
         {formatTime(trade.entryTime)}
       </span>
 
       {/* Instrument */}
-      <span className="text-sm font-semibold text-[var(--foreground)] w-12 shrink-0">
+      <span className="text-sm font-medium text-[#FFFFFF] w-12 shrink-0">
         {trade.rootSymbol}
       </span>
 
       {/* Side icon */}
       <span className="shrink-0">
         {isLong ? (
-          <ArrowUp size={14} className="text-[var(--color-green)]" />
+          <ArrowUp size={14} className="text-[#4ADE80]" />
         ) : (
-          <ArrowDown size={14} className="text-[var(--color-red)]" />
+          <ArrowDown size={14} className="text-[#EF4444]" />
         )}
       </span>
 
       {/* Entry → Exit prices */}
-      <span className="font-mono text-xs text-[var(--muted-foreground)] shrink-0">
+      <span className="font-mono-data text-xs text-[#52525B] shrink-0">
         {formatPrice(trade.avgEntryPrice)}
         {trade.avgExitPrice && (
           <span className="mx-1 opacity-50">→</span>
@@ -279,12 +279,12 @@ function TradeRow({ trade, isSelected, onClick, onInfoClick }: TradeRowProps) {
       </span>
 
       {/* Duration */}
-      <span className="text-xs text-[var(--muted-foreground)] shrink-0 hidden sm:block">
+      <span className="text-xs text-[#52525B] shrink-0 hidden sm:block">
         {formatDuration(trade.durationSeconds)}
       </span>
 
       {/* Fills count */}
-      <span className="text-xs text-[var(--muted-foreground)] shrink-0 hidden md:block">
+      <span className="text-xs text-[#52525B] shrink-0 hidden md:block">
         {trade.fillsCount} fill{trade.fillsCount !== 1 ? 's' : ''}
       </span>
 
@@ -295,7 +295,7 @@ function TradeRow({ trade, isSelected, onClick, onInfoClick }: TradeRowProps) {
           {trade.tags.slice(0, 2).map((tag) => (
             <span
               key={tag.id}
-              className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border border-[var(--border)] text-[var(--muted-foreground)]"
+              className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border border-[#27272A] text-[#A1A1AA]"
               style={
                 tag.color
                   ? { borderColor: tag.color + '60', color: tag.color }
@@ -339,8 +339,8 @@ function TradeRow({ trade, isSelected, onClick, onInfoClick }: TradeRowProps) {
             }
           }}
           className={cn(
-            'p-1.5 flex items-center justify-center rounded-md text-[var(--muted-foreground)]',
-            'hover:bg-[var(--border)] hover:text-[var(--foreground)]',
+            'p-1.5 flex items-center justify-center rounded-md text-[#52525B]',
+            'hover:bg-[#27272A] hover:text-[#A1A1AA]',
             'transition-all duration-150 cursor-pointer'
           )}
           title="Trade Details"
@@ -380,21 +380,21 @@ function DayGroup({ date, trades, checkin, selectedId, onSelectTrade, onInfoTrad
   return (
     <div className="space-y-1.5">
       {/* Day header */}
-      <div className="flex items-center gap-3 py-1 sticky top-0 bg-[var(--background)] z-10">
-        <span className="text-xs font-semibold text-[var(--muted-foreground)] shrink-0">
+      <div className="flex items-center gap-3 py-1 sticky top-0 bg-[#09090B] z-10">
+        <span className="text-sm font-semibold text-[#A1A1AA] shrink-0">
           {formatDayHeader(date)}
         </span>
         <div className="shrink-0 flex items-center">
           <RoutinePill date={date} checkin={checkin} />
         </div>
-        <div className="flex-1 h-px bg-[var(--border)]" />
-        <span className="text-xs text-[var(--muted-foreground)] shrink-0">
+        <div className="flex-1 h-px bg-[#27272A]" />
+        <span className="text-xs text-[#A1A1AA] shrink-0">
           {trades.length} trade{trades.length !== 1 ? 's' : ''}
         </span>
         <span
           className={cn(
-            'font-mono text-sm font-semibold tabular-nums shrink-0',
-            pnlColor
+            'font-mono-data text-sm font-semibold tabular-nums shrink-0',
+            dayPnl > 0 ? 'text-[#4ADE80]' : dayPnl < 0 ? 'text-[#EF4444]' : 'text-[#A1A1AA]'
           )}
         >
           {formatPnl(dayPnl.toString())}
@@ -455,15 +455,15 @@ function RoutinePill({ date, checkin }: { date: string, checkin: any | null }) {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [isOpen])
 
-  let pillClass = "text-[var(--muted-foreground)] border-[var(--border)]"
+  let pillClass = "text-[#A1A1AA] border-[#27272A]"
   let text = "Routine: ?"
 
   if (checkin) {
     if (checkin.followed_routine) {
-      pillClass = "text-[var(--color-green)] border-[var(--color-green)]/30"
+      pillClass = "bg-[rgba(74,222,128,0.1)] border-[rgba(74,222,128,0.2)] text-[#4ADE80]"
       text = "Routine: ✓"
     } else {
-      pillClass = "text-[var(--color-red)] border-[var(--color-red)]/30"
+      pillClass = "bg-[rgba(239,68,68,0.1)] border-[rgba(239,68,68,0.2)] text-[#EF4444]"
       text = "Routine: ✗"
     }
   }
@@ -475,7 +475,7 @@ function RoutinePill({ date, checkin }: { date: string, checkin: any | null }) {
         className={cn(
           "inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-medium border transition-colors",
           pillClass,
-          isOpen ? "bg-[var(--accent)]" : "hover:bg-[var(--accent)]"
+          isOpen ? "bg-[#18181B]" : "hover:bg-[#18181B] cursor-pointer"
         )}
       >
         {text}
@@ -605,37 +605,44 @@ export function JournalClient() {
   }
 
   return (
-    <div className="flex flex-1 min-h-0 overflow-hidden flex-row">
-      {/* Main list (60%) */}
-      <div className="w-[60%] overflow-y-auto border-r border-[var(--border)]">
-        {isLoading ? (
-          <LoadingSkeleton />
-        ) : trades.length === 0 ? (
-          <div className="px-6 py-5 space-y-6 max-w-5xl">
-            <EmptyState />
-          </div>
-        ) : (
-          <div className="px-6 py-5 space-y-6 max-w-5xl">
-            {groupedTrades.map(([date, dayTrades]) => (
-              <DayGroup
-                key={date}
-                date={date}
-                trades={dayTrades}
-                checkin={checkinsMap[date] ?? null}
-                selectedId={selectedTrade?.id ?? null}
-                onSelectTrade={handleSelectTrade}
-                onInfoTrade={handleInfoTrade}
-              />
-            ))}
-          </div>
-        )}
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-[#09090B]">
+      {/* Page header */}
+      <div className="px-6 pt-6 pb-2 shrink-0">
+        <h1 className="text-xl font-semibold text-[#FFFFFF]">Trade Journal</h1>
       </div>
 
-      {/* Notebook panel (40%) */}
-      <NotebookPanel trade={selectedTrade} />
+      <div className="flex flex-1 min-h-0 overflow-hidden flex-row">
+        {/* Main list (60%) */}
+        <div className="w-[60%] overflow-y-auto border-r border-[#27272A]">
+          {isLoading ? (
+            <LoadingSkeleton />
+          ) : trades.length === 0 ? (
+            <div className="px-6 py-5 space-y-6 max-w-5xl">
+              <EmptyState />
+            </div>
+          ) : (
+            <div className="px-6 py-5 space-y-6 max-w-5xl">
+              {groupedTrades.map(([date, dayTrades]) => (
+                <DayGroup
+                  key={date}
+                  date={date}
+                  trades={dayTrades}
+                  checkin={checkinsMap[date] ?? null}
+                  selectedId={selectedTrade?.id ?? null}
+                  onSelectTrade={handleSelectTrade}
+                  onInfoTrade={handleInfoTrade}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
-      {/* Slide-over trade detail panel */}
-      <TradeDetailPanel trade={detailedTrade} onClose={handleCloseDetailPanel} />
+        {/* Notebook panel (40%) */}
+        <NotebookPanel trade={selectedTrade} />
+
+        {/* Slide-over trade detail panel */}
+        <TradeDetailPanel trade={detailedTrade} onClose={handleCloseDetailPanel} />
+      </div>
     </div>
   )
 }

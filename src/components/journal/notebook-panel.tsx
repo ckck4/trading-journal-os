@@ -61,25 +61,25 @@ export function NotebookPanel({ trade }: NotebookPanelProps) {
         : formatDate(new Date().toISOString().split('T')[0])
 
     return (
-        <div className="w-[40%] flex flex-col h-full bg-[var(--background)]">
+        <div className="w-[40%] flex flex-col h-full bg-[#18181B] border-l border-[#27272A]">
             {/* Header */}
-            <div className="h-14 shrink-0 flex items-center justify-between px-6 border-b border-[var(--border)]">
-                <h2 className="text-sm font-semibold text-[var(--foreground)]">
+            <div className="h-14 shrink-0 flex items-center justify-between px-6 border-b border-[#27272A]">
+                <h2 className="text-sm font-semibold text-[#FFFFFF]">
                     {trade ? 'Trade Notes' : 'Daily Journal'}
                 </h2>
-                <span className="text-xs text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis">
+                <span className="text-sm text-[#71717A] whitespace-nowrap overflow-hidden text-ellipsis">
                     {headerText}
                 </span>
             </div>
 
             {/* Editor Body */}
-            <div className="flex-1 p-6 flex flex-col min-h-0 bg-[var(--background)]">
+            <div className="flex-1 p-6 flex flex-col min-h-0 bg-transparent">
                 <textarea
                     className={cn(
                         'flex-1 w-full resize-none rounded-lg p-4 font-mono text-sm leading-relaxed',
-                        'bg-[#14171E] border border-[#2A2F3E] text-[#E8EAF0]',
-                        'focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)] focus:border-transparent',
-                        'transition-colors duration-200 placeholder:text-[var(--muted-foreground)]',
+                        'bg-[#09090B] border border-[#27272A] text-[#E4E4E7]',
+                        'focus:outline-none focus:ring-1 focus:ring-[#4ADE80] focus:border-transparent',
+                        'transition-colors duration-200 placeholder:text-[#52525B]',
                         !trade && 'opacity-60 cursor-not-allowed'
                     )}
                     placeholder={trade ? "Write your journal entry..." : "Select a trade to write notes..."}
@@ -94,10 +94,10 @@ export function NotebookPanel({ trade }: NotebookPanelProps) {
                         onClick={handleSave}
                         disabled={!trade || isSaving}
                         className={cn(
-                            'relative flex items-center justify-center h-9 px-4 rounded-md text-sm font-medium transition-all duration-200',
-                            'bg-[var(--foreground)] text-[var(--background)] hover:opacity-90',
+                            'relative flex items-center justify-center h-9 px-4 rounded-md text-sm font-semibold transition-all duration-200',
+                            'bg-[#4ADE80] text-[#000000] hover:bg-[#22c55e]',
                             'disabled:opacity-50 disabled:cursor-not-allowed',
-                            showSaved && 'bg-[var(--color-green)] text-white hover:opacity-100'
+                            showSaved && 'bg-[#22c55e] text-white'
                         )}
                     >
                         {showSaved ? (
