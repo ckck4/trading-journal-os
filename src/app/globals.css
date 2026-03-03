@@ -216,7 +216,29 @@
   font-family: var(--font-mono-fam);
 }
 
+/* ================================================
+   ANTIGRAVITY DEFAULT CARD SCHEME
+   Use this class on ALL cards, widgets, and trade 
+   rows across the entire journal.
+   Reference: Command Center standard cards.
+   ================================================ */
+.ag-card {
+  background-color: var(--card);
+  /* #14171E */
+  border: 1px solid var(--border);
+  /* #2A2F3E */
+  border-radius: 0.5rem;
+  /* 8px */
+  padding: 1rem;
+  /* 16px */
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+  box-shadow: none;
+}
 
+.ag-card:hover {
+  border-color: rgba(74, 222, 128, 0.25);
+  box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.1);
+}
 
 .card-base {
   transition: border-color 200ms ease, box-shadow 200ms ease;

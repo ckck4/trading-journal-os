@@ -33,6 +33,11 @@ Follow `ux/ui_design_bible.md` strictly. No exceptions without explicit permissi
 - **Components**: `shadcn/ui` (new-york dark theme), Lucide React icons.
 - **Animations**: Subtle, 150-300ms transitions. Skeletons for loaders.
 
+### Default Card Scheme
+All cards, widgets, and data rows use the `.ag-card` CSS class.
+Defined in `src/app/globals.css`.
+Never use hardcoded background/border values on cards — always use `.ag-card`.
+
 ## 5. Code Quality Standards
 - **TypeScript**: Strict mode enabled. No `any` types without explicit justification.
 - **Error Handling**: All async functions and API routes must use `try/catch`. DO NOT catch silently without logging or returning an error status.
