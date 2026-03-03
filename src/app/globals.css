@@ -216,11 +216,7 @@
   font-family: var(--font-mono-fam);
 }
 
-.surface-matte {
-  background: #18181B;
-  border: 1px solid #27272A;
-  border-radius: 12px;
-}
+
 
 .card-base {
   transition: border-color 200ms ease, box-shadow 200ms ease;
