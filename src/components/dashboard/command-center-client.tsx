@@ -12,7 +12,6 @@ import { RecentTradesWidget } from '@/components/dashboard/recent-trades-widget'
 import { GoalsWidget } from '@/components/dashboard/goals-widget'
 import type { WidgetData } from '@/types/dashboard'
 import type { DatePreset } from '@/stores/filters'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const WIDGET_IDS = ['combined', 'discipline', 'history', 'daily', 'winrate', 'prop', 'trades', 'goals'] as const
 type WidgetId = typeof WIDGET_IDS[number]
@@ -55,6 +54,8 @@ function getDateRange(
 }
 
 function formatDisplayDate(from: string, to: string) {
+  if (from.startsWith('2000-01-01')) return 'All Time'
+
   const d1Str = from.split('T')[0]
   const d2Str = to.split('T')[0]
   const d1 = new Date(d1Str + 'T12:00:00')
@@ -169,20 +170,7 @@ export function CommandCenterClient() {
         <div>
           <h1 className="text-xl font-semibold text-[var(--foreground)]">Command Center</h1>
           <div className="flex items-center gap-3 mt-1.5">
-            <Select
-              value={datePreset}
-              onValueChange={(val) => setDatePreset(val as DatePreset)}
-            >
-              <SelectTrigger className="w-[140px] h-8 text-xs bg-[#14171E] border border-[#2A2F3E] text-[#E8EAF0] focus:ring-0">
-                <SelectValue placeholder="Date Range" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#14171E] border-[#2A2F3E] text-[#E8EAF0]">
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="this_week">This Week</SelectItem>
-                <SelectItem value="this_month">This Month</SelectItem>
-                <SelectItem value="last_30d">Last 30 Days</SelectItem>
-              </SelectContent>
-            </Select>
+
             <span className="font-sans text-sm text-[#A1A1AA]">
               {formatDisplayDate(from, to)}
             </span>
