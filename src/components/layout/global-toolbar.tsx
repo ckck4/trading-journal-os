@@ -18,7 +18,7 @@ const DATE_PRESETS: { value: DatePreset; label: string }[] = [
   { value: 'this_week', label: 'This Week' },
   { value: 'this_month', label: 'This Month' },
   { value: 'last_30d', label: 'Last 30d' },
-  { value: 'custom', label: 'Custom Range' },
+  { value: 'all', label: 'All Time' },
 ]
 
 const PRESET_LABELS: Record<DatePreset, string> = {
@@ -26,7 +26,7 @@ const PRESET_LABELS: Record<DatePreset, string> = {
   this_week: 'This Week',
   this_month: 'This Month',
   last_30d: 'Last 30d',
-  custom: 'Custom Range',
+  all: 'All Time',
 }
 
 // ─── Generic filter dropdown ──────────────────────────────────────────────────
@@ -155,9 +155,9 @@ function FilterDropdown({
             zIndex: 9999,
           }}
           className={cn(
-            'min-w-[176px] rounded-md border border-[var(--border)]',
-            'bg-[var(--card)] shadow-[var(--shadow-md)]',
-            'py-1 overflow-hidden'
+            'min-w-[176px] rounded-[8px] border border-[#27272A]',
+            'bg-[#09090B]',
+            'p-1 overflow-hidden shadow-md'
           )}
         >
           {/* "All" option */}
@@ -169,19 +169,19 @@ function FilterDropdown({
                 onClick={() => handleSelect('')}
               />
               {options.length > 0 && (
-                <div className="my-1 h-px bg-[var(--border)]" />
+                <div className="my-1 h-px bg-[#27272A]" />
               )}
             </>
           )}
 
           {options.length === 0 && !allLabel && (
-            <div className="px-3 py-2 text-[13px] text-[var(--muted-foreground)]">
+            <div className="px-3 py-2 text-[13px] text-[#A1A1AA]">
               No options
             </div>
           )}
 
           {options.length === 0 && allLabel !== undefined && (
-            <div className="px-3 py-2 text-[13px] text-[var(--muted-foreground)]">
+            <div className="px-3 py-2 text-[13px] text-[#A1A1AA]">
               None configured yet
             </div>
           )}
@@ -216,16 +216,16 @@ function DropdownItem({
       onClick={onClick}
       className={cn(
         'flex w-full items-center justify-between gap-3',
-        'px-3 py-1.5 text-[13px] text-left',
-        'hover:bg-[var(--accent)] transition-colors duration-100',
+        'px-2 py-1.5 text-[13px] text-left rounded-md',
+        'transition-colors duration-100',
         isSelected
-          ? 'text-[var(--color-accent-primary)] font-medium'
-          : 'text-[var(--foreground)]'
+          ? 'bg-[rgba(74,222,128,0.08)] text-[#4ADE80] font-medium'
+          : 'bg-transparent text-[#A1A1AA] hover:bg-[rgba(74,222,128,0.06)] hover:text-[#E4E4E7]'
       )}
     >
       <span>{label}</span>
       {isSelected && (
-        <Check size={12} className="shrink-0 text-[var(--color-accent-primary)]" />
+        <Check size={14} className="shrink-0 text-[#4ADE80]" />
       )}
     </button>
   )

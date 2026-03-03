@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type DatePreset = 'today' | 'this_week' | 'this_month' | 'last_30d' | 'custom'
+export type DatePreset = 'today' | 'this_week' | 'this_month' | 'last_30d' | 'all'
 
 export interface FiltersState {
   accountIds: string[]

@@ -47,10 +47,11 @@ function getDateRange(
     d.setDate(today.getDate() - 29)
     return { from: fmt(d), to: fmt(today, true) }
   }
-  return {
-    from: dateFrom ? `${dateFrom}T00:00:00` : fmt(today),
-    to: dateTo ? `${dateTo}T23:59:59` : fmt(today, true)
+  if (preset === 'all') {
+    return { from: '2000-01-01T00:00:00', to: fmt(today, true) }
   }
+
+  return { from: fmt(today), to: fmt(today, true) }
 }
 
 function formatDisplayDate(from: string, to: string) {

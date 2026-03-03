@@ -106,16 +106,16 @@
 
   --card: #14171E;
   --card-foreground: #E8EAF0;
-  --popover: #14171E;
-  --popover-foreground: #E8EAF0;
+  --popover: 9 9 11;
+  --popover-foreground: 161 161 170;
   --primary: #6C63FF;
   --primary-foreground: #FFFFFF;
   --secondary: #1A1E28;
   --secondary-foreground: #E8EAF0;
   --muted: #1A1E28;
   --muted-foreground: #8B92A8;
-  --accent: #1F2433;
-  --accent-foreground: #E8EAF0;
+  --accent: 74 222 128 / 0.08;
+  --accent-foreground: 228 228 231;
   --destructive: #EF4444;
   --border: #2A2F3E;
   --input: #2A2F3E;
