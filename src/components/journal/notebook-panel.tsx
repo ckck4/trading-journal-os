@@ -1,7 +1,5 @@
-'use client'
-
 import { useState, useEffect } from 'react'
-import { Check } from 'lucide-react'
+import { Check, AlignLeft, Paperclip, Hash, Save as SaveIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Trade } from '@/types/trades'
 import { useQueryClient } from '@tanstack/react-query'
@@ -55,58 +53,55 @@ export function NotebookPanel({ trade }: NotebookPanelProps) {
         }
     }
 
-    // Header string
-    const headerText = trade
-        ? `${trade.rootSymbol} • ${formatDate(trade.tradingDay)}`
-        : formatDate(new Date().toISOString().split('T')[0])
-
     return (
-        <div className="w-[40%] flex flex-col h-full bg-[#18181B] border-l border-[#27272A]">
-            {/* Header */}
-            <div className="px-6 pt-6 pb-4 border-b border-[#27272A]">
-                <h2 className="text-[16px] font-semibold text-[#FFFFFF]">
-                    {trade ? 'Trade Notes' : 'Daily Journal'}
-                </h2>
-                <span className="text-[12px] text-[#52525B] mt-1 block">
-                    {headerText}
-                </span>
-            </div>
+        <div className="w-[40%] p-6 overflow-y-auto shrink-0 hidden sm:block">
+            <div className="bg-[#18181B] border border-[#27272A] rounded-[12px] p-0 overflow-hidden h-fit w-full flex flex-col">
 
-            {/* Editor Body */}
-            <div className="flex-1 p-6 flex flex-col min-h-0 bg-transparent">
-                {/* Context Label */}
-                <div className="flex items-center justify-between mb-2">
-                    <label className="text-[11px] text-[#71717A] uppercase tracking-[0.08em] font-medium">
-                        Notes
-                    </label>
-                    {trade && (
-                        <span className="text-[#A1A1AA] text-[12px] font-mono-data">
-                            {trade.rootSymbol} · {new Date(trade.entryTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                {/* HEADER ROW */}
+                <div className="px-4 py-3 flex items-center justify-between border-b border-[#27272A]">
+                    <div className="flex items-center gap-2">
+                        <AlignLeft size={16} className="text-[#4ADE80]" />
+                        <span className="text-[#FFFFFF] font-semibold text-[14px]">
+                            Daily Journal
                         </span>
-                    )}
+                    </div>
+                    <span className="text-[#52525B] text-[11px] italic">
+                        Auto-saving enabled...
+                    </span>
                 </div>
 
+                {/* TEXTAREA */}
                 <textarea
                     className={cn(
-                        'flex-1 w-full resize-none p-3 font-mono text-[14px] leading-relaxed min-h-[160px]',
-                        'bg-[#09090B] border border-[#27272A] rounded-[8px] text-[#E4E4E7]',
-                        'focus:outline-none focus:border-[rgba(74,222,128,0.4)] focus:shadow-[0_0_0_1px_rgba(74,222,128,0.1)] focus:ring-0',
-                        'transition-colors duration-200 placeholder:text-[#52525B]',
+                        'w-full min-h-[120px] resize-none p-4 text-[13px]',
+                        'bg-transparent border-none outline-none text-[#A1A1AA]',
+                        'placeholder:text-[#52525B]',
                         !trade && 'opacity-60 cursor-not-allowed'
                     )}
-                    placeholder={trade ? "Write your journal entry..." : "Select a trade to write notes..."}
+                    placeholder="Reflect on today's execution. Were the entries disciplined? How was the risk management..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     disabled={!trade || isSaving}
                 />
 
-                {/* Save Action */}
-                <div className="shrink-0 pt-3">
+                {/* BOTTOM BAR */}
+                <div className="px-4 py-2.5 flex items-center justify-between border-t border-[#27272A]">
+                    <div className="flex items-center gap-2">
+                        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[#27272A] rounded-[6px] text-[#71717A] text-xs hover:border-[#4ADE80] hover:text-[#A1A1AA] transition-colors">
+                            <Paperclip size={14} />
+                            Add Screenshot
+                        </button>
+                        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[#27272A] rounded-[6px] text-[#71717A] text-xs hover:border-[#4ADE80] hover:text-[#A1A1AA] transition-colors">
+                            <Hash size={14} />
+                            Tags
+                        </button>
+                    </div>
+
                     <button
                         onClick={handleSave}
                         disabled={!trade || isSaving}
                         className={cn(
-                            'w-full flex items-center justify-center px-4 py-2 rounded-[6px] text-sm font-semibold transition-colors duration-150 relative h-9',
+                            'flex items-center gap-1.5 px-4 py-1.5 rounded-[6px] text-sm font-semibold transition-colors duration-150 relative',
                             'bg-[#4ADE80] text-[#000000] hover:bg-[#22c55e]',
                             'disabled:opacity-50 disabled:cursor-not-allowed',
                             showSaved && 'bg-[#22c55e] text-white'
@@ -114,16 +109,20 @@ export function NotebookPanel({ trade }: NotebookPanelProps) {
                     >
                         {showSaved ? (
                             <>
-                                <Check size={16} className="mr-2" />
+                                <Check size={14} />
                                 Saved
                             </>
                         ) : isSaving ? (
                             'Saving...'
                         ) : (
-                            'Save Notes'
+                            <>
+                                <SaveIcon size={14} />
+                                Save Notes
+                            </>
                         )}
                     </button>
                 </div>
+
             </div>
         </div>
     )
