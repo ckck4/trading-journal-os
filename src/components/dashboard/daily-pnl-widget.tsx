@@ -50,7 +50,7 @@ export function DailyPnlWidget({ data, isLoading }: DailyPnlWidgetProps) {
       {/* Net P&L */}
       <span
         className={cn(
-          'text-3xl font-mono-data font-bold tracking-tight',
+          'text-[42px] leading-none font-mono-data font-bold tracking-tight',
           isPositive
             ? 'text-[#4ADE80]'
             : isNegative
@@ -66,22 +66,22 @@ export function DailyPnlWidget({ data, isLoading }: DailyPnlWidgetProps) {
       </span>
 
       {/* Stats row */}
-      <div className="mt-auto flex gap-4">
+      <div className="mt-auto flex gap-6 pb-2">
         <div className="flex flex-col">
-          <span className="text-[10px] text-[#52525B] uppercase tracking-[0.1em]">
+          <span className="text-[11px] text-[#52525B] uppercase tracking-[0.1em] mb-1">
             Trades
           </span>
-          <span className="text-sm font-mono-data font-semibold text-[#FFFFFF]">{data.tradeCount}</span>
+          <span className="text-lg font-mono-data font-semibold text-[#FFFFFF]">{data.tradeCount}</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-[10px] text-[#4ADE80] uppercase tracking-[0.1em]">W</span>
-          <span className="text-sm font-mono-data font-semibold text-[#4ADE80]">
+          <span className="text-[11px] text-[#4ADE80] uppercase tracking-[0.1em] mb-1">W</span>
+          <span className="text-lg font-mono-data font-semibold text-[#4ADE80]">
             {data.winCount}
           </span>
         </div>
         <div className="flex flex-col">
-          <span className="text-[10px] text-[#EF4444] uppercase tracking-[0.1em]">L</span>
-          <span className="text-sm font-mono-data font-semibold text-[#EF4444]">
+          <span className="text-[11px] text-[#EF4444] uppercase tracking-[0.1em] mb-1">L</span>
+          <span className="text-lg font-mono-data font-semibold text-[#EF4444]">
             {data.lossCount}
           </span>
         </div>

@@ -55,22 +55,22 @@ export function WinRateWidget({ data, isLoading }: WinRateWidgetProps) {
         Win Rate
       </span>
 
-      <span className={cn('text-3xl font-mono-data font-bold tracking-tight', wrColor)}>
+      <span className={cn('text-[42px] leading-none font-mono-data font-bold tracking-tight mt-2', wrColor)}>
         {data.winRate.toFixed(1)}%
       </span>
 
-      <div className="mt-auto flex gap-4">
+      <div className="mt-auto flex gap-6 pb-2">
         <div className="flex flex-col">
-          <span className="text-[10px] text-[#52525B] uppercase tracking-[0.1em]">
+          <span className="text-[11px] text-[#52525B] uppercase tracking-[0.1em] mb-1">
             Trades
           </span>
-          <span className="text-sm font-mono-data font-semibold text-[#FFFFFF]">{data.totalTrades}</span>
+          <span className="text-lg font-mono-data font-semibold text-[#FFFFFF]">{data.totalTrades}</span>
         </div>
         <div className="flex flex-col">
-          <span className="text-[10px] text-[#52525B] uppercase tracking-[0.1em]">
+          <span className="text-[11px] text-[#52525B] uppercase tracking-[0.1em] mb-1">
             Prof. Factor
           </span>
-          <span className={cn('text-sm font-mono-data font-semibold', pfColor)}>
+          <span className={cn('text-lg font-mono-data font-semibold', pfColor)}>
             {data.profitFactor >= 9999 ? '∞' : data.profitFactor.toFixed(2)}
           </span>
         </div>

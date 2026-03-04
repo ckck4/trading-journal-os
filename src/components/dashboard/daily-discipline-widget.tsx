@@ -196,18 +196,18 @@ export function DailyDisciplineWidget() {
                     </div>
                 ) : score === null || score === undefined ? (
                     <div className="flex-1 flex flex-col items-center justify-center pb-4">
-                        <div className="h-[120px] w-[120px] relative">
+                        <div className="h-[168px] w-[168px] relative">
                             <ResponsiveContainer width="100%" height="100%">
                                 <RadialBarChart
                                     cx="50%" cy="50%" innerRadius="70%" outerRadius="100%"
-                                    barSize={10} data={[{ name: 'score', value: 0 }]} startAngle={90} endAngle={-270}
+                                    barSize={14} data={[{ name: 'score', value: 0 }]} startAngle={90} endAngle={-270}
                                 >
                                     <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-                                    <RadialBar background={{ fill: '#27272A' }} dataKey="value" cornerRadius={10} fill="#2A2F3E" />
+                                    <RadialBar background={{ fill: '#27272A' }} dataKey="value" cornerRadius={12} fill="#2A2F3E" />
                                 </RadialBarChart>
                             </ResponsiveContainer>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-2xl font-bold font-mono-data text-[#71717A]">0</span>
+                                <span className="text-3xl font-bold font-mono-data text-[#71717A]">0</span>
                             </div>
                         </div>
                         <p className="text-sm text-[#71717A] font-medium mt-4">No data yet</p>
@@ -219,24 +219,24 @@ export function DailyDisciplineWidget() {
                     <div className="flex flex-col h-full">
                         {/* Gauge */}
                         <div className="flex justify-center mb-6">
-                            <div className="h-[140px] w-[140px] relative">
+                            <div className="h-[196px] w-[196px] relative">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <RadialBarChart
                                         cx="50%" cy="50%" innerRadius="75%" outerRadius="100%"
-                                        barSize={12} data={chartData} startAngle={90} endAngle={-270}
+                                        barSize={16} data={chartData} startAngle={90} endAngle={-270}
                                     >
                                         <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
                                         <RadialBar
                                             background={{ fill: '#27272A' }}
                                             dataKey="value"
-                                            cornerRadius={10}
+                                            cornerRadius={12}
                                             fill={color}
                                         />
                                     </RadialBarChart>
                                 </ResponsiveContainer>
                                 <div className="absolute inset-0 flex flex-col items-center justify-center mt-1">
-                                    <span className="text-3xl font-bold font-mono-data" style={{ color }}>{score}</span>
-                                    <span className="text-[10px] font-medium uppercase tracking-[0.1em] mt-1" style={{ color }}>{label}</span>
+                                    <span className="text-[42px] leading-none font-bold font-mono-data" style={{ color }}>{score}</span>
+                                    <span className="text-xs font-medium uppercase tracking-[0.1em] mt-1" style={{ color }}>{label}</span>
                                 </div>
                             </div>
                         </div>
