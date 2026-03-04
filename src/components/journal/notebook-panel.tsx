@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Check, AlignLeft, Paperclip, Hash, Save as SaveIcon } from 'lucide-react'
+import { Check, AlignLeft, Save as SaveIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Trade } from '@/types/trades'
 import { useQueryClient } from '@tanstack/react-query'
@@ -55,7 +55,7 @@ export function NotebookPanel({ trade }: NotebookPanelProps) {
 
     return (
         <div className="w-[40%] p-6 overflow-y-auto shrink-0 hidden sm:block">
-            <div className="bg-[#18181B] border border-[#27272A] rounded-[12px] p-0 overflow-hidden h-fit w-full flex flex-col">
+            <div className="ag-card !p-0 overflow-hidden h-fit w-full flex flex-col">
 
                 {/* HEADER ROW */}
                 <div className="px-4 py-3 flex items-center justify-between border-b border-[#27272A]">
@@ -85,18 +85,7 @@ export function NotebookPanel({ trade }: NotebookPanelProps) {
                 />
 
                 {/* BOTTOM BAR */}
-                <div className="px-4 py-2.5 flex items-center justify-between border-t border-[#27272A]">
-                    <div className="flex items-center gap-2">
-                        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[#27272A] rounded-[6px] text-[#71717A] text-xs hover:border-[#4ADE80] hover:text-[#A1A1AA] transition-colors">
-                            <Paperclip size={14} />
-                            Add Screenshot
-                        </button>
-                        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[#27272A] rounded-[6px] text-[#71717A] text-xs hover:border-[#4ADE80] hover:text-[#A1A1AA] transition-colors">
-                            <Hash size={14} />
-                            Tags
-                        </button>
-                    </div>
-
+                <div className="px-4 py-2.5 flex items-center justify-end border-t border-[#27272A]">
                     <button
                         onClick={handleSave}
                         disabled={!trade || isSaving}
