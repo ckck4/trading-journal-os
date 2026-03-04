@@ -117,61 +117,65 @@ export function CombinedEquityBalanceWidget({ balanceData, equityData, isLoading
                             <p className="text-xs text-[var(--muted-foreground)]">No data yet</p>
                         </div>
                     ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={equityData} margin={{ top: 8, right: 4, left: 4, bottom: 4 }}>
-                                <defs>
-                                    <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
-                                        {isEquityPositive ? (
-                                            <>
-                                                <stop offset="0%" stopColor="#4ADE80" stopOpacity={0.2} />
-                                                <stop offset="100%" stopColor="#4ADE80" stopOpacity={0} />
-                                            </>
-                                        ) : (
-                                            <>
-                                                <stop offset="0%" stopColor="#EF4444" stopOpacity={0.2} />
-                                                <stop offset="100%" stopColor="#EF4444" stopOpacity={0} />
-                                            </>
-                                        )}
-                                    </linearGradient>
-                                    <filter id="lineGlow">
-                                        <feGaussianBlur stdDeviation="3" result="blur" />
-                                        <feMerge>
-                                            <feMergeNode in="blur" />
-                                            <feMergeNode in="SourceGraphic" />
-                                        </feMerge>
-                                    </filter>
-                                </defs>
-                                <CartesianGrid vertical={false} stroke="#1f1f23" strokeDasharray="4 4" />
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: 'var(--card)',
-                                        border: '1px solid var(--border)',
-                                        borderRadius: '6px',
-                                        fontSize: '11px',
-                                        color: 'var(--foreground)',
-                                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
-                                    }}
-                                    formatter={(value: number | undefined) => [
-                                        value != null ? `$${value.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '$0.00',
-                                        'Equity',
-                                    ]}
-                                    labelStyle={{ color: 'var(--muted-foreground)', marginBottom: '4px' }}
-                                    labelFormatter={(label) => label}
-                                />
-                                <Area
-                                    type="monotone"
-                                    dataKey="value"
-                                    stroke={strokeColor}
-                                    strokeWidth={2}
-                                    dot={false}
-                                    fillOpacity={1}
-                                    fill="url(#equityGradient)"
-                                    filter="url(#lineGlow)"
-                                    activeDot={{ r: 4, fill: strokeColor, stroke: 'var(--card)', strokeWidth: 2 }}
-                                    baseLine={0}
-                                />
-                            </AreaChart>
-                        </ResponsiveContainer>
+                        <div style={{ overflow: 'hidden', width: '100%', height: '100%' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={equityData} margin={{ top: 8, right: 4, left: 4, bottom: 4 }}>
+                                    <defs>
+                                        <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
+                                            {isEquityPositive ? (
+                                                <>
+                                                    <stop offset="0%" stopColor="#4ADE80" stopOpacity={0.0} />
+                                                    <stop offset="30%" stopColor="#4ADE80" stopOpacity={0.15} />
+                                                    <stop offset="100%" stopColor="#4ADE80" stopOpacity={0} />
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <stop offset="0%" stopColor="#EF4444" stopOpacity={0.0} />
+                                                    <stop offset="30%" stopColor="#EF4444" stopOpacity={0.15} />
+                                                    <stop offset="100%" stopColor="#EF4444" stopOpacity={0} />
+                                                </>
+                                            )}
+                                        </linearGradient>
+                                        <filter id="lineGlow">
+                                            <feGaussianBlur stdDeviation="3" result="blur" />
+                                            <feMerge>
+                                                <feMergeNode in="blur" />
+                                                <feMergeNode in="SourceGraphic" />
+                                            </feMerge>
+                                        </filter>
+                                    </defs>
+                                    <CartesianGrid vertical={false} stroke="#1f1f23" strokeDasharray="4 4" />
+                                    <Tooltip
+                                        contentStyle={{
+                                            backgroundColor: 'var(--card)',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: '6px',
+                                            fontSize: '11px',
+                                            color: 'var(--foreground)',
+                                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
+                                        }}
+                                        formatter={(value: number | undefined) => [
+                                            value != null ? `$${value.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '$0.00',
+                                            'Equity',
+                                        ]}
+                                        labelStyle={{ color: 'var(--muted-foreground)', marginBottom: '4px' }}
+                                        labelFormatter={(label) => label}
+                                    />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="value"
+                                        stroke={strokeColor}
+                                        strokeWidth={2}
+                                        dot={false}
+                                        fillOpacity={1}
+                                        fill="url(#equityGradient)"
+                                        filter="url(#lineGlow)"
+                                        activeDot={{ r: 4, fill: strokeColor, stroke: 'var(--card)', strokeWidth: 2 }}
+                                        baseValue="dataMin"
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
                     )}
                 </div>
             </div>
