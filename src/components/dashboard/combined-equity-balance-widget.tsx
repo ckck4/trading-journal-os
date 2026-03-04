@@ -123,13 +123,13 @@ export function CombinedEquityBalanceWidget({ balanceData, equityData, isLoading
                                     <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
                                         {isEquityPositive ? (
                                             <>
-                                                <stop offset="0%" stopColor="rgba(74,222,128,0.3)" />
-                                                <stop offset="100%" stopColor="rgba(74,222,128,0)" />
+                                                <stop offset="0%" stopColor="#4ADE80" stopOpacity={0.2} />
+                                                <stop offset="100%" stopColor="#4ADE80" stopOpacity={0} />
                                             </>
                                         ) : (
                                             <>
-                                                <stop offset="0%" stopColor="rgba(239,68,68,0.3)" />
-                                                <stop offset="100%" stopColor="rgba(239,68,68,0)" />
+                                                <stop offset="0%" stopColor="#EF4444" stopOpacity={0.2} />
+                                                <stop offset="100%" stopColor="#EF4444" stopOpacity={0} />
                                             </>
                                         )}
                                     </linearGradient>
@@ -164,9 +164,11 @@ export function CombinedEquityBalanceWidget({ balanceData, equityData, isLoading
                                     stroke={strokeColor}
                                     strokeWidth={2}
                                     dot={false}
+                                    fillOpacity={1}
                                     fill="url(#equityGradient)"
                                     filter="url(#lineGlow)"
                                     activeDot={{ r: 4, fill: strokeColor, stroke: 'var(--card)', strokeWidth: 2 }}
+                                    baseLine={0}
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
