@@ -27,6 +27,16 @@ function fmtStrDate(date: Date) {
 
 export function PnlCalendarWidget() {
     const [calendarDate, setCalendarDate] = useState(new Date())
+    const [hoveredDay, setHoveredDay] = useState<{
+        day: number
+        month: number
+        year: number
+        x: number
+        y: number
+        pnl: number
+        trades: number
+        winRate: number
+    } | null>(null)
     const { accountIds } = useFiltersStore()
     const accountId = accountIds[0] ?? ''
 
@@ -58,9 +68,9 @@ export function PnlCalendarWidget() {
     const firstDay = getFirstDayOfMonth(year, month)
 
     // Setup day map
-    const dayStats: Record<number, { pnl: number, count: number, maxR: number | null }> = {}
+    const dayStats: Record<number, { pnl: number, count: number, winCount: number, maxR: number | null }> = {}
     for (let i = 1; i <= daysInMonth; i++) {
-        dayStats[i] = { pnl: 0, count: 0, maxR: null }
+        dayStats[i] = { pnl: 0, count: 0, winCount: 0, maxR: null }
     }
 
     let monthlyTotal = 0
@@ -73,6 +83,7 @@ export function PnlCalendarWidget() {
             const d = tDate.getDate()
             dayStats[d].pnl += parseFloat(t.netPnl)
             dayStats[d].count += 1
+            if (parseFloat(t.netPnl) > 0) dayStats[d].winCount += 1
             if (t.rMultiple) {
                 const rVal = parseFloat(t.rMultiple)
                 dayStats[d].maxR = dayStats[d].maxR === null ? rVal : Math.max(dayStats[d].maxR!, rVal)
@@ -181,13 +192,30 @@ export function PnlCalendarWidget() {
                                     const isToday = fmtStrDate(new Date(year, month, dayNum)) === todayStr
 
                                     return (
-                                        <div key={dIdx} className={cn(
-                                            "relative rounded-[6px] p-1.5 flex flex-col",
-                                            hasTrades && isProfit ? "bg-[rgba(74,222,128,0.15)] border border-[rgba(74,222,128,0.3)]" :
-                                                hasTrades && !isProfit ? "bg-[rgba(239,68,68,0.15)] border border-[rgba(239,68,68,0.3)]" :
-                                                    "bg-transparent border border-[#1f1f23]",
-                                            isToday && !hasTrades && "border-[#4ADE80]"
-                                        )}>
+                                        <div key={dIdx}
+                                            className={cn(
+                                                "relative rounded-[6px] p-1.5 flex flex-col",
+                                                hasTrades && isProfit ? "bg-[rgba(74,222,128,0.15)] border border-[rgba(74,222,128,0.3)] hover:brightness-110 transition-all cursor-default" :
+                                                    hasTrades && !isProfit ? "bg-[rgba(239,68,68,0.15)] border border-[rgba(239,68,68,0.3)] hover:brightness-110 transition-all cursor-default" :
+                                                        "bg-transparent border border-[#1f1f23]",
+                                                isToday && !hasTrades && "border-[#4ADE80]"
+                                            )}
+                                            onMouseEnter={(e) => {
+                                                if (!hasTrades) return
+                                                const rect = e.currentTarget.getBoundingClientRect()
+                                                setHoveredDay({
+                                                    day: dayNum,
+                                                    month,
+                                                    year,
+                                                    x: rect.left + rect.width / 2,
+                                                    y: rect.top,
+                                                    pnl: stats.pnl,
+                                                    trades: stats.count,
+                                                    winRate: (stats.winCount / stats.count) * 100
+                                                })
+                                            }}
+                                            onMouseLeave={() => setHoveredDay(null)}
+                                        >
                                             <span className="text-[11px] text-[#A1A1AA] absolute pl-0.5 pt-0.5">{dayNum}</span>
 
                                             {hasTrades && (
@@ -228,6 +256,38 @@ export function PnlCalendarWidget() {
                     )}
                 </div>
             </div>
+
+            {/* Tooltip */}
+            {hoveredDay && typeof window !== 'undefined' && (
+                <div
+                    className="fixed pointer-events-none z-50 flex flex-col"
+                    style={{
+                        top: hoveredDay.y - 8,
+                        left: hoveredDay.x,
+                        transform: 'translate(-50%, -100%)',
+                        background: '#18181B',
+                        border: '1px solid #27272A',
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                        minWidth: '140px'
+                    }}
+                >
+                    <span className="text-[#A1A1AA] text-[12px] mb-1">
+                        {new Date(hoveredDay.year, hoveredDay.month, hoveredDay.day).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                    </span>
+                    <span className={cn(
+                        "font-mono-data text-[14px] font-semibold mb-2",
+                        hoveredDay.pnl >= 0 ? "text-[#4ADE80]" : "text-[#EF4444]"
+                    )}>
+                        {hoveredDay.pnl >= 0 ? '+' : ''}${Math.abs(hoveredDay.pnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <div className="flex justify-between items-center">
+                        <span className="text-[#71717A] text-[11px]">{hoveredDay.trades} {hoveredDay.trades === 1 ? 'trade' : 'trades'}</span>
+                        <span className="text-[#FFFFFF] text-[11px]">{hoveredDay.winRate.toFixed(1)}%</span>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
