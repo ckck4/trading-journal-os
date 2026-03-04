@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useFiltersStore } from '@/stores/filters'
 import { CombinedEquityBalanceWidget } from '@/components/dashboard/combined-equity-balance-widget'
 import { DailyDisciplineWidget } from '@/components/dashboard/daily-discipline-widget'
-import { DisciplineHistoryWidget } from '@/components/dashboard/discipline-history-widget'
+import { PnlCalendarWidget } from '@/components/dashboard/pnl-calendar-widget'
 import { DailyPnlWidget } from '@/components/dashboard/daily-pnl-widget'
 import { WinRateWidget } from '@/components/dashboard/win-rate-widget'
 import { PropRulesWidget } from '@/components/dashboard/prop-rules-widget'
@@ -13,7 +13,7 @@ import { GoalsWidget } from '@/components/dashboard/goals-widget'
 import type { WidgetData } from '@/types/dashboard'
 import type { DatePreset } from '@/stores/filters'
 
-const WIDGET_IDS = ['combined', 'discipline', 'history', 'daily', 'winrate', 'prop', 'trades', 'goals'] as const
+const WIDGET_IDS = ['combined', 'discipline', 'calendar', 'daily', 'winrate', 'prop', 'trades', 'goals'] as const
 type WidgetId = typeof WIDGET_IDS[number]
 
 // ─── Date range helper ─────────────────────────────────────────────────────────
@@ -96,8 +96,8 @@ function WidgetCard({
       {id === 'discipline' && (
         <DailyDisciplineWidget />
       )}
-      {id === 'history' && (
-        <DisciplineHistoryWidget />
+      {id === 'calendar' && (
+        <PnlCalendarWidget />
       )}
       {id === 'daily' && (
         <DailyPnlWidget data={widgets?.dailyPnl ?? null} isLoading={isLoading} />
@@ -193,10 +193,10 @@ export function CommandCenterClient() {
           </div>
         </div>
 
-        {/* ROW 2: Discipline History + Daily Discipline + Recent Trades */}
+        {/* ROW 2: P&L Calendar + Daily Discipline + Recent Trades */}
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 lg:col-span-4 h-[320px]">
-            <WidgetCard id="history" widgets={widgets} isLoading={isLoading} />
+            <WidgetCard id="calendar" widgets={widgets} isLoading={isLoading} />
           </div>
           <div className="col-span-12 lg:col-span-3 h-[320px]">
             <WidgetCard id="discipline" widgets={widgets} isLoading={isLoading} />

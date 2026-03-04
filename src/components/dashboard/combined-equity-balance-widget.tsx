@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts'
+import { AreaChart, Area, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts'
 import type { BalanceData, EquityPoint } from '@/types/dashboard'
 
 interface CombinedEquityBalanceWidgetProps {
@@ -118,7 +118,30 @@ export function CombinedEquityBalanceWidget({ balanceData, equityData, isLoading
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={equityData} margin={{ top: 8, right: 4, left: 4, bottom: 4 }}>
+                            <AreaChart data={equityData} margin={{ top: 8, right: 4, left: 4, bottom: 4 }}>
+                                <defs>
+                                    <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
+                                        {isEquityPositive ? (
+                                            <>
+                                                <stop offset="0%" stopColor="rgba(74,222,128,0.3)" />
+                                                <stop offset="100%" stopColor="rgba(74,222,128,0)" />
+                                            </>
+                                        ) : (
+                                            <>
+                                                <stop offset="0%" stopColor="rgba(239,68,68,0.3)" />
+                                                <stop offset="100%" stopColor="rgba(239,68,68,0)" />
+                                            </>
+                                        )}
+                                    </linearGradient>
+                                    <filter id="lineGlow">
+                                        <feGaussianBlur stdDeviation="3" result="blur" />
+                                        <feMerge>
+                                            <feMergeNode in="blur" />
+                                            <feMergeNode in="SourceGraphic" />
+                                        </feMerge>
+                                    </filter>
+                                </defs>
+                                <CartesianGrid vertical={false} stroke="#1f1f23" strokeDasharray="4 4" />
                                 <Tooltip
                                     contentStyle={{
                                         backgroundColor: 'var(--card)',
@@ -135,15 +158,17 @@ export function CombinedEquityBalanceWidget({ balanceData, equityData, isLoading
                                     labelStyle={{ color: 'var(--muted-foreground)', marginBottom: '4px' }}
                                     labelFormatter={(label) => label}
                                 />
-                                <Line
+                                <Area
                                     type="monotone"
                                     dataKey="value"
                                     stroke={strokeColor}
                                     strokeWidth={2}
                                     dot={false}
+                                    fill="url(#equityGradient)"
+                                    filter="url(#lineGlow)"
                                     activeDot={{ r: 4, fill: strokeColor, stroke: 'var(--card)', strokeWidth: 2 }}
                                 />
-                            </LineChart>
+                            </AreaChart>
                         </ResponsiveContainer>
                     )}
                 </div>
